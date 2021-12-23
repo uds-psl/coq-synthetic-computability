@@ -1,7 +1,7 @@
 Require Undecidability.Shared.Dec Undecidability.Shared.ListAutomation.
 Require Import Setoid Morphisms.
 Require Import Undecidability.Synthetic.Definitions Lia List NPeano.
-From Undecidability.Shared Require Import mu_nat equiv_on Pigeonhole Dec.
+From Undecidability.Shared Require Import mu_nat equiv_on Pigeonhole Dec partial.
 Import ListNotations.
 
 Definition lists {X} (l : list X) (p : X -> Prop) := forall x, p x <-> List.In x l. 
@@ -323,6 +323,21 @@ Proof.
   - firstorder.
 Qed.
 
+Lemma non_finite_unbounded_fun (p : nat -> Prop) f :
+  (forall n, exists L, forall x, f x <= n -> In x L) ->
+  ~ exhaustible p -> forall x, ~~ exists y : nat, f y >= x /\ p y.
+Proof.
+  intros Hsur Hfin n. rewrite non_finite_spec in Hfin.
+  2: intros; destruct (Nat.eq_decidable x1 x2); tauto.
+
+  destruct (Hsur n) as [L HL].
+  specialize (Hfin L).
+  cunwrap. destruct Hfin as (y & H1 & H2).
+  cprove exists y. split; [|eauto].
+  unshelve cstart. 1:eapply Compare_dec.le_dec.
+  intros H. apply H2, HL. lia.
+Qed.
+
 Lemma non_finite_nat (p : nat -> Prop) :
   ~ exhaustible p <-> forall n, ~~ exists m, m >= n /\ p m.
 Proof.
@@ -339,6 +354,25 @@ Proof.
     assert (list_max l <= list_max l) as ? % list_max_le by lia.
     rewrite Forall_forall in H0.
     intros ? % H0. lia.
+Qed.
+
+Lemma unbounded_non_finite_fun (p : nat -> Prop) (f : nat -> nat) :
+  (forall k, ~~ exists x, f x >= k /\ p x) -> ~ exhaustible p.
+Proof.
+  intros Hfin. eapply non_finite_nat.
+  intros n H.
+  pose (N := 1 + list_max (map f (seq 0 n))).
+  eapply (Hfin N).
+  intros (x & H1 & H2).
+  apply H. eexists; split. 2: eauto.
+  assert (x < n \/ x >= n) as [ | ] by lia; try lia.
+  enough (f x > f x) by lia. subst N.
+  unfold gt. unfold ge in H1.
+  eapply Nat.lt_le_trans. 2: eauto. red. cbn.
+  rewrite <- Nat.succ_le_mono.
+  eapply list_max_spec.
+  eapply in_map_iff. exists x. split; eauto.
+  eapply in_seq. lia.
 Qed.
 
 Lemma non_exhaustible_generative {X} (p : X -> Prop) :

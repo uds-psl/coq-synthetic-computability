@@ -239,6 +239,16 @@ Section assume_part.
 
 End assume_part.
 
+Lemma list_max_spec L x :
+  In x L -> x <= list_max L.
+Proof.
+  induction L.
+  - firstorder.
+  - intros [-> | ]; cbn.
+    + lia.
+    + eapply IHL in H. unfold list_max in H. lia.
+Qed.
+
 Module implementation.
 
   Record part A := {
@@ -392,11 +402,7 @@ Module implementation.
 
   Lemma list_max_lookup k n l : l !! k = Some n -> n <= list_max l.
   Proof.
-    induction l in k |-*; intros H.
-    - destruct k; inversion H.
-    - destruct k; inversion H.
-      + subst. cbn. lia.
-      + eapply IHl in H1. cbn. fold (list_max l). lia.
+    intros H. eapply list_max_spec, elem_of_list_In, elem_of_list_lookup_2, H.
   Qed.
 
   Lemma lt_list {X} n (P : X -> nat -> Prop) k :

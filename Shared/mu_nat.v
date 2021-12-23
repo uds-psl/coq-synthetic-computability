@@ -43,6 +43,16 @@ Section WO.
     constructor. rewrite H. discriminate.
   Defined.
 
+  Theorem mu_nat' :
+    (({n | f n = true} -> False) -> False) -> ({ n | least (fun n => f n = true) 0 n } -> False) -> False.
+  Proof.
+    intros H. intros G. apply H. clear H. intros [n H].
+    apply G. clear G.
+    apply (G_sig 0).
+    apply (G_zero n).
+    constructor. rewrite H. discriminate.
+  Defined.
+
 End WO.
 
 Definition mu_nat_dep : forall P : nat -> Prop,
