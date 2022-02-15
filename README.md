@@ -1,6 +1,6 @@
-# Computability in Constructive Type Theory
+# A Constructive and Synthetic Theory of Reducibility: Myhill’s Isomorphism Theorem and Post’s Problem for Many-one and Truth-table Reducibility in Coq
 
-This is the Coq mechanisation of part I of "Computability in Constructive Type Theory", the PhD thesis of Yannick Forster.
+This is the Coq mechanisation of the paper "A Constructive and Synthetic Theory of Reducibility: Myhill’s Isomorphism Theorem and Post’s Problem for Many-one and Truth-table Reducibility in Coq" by Yannick Forster, Felix Jahn, and Gert Smolka.
 
 ## How to compile the code
 
