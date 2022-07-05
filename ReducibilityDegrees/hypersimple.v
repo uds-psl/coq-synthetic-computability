@@ -6,6 +6,7 @@ Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Import SyntheticComputability.Shared.ListAutomation.
 Require Import List Arith.
 
+Import Assume_EA.
 Import ListNotations ListAutomationNotations.
 
 Definition majorizes (f: nat -> nat) (p: nat -> Prop): Prop
@@ -45,7 +46,7 @@ Proof.
   destruct Hi1. eapply in_seq. split. lia. cbn. lia.
 Qed.
 
-Definition ttId := EA.TT.
+Definition ttId := Assume_EA.TT.
 
 Lemma IsFilter_NoDup {X} l l' (p : X -> Prop) :
   IsFilter p l l' -> NoDup l -> NoDup l'.

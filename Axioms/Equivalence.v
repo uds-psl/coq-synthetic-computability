@@ -1,82 +1,14 @@
 From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.SemiDecidabilityFacts reductions partial embed_nat.
 Require Import Setoid Program Lia.
 
-(** * Axioms for synthetic computability *)
-
-Definition CT (ϕ : nat -> nat -> nat -> option nat) :=
-  (forall c x, monotonic (ϕ c x)) /\
-  forall f, exists c, forall x, exists n, ϕ c x n = Some (f x).
-
-Section halting_CT.
-
-  Variable ϕ : nat -> nat -> nat -> option nat.
-
-  Variable ct : CT ϕ.
-
-  Definition K' c := exists n m, ϕ c ⟨c, n⟩ m = Some 0.
-  
-  Lemma semidecidable_K' : semi_decidable K'.
-  Proof.
-    exists (fun c => fun! ⟨n, m⟩ => if (ϕ c ⟨c,n⟩ m) is Some 0 then true else false).
-    intros c; unfold K'. split.
-    - intros (n & m & H).
-      exists ⟨n, m⟩. now rewrite embedP, H.
-    - intros (nm & H). destruct (unembed nm) as [n m].
-      destruct ϕ as [[] | ] eqn:E; inv H.
-      eauto.
-  Qed. 
-
-  Lemma not_semidecidable_compl_K' : ~ semi_decidable (compl K').
-  Proof.
-    intros (f & Hf). destruct ct as [Hm ct'].
-    destruct (ct' (fun! ⟨x, n⟩ => if f x n then 0 else 1)) as [c Hc].
-    enough(compl K' c <-> K' c) by (unfold compl in *; tauto).
-    red in Hf.
-    rewrite Hf. unfold K'.
-    split.
-    - intros [n Hn].
-      specialize (Hc ⟨c, n⟩) as [m H].
-      rewrite embedP in H. 
-      exists n, m. rewrite Hn in H. eauto.
-    - intros (n & m & H). exists n.
-      specialize (Hc (⟨c, n⟩)) as [m' H'].
-      rewrite embedP in H'.
-      destruct (f c n); try congruence.
-      enough (1 = 0) by congruence.
-      eapply monotonic_agnostic; eauto.
-  Qed.
-
-End halting_CT.
-
-Lemma CT_halting {ϕ} : CT ϕ ->
-  exists K : nat -> Prop, semi_decidable K /\ ~ semi_decidable (compl K) /\ ~ decidable K /\ ~ decidable (compl K).
-Proof.
-  intros [Hm H]. exists (K' ϕ).
-  repeat split.
-  - now eapply semidecidable_K'.
-  - now eapply not_semidecidable_compl_K'.
-  - intros ? % decidable_complement % decidable_semi_decidable.
-    now eapply not_semidecidable_compl_K'.
-  - intros ? % decidable_semi_decidable.
-    now eapply not_semidecidable_compl_K'.
-Qed.
-
-(** ** Synthetic Church's thesis *)
-
-Definition SCT :=
-  ∑ T : nat -> nat -> nat -> option nat,
-    (forall c x, monotonic (T c x)) /\
-    forall f : nat -> nat -> nat, exists γ, forall x y, exists n, T (γ x) y n = Some (f x y).
+From SyntheticComputability.Axioms Require Export CT SCT EA EPF.
 
 Tactic Notation "intros" "⟨" ident(x) "," ident(n) "⟩" :=
-  let xn := fresh "xn" in
-  intros xn; destruct (unembed xn) as [x n]; try setoid_rewrite (@embedP (x,n)).
-
-Definition SMN_for (T : nat -> nat -> nat -> option nat) :=
-  (exists S : nat -> nat -> nat, forall c x y v, (exists n, T c ⟨x,y⟩ n = Some v) <-> (exists n, T (S c x) y n = Some v)).
+let xn := fresh "xn" in
+intros xn; destruct (unembed xn) as [x n]; try setoid_rewrite (@embedP (x,n)).
 
 Lemma CT_SMN_to_SCT :
-  (∑ ϕ, CT ϕ /\ SMN_for ϕ) ->
+  (∑ ϕ, CT_for ϕ /\ SMN_for ϕ) ->
   SCT.
 Proof.
   intros (ϕ & H).
@@ -93,66 +25,13 @@ Qed.
 
 Lemma SCT_to_CT :
   SCT ->
-  ∑ ϕ, CT ϕ.
+  ∑ ϕ, CT_for ϕ.
 Proof.
   intros (ϕ & Hϕ & SCT).
   exists ϕ. repeat eapply conj.
   - eapply Hϕ.
   - intros f. specialize (SCT (fun _ => f)) as [γ H].
     exists (γ 0). intros. eapply H.
-Qed.
-
-Section Cantor.
-
-  Variable A : Type.
-  Variable g : A -> (A -> bool).
-
-  Lemma Cantor : surjection_wrt ext_equiv g -> False.
-  Proof.
-    intros g_surj.
-    pose (h x1 := negb (g x1 x1)).
-    destruct (g_surj h) as [n H].
-    specialize (H n). cbn in H. unfold h in H.
-    destruct (g n n); inv H.
-  Qed.
-
-End Cantor.
-
-Instance equiv_part `{partiality} {A} : equiv_on (part A) := {| equiv_rel := @partial.equiv _ A |}.
-
-Definition EPF `{partiality} :=
-  ∑ θ : nat -> (nat ↛ nat), forall f : nat -> nat ↛ nat,
-      exists γ, forall x, θ (γ x) ≡{nat ↛ nat} f x.
-
-Notation "A ↔ B" := ((A -> B) * (B -> A))%type (at level 95).
-
-Lemma EPF_iff `{Part : partiality} :
-  EPF ↔ ∑ θ : nat -> (nat ↛ nat), forall R : nat -> FunRel nat nat, 
-            (exists f, (forall i, pcomputes (f i) (R i))) -> exists γ, forall i, pcomputes (θ (γ i)) (R i).
-Proof.
-  split.
-  - intros [θ H]. exists θ. intros R [f Hf].
-    destruct (H f) as [γ Hγ]. exists γ. intros i x y.
-    unfold pcomputes in *. specialize (Hγ i x). cbn in Hγ. red in Hγ.
-    rewrite Hγ. eapply Hf.
-  - intros [θ H]. exists θ. intros f.
-    unshelve epose (R := fun i => @Build_FunRel nat nat (fun x y => hasvalue (f i x) y) _).
-    { intros ? ? ? ? ?. eapply hasvalue_det; eauto. }
-    destruct (H R) as [γ Hγ].
-    + exists f. firstorder.
-    + exists γ. intros i x y. eapply Hγ.
-Qed.    
-
-Lemma partial_to_total `{Part : partiality} (f : nat ↛ nat) :
-  {f' : nat -> nat | forall x a, f x =! a <-> exists n, f' ⟨x, n⟩ = S a }.
-Proof.
-  exists (fun arg => let (x,n) := unembed arg in match seval (f x) n with Some a => S a | None => 0 end).
-  intros x a. split.
-  - intros [n H] % seval_hasvalue. 
-    exists n. now rewrite embedP, H.
-  - intros [n H]. rewrite embedP in H.
-    eapply seval_hasvalue. exists n.
-    destruct seval; congruence.
 Qed.
 
 Definition e `{partiality} (ϕ : nat -> nat -> nat -> option nat) :=
@@ -214,7 +93,7 @@ Proof.
 Qed.
 
 Lemma EPF_to_CT_SMN {Part : partiality} :
-  EPF -> exists ϕ, CT ϕ /\ SMN_for ϕ.
+  EPF -> exists ϕ, CT_for ϕ /\ SMN_for ϕ.
 Proof.
   intros (θ & EPF).
   exists (fun c x n => seval (θ c x) n). split. split.
@@ -230,55 +109,6 @@ Proof.
     rewrite embedP in H. symmetry. eapply H.
 Qed.
 
-Definition EA := ∑ ψ : nat -> (nat -> option nat),
-    forall p : nat -> nat -> Prop, penumerable p -> exists γ, parametric_enumerator (fun x => ψ (γ x)) p.
-
-From SyntheticComputability Require Import reductions ReducibilityFacts EnumerabilityFacts ListEnumerabilityFacts.
-
-Lemma EA_iff_enumerable :
-  EA ↔ ∑ ψ : nat -> (nat -> option nat),
-  forall p : nat -> nat -> Prop, enumerable (uncurry p) -> exists γ, parametric_enumerator (fun x => ψ (γ x)) p.
-Proof.
-  split; intros [ψ H]; exists ψ; intros p Hp % penumerable_iff; eauto.
-  all: eapply discrete_nat.
-Qed.
-
-Lemma EA_iff_ran :
-  EA ↔ ∑ ψ : nat -> (nat -> option nat),
-  forall f : nat -> nat -> option nat,
-  exists γ, forall x, ψ (γ x) ≡{ran} f x.
-Proof.
-  split; intros [ψ H]; exists ψ.
-  - intros f.
-    specialize (H (fun x y => exists n, f x n = Some y)) as [γ H].
-    + exists f. red. reflexivity.
-    + exists γ. intros x. cbn. intros y. symmetry. eapply H.
-  - intros p [f Hf].
-    specialize (H f) as [γ H].
-    exists γ. intros x y.
-    red in Hf. cbn in H. now rewrite Hf, H.
-Qed.
-
-Lemma EA_halting : EA -> exists K : nat -> Prop, enumerable K /\ ~ enumerable (compl K) /\ ~ decidable K.
-Proof.
-  intros [φ EA].
-  exists (fun c => exists n, φ c n = Some c).
-  assert (He : ~ enumerable (compl (fun c => exists n, φ c n = Some c))). { 
-    intros [f Hf].
-    specialize (EA (fun _ => compl (fun c => exists n, φ c n = Some c))) as [γ H].
-    { exists (fun _ => f). firstorder. }
-    specialize (H 0 (γ 0)). cbn in H. unfold compl in *. tauto.
-  }
-  repeat split.
-  - exists (fun! ⟨c, m⟩ => if φ c m is Some x then if Nat.eqb x c then Some c else None else None).
-    unfold enumerator. intros c. split.
-    + intros [n H]. exists ⟨c, n⟩. now rewrite embedP, H, PeanoNat.Nat.eqb_refl.
-    + intros [cn H]. destruct (unembed cn) as [c' n]. exists n.
-      destruct φ eqn:E; inv H.
-      now destruct (PeanoNat.Nat.eqb_spec n0 c'); inv H1.
-  - eassumption.
-  - intros ? % decidable_complement % decidable_enumerable; eauto.
-Qed.
 
 Definition ψ (ϕ : nat -> nat -> nat -> option nat) c := fun! ⟨ n, m ⟩ => match ϕ c n m with Some (S x) => Some x | _ => None end.
 
@@ -393,88 +223,6 @@ Proof.
     subst. eauto.
 Qed.
 
-Lemma EA_to_EA_star :
-  EA -> ∑ φ : nat -> (nat -> option nat),
-    (forall p, enumerable p -> exists c, enumerator (φ c) p) /\
-    let W c x := exists n, φ c n = Some x in                     
-    exists s, forall c x y, W (s c x) y <-> W c ⟨x,y⟩.
-Proof.
-  intros (φ & H) % EA_iff_enumerable.
-  assert (lem : forall p : nat -> Prop, enumerable p -> exists c : nat, enumerator (φ c) p). { 
-    intros p [f Hf].
-    destruct (H (fun _ => p)) as [c0 Hc0].
-    + exists (fun! ⟨x,n⟩ => if f n is Some y then Some (x,y) else None).
-      intros [x y]. 
-      rewrite (Hf y). 
-      split.
-      * intros [n Hn]. exists ⟨x,n⟩. now rewrite embedP, Hn. 
-      * intros [xn Hn]. destruct (unembed xn) as [x' n].
-        destruct f eqn:E'; inv Hn. eauto. 
-    + exists (c0 0). intros x. eapply Hc0.
-  }
-  exists φ. split.
-  - eapply lem.
-  - cbn. destruct (H (fun! ⟨c,x⟩ => fun y => exists n, φ c n = Some ⟨x,y⟩)) as [γ Hγ].
-    + eexists (fun! ⟨c,n⟩ => if φ c n is Some xy then (fun! ⟨x,y⟩ => Some (⟨c,x⟩, y)) xy else @None _). intros [cx y].
-      destruct (unembed cx) as [c x] eqn:E'.
-      eapply (f_equal embed) in E'. rewrite unembedP in E'.
-      subst. split.
-      * cbn. rewrite embedP. intros [n Hn]. exists ⟨c,n⟩.
-        now rewrite embedP, Hn, embedP.
-      * intros [n Hn]. destruct (unembed n) as [c' n'].
-        destruct φ eqn:E; try congruence.
-        destruct (unembed n0) as [x' y'] eqn:E'. inv Hn.
-        eapply (f_equal unembed) in H1. rewrite !embedP in H1.
-        inv H1.
-        eapply (f_equal embed) in E'. rewrite !unembedP in E'. subst.
-        cbn. rewrite embedP. eauto.
-    + exists (fun c x => γ ⟨c,x⟩). unfold enumerator in Hγ.
-      intros. specialize (Hγ ⟨c,x⟩ y). cbn in Hγ. rewrite embedP in Hγ.
-      symmetry. eassumption.
-Qed.
-
-Lemma enumerable_pair_red:
-  forall p : nat -> nat -> Prop, enumerable (uncurry p) -> enumerable (fun! ⟨ x, y ⟩ => p x y).
-Proof.
-  intros p Hp.
-  eapply enumerable_red; eauto. 2: eapply discrete_iff; eauto.
-  exists unembed. intros xy.
-  destruct (unembed xy) as [x y]. reflexivity.
-Qed.
-
-Lemma EA_star_to_EA :
-  (∑ φ : nat -> (nat -> option nat),
-    (forall p, enumerable p -> exists c, enumerator (φ c) p) /\
-    let W c x := exists n, φ c n = Some x in                     
-    exists s, forall c x y, W (s c x) y <-> W c ⟨x,y⟩) -> EA.
-Proof.
-  intros (φ & H). eapply EA_iff_enumerable.
-  exists φ. destruct H as (Hφ & S & HS).
-  intros p Hp % enumerable_pair_red.
-
-  destruct (Hφ _ Hp) as [c Hc].
-  exists (fun x => S c x). intros x y. red in Hc.
-  now rewrite HS, <- Hc, embedP.
-Qed.
-
-Definition EA' := ∑ W : nat -> (nat -> Prop), forall p : nat -> Prop, enumerable p <-> exists c, W c ≡{nat -> Prop} p.
-
-Lemma EA_to_EA'  : 
-  EA -> EA'.
-Proof.
-  intros [φ H].
-  exists (fun c x => exists n, φ c n = Some x). intros p.
-  split.
-  - intros [f Hf]. specialize (H (fun _ => p)) as [γ H].
-    + exists (fun _ => f). intros _. eapply Hf.
-    + exists (γ 0). intros x. cbn. firstorder.
-  - intros [c Hc]. exists (φ c). firstorder.
-Qed.
-
-Definition SCT_bool :=
-  ∑ ϕ : nat -> nat -> nat -> option bool,
-    (forall c x, monotonic (ϕ c x)) /\
-    forall f : nat -> nat -> bool, exists γ, forall x y,exists n,  ϕ (γ x) y n = Some (f x y).
 
 Module R_spec.
 
@@ -587,10 +335,6 @@ Qed.
 
 End R_spec.
 
-Definition EPF_bool `{partiality} :=
-  ∑ θ : nat -> (nat ↛ bool), forall f : nat -> nat ↛ bool,
-      exists γ, forall x, θ (γ x) ≡{nat ↛ bool} f x.
-
 Lemma EPF_bool_to_SCT_bool {Part : partiality} :
   EPF_bool -> SCT_bool.
 Proof.
@@ -620,51 +364,4 @@ Proof.
     now destruct a0; cbn.
   - intros H. eexists. split. 1:eexists; split. 1: eassumption.
     eapply ret_hasvalue. destruct v; eapply ret_hasvalue.
-Qed.
-
-Section halting.
-
-  Variable Part : partiality.
-  Variable θ : nat -> nat ↛ bool.
-
-  Variable EPF : forall f : nat -> nat ↛ bool,
-     exists γ : nat -> nat, forall x : nat, θ (γ x) ≡{ nat ↛ bool} f x.
-
-  Definition K c := exists v, θ c c =! v.
-
-  Lemma semidecidable_K : semi_decidable K.
-  Proof.
-    exists (fun c n => if seval (θ c c) n is Some v then true else false).
-    intros c; unfold K. split.
-    - intros [v [n H] % seval_hasvalue]. exists n. now rewrite H.
-    - intros [n H]. destruct (seval) as [v | ] eqn:E; inv H.
-      exists v. eapply seval_hasvalue. eauto.
-  Qed.
-
-  Lemma not_semidecidable_compl_K : ~ semi_decidable (compl K).
-  Proof.
-    intros (Y & f & Hf) % semi_decidable_part_iff.
-    destruct (EPF (fun _ n => bind (f n) (fun _ => ret true))) as [γ H].
-    specialize (H 0). 
-    enough(compl K (γ 0) <-> K (γ 0)) by (unfold compl in *; tauto).
-    rewrite Hf. unfold K.
-    specialize (H (γ 0)). cbn in H. red in H.
-    setoid_rewrite H. setoid_rewrite bind_hasvalue.
-    setoid_rewrite <- ret_hasvalue_iff. 
-    split; intros [v Hv]; eauto; firstorder.
-  Qed.
-
-End halting.
-
-Lemma EPF_halting {Part : partiality} : EPF_bool -> 
-  exists K : nat -> Prop, semi_decidable K /\ ~ semi_decidable (compl K) /\ ~ decidable K /\ ~ decidable (compl K).
-Proof.
-  intros [θ H]. exists (K _ θ).
-  repeat split.
-  - now eapply semidecidable_K.
-  - now eapply not_semidecidable_compl_K.
-  - intros ? % decidable_complement % decidable_semi_decidable.
-    now eapply not_semidecidable_compl_K.
-  - intros ? % decidable_semi_decidable.
-    now eapply not_semidecidable_compl_K.
 Qed.

@@ -1,5 +1,5 @@
 Require Import stdpp.list stdpp.list_numbers.
-From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts reductions partial Axioms.bestaxioms principles kleenetree Synthetic.MoreEnumerabilityFacts mu_nat Shared.Dec.
+From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts reductions partial Axioms.Equivalence principles kleenetree Synthetic.MoreEnumerabilityFacts mu_nat Shared.Dec.
 Require Import ssreflect Nat.
 
 (** ** Continuity  *)

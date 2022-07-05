@@ -1,6 +1,8 @@
-From SyntheticComputability Require Import bestaxioms EA equiv_on DecidabilityFacts SemiDecidabilityFacts Definitions reductions EnumerabilityFacts ReducibilityTransport.
+From SyntheticComputability Require Import Equivalence EA equiv_on DecidabilityFacts SemiDecidabilityFacts Definitions reductions EnumerabilityFacts ReducibilityTransport.
 
 Import EmbedNatNotations.
+
+Import Assume_EA.
 
 Set Default Goal Selector "!".
 

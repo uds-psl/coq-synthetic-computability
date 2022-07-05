@@ -1,5 +1,70 @@
-From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.SemiDecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.ListEnumerabilityFacts reductions partial embed_nat ReducibilityFacts truthtables bestaxioms.
-Require Import Setoid Program Lia List.
+From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.SemiDecidabilityFacts reductions embed_nat.
+Require Import Setoid Program Lia.
+
+Definition EA := ∑ ψ : nat -> (nat -> option nat),
+    forall p : nat -> nat -> Prop, penumerable p -> exists γ, parametric_enumerator (fun x => ψ (γ x)) p.
+
+From SyntheticComputability Require Import reductions ReducibilityFacts EnumerabilityFacts ListEnumerabilityFacts.
+
+Require Import SyntheticComputability.Synthetic.ReducibilityFacts.
+
+Local Notation "A ↔ B" := ((A -> B) * (B -> A))%type (at level 95).
+
+Lemma EA_iff_enumerable :
+  EA ↔ ∑ ψ : nat -> (nat -> option nat),
+  forall p : nat -> nat -> Prop, enumerable (uncurry p) -> exists γ, parametric_enumerator (fun x => ψ (γ x)) p.
+Proof.
+  split; intros [ψ H]; exists ψ; intros p Hp % penumerable_iff; eauto.
+  all: eapply discrete_nat.
+Qed.
+
+Lemma EA_iff_ran :
+  EA ↔ ∑ ψ : nat -> (nat -> option nat),
+  forall f : nat -> nat -> option nat,
+  exists γ, forall x, ψ (γ x) ≡{ran} f x.
+Proof.
+  split; intros [ψ H]; exists ψ.
+  - intros f.
+    specialize (H (fun x y => exists n, f x n = Some y)) as [γ H].
+    + exists f. red. reflexivity.
+    + exists γ. intros x. cbn. intros y. symmetry. eapply H.
+  - intros p [f Hf].
+    specialize (H f) as [γ H].
+    exists γ. intros x y.
+    red in Hf. cbn in H. now rewrite Hf, H.
+Qed.
+
+Lemma EA_halting : EA -> exists K : nat -> Prop, enumerable K /\ ~ enumerable (compl K) /\ ~ decidable K.
+Proof.
+  intros [φ EA].
+  exists (fun c => exists n, φ c n = Some c).
+  assert (He : ~ enumerable (compl (fun c => exists n, φ c n = Some c))). { 
+    intros [f Hf].
+    specialize (EA (fun _ => compl (fun c => exists n, φ c n = Some c))) as [γ H].
+    { exists (fun _ => f). firstorder. }
+    specialize (H 0 (γ 0)). cbn in H. unfold compl in *. tauto.
+  }
+  repeat split.
+  - exists (fun! ⟨c, m⟩ => if φ c m is Some x then if Nat.eqb x c then Some c else None else None).
+    unfold enumerator. intros c. split.
+    + intros [n H]. exists ⟨c, n⟩. now rewrite embedP, H, PeanoNat.Nat.eqb_refl.
+    + intros [cn H]. destruct (unembed cn) as [c' n]. exists n.
+      destruct φ eqn:E; inv H.
+      now destruct (PeanoNat.Nat.eqb_spec n0 c'); inv H1.
+  - eassumption.
+  - intros ? % decidable_complement % decidable_enumerable; eauto.
+Qed.
+
+Lemma enum_iff (p : nat -> Prop) : enumerable p <-> semi_decidable p.
+Proof.
+  split.
+  - intros H. eapply enumerable_semi_decidable. eapply discrete_nat. eassumption.
+  - intros H. eapply semi_decidable_enumerable. eauto. eauto.
+Qed.
+
+Module Assume_EA.
+
+From SyntheticComputability Require Import reductions.
 
 Axiom EA : EA.
 
@@ -116,6 +181,8 @@ Proof.
   - eapply enumerable_W.
 Qed.
 
+From SyntheticComputability Require Import truthtables.
+
 Lemma TT : 
   forall f : nat -> { Q : list nat & truthtable}, 
     exists c : list nat -> nat, forall l x, W (c l) x <-> eval_tt (projT2 (f x)) (List.map (fun x => negb (inb (uncurry Nat.eqb) x l)) (projT1 (f x))) = false.
@@ -219,12 +286,8 @@ Proof.
   eapply red_m_transitive. exact Hq. exact W_red_K0.
 Qed.
 
-Lemma enum_iff (p : nat -> Prop) : enumerable p <-> semi_decidable p.
-Proof.
-  split.
-  - intros H. eapply enumerable_semi_decidable. eapply discrete_nat. eassumption.
-  - intros H. eapply semi_decidable_enumerable. eauto. eauto.
-Qed.
+
+Require Import List.
 
 Lemma generative_W :   generative (fun! ⟨ n, m ⟩ => W n m).
 Proof.
@@ -233,8 +296,10 @@ Proof.
   destruct (do_EA (fun _ => True)) as [c_top H_top]. {
     eapply decidable_enumerable. 2:eauto. exists (fun _ => true). firstorder.
   }
-  intros n. exists (map (fun m => ⟨c_top,m⟩) (seq 0 n)). split.
+  intros n. exists (List.map (fun m => ⟨c_top,m⟩) (List.seq 0 n)). split.
   now rewrite map_length, seq_length. split.
   eapply NoDup_map. intros ? ? E % (f_equal unembed). rewrite !embedP in E. congruence. eapply seq_NoDup.
   intros ? (? & <- & ?) % in_map_iff. rewrite embedP. firstorder.
 Qed.
+
+End Assume_EA.

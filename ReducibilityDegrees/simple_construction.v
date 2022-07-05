@@ -12,9 +12,11 @@ Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Synthetic.reductions SyntheticComputability.Synthetic.truthtables.
 Require Export SyntheticComputability.Synthetic.DecidabilityFacts SyntheticComputability.Synthetic.EnumerabilityFacts SyntheticComputability.Synthetic.SemiDecidabilityFacts.
 Require Export SyntheticComputability.Shared.ListAutomation.
-Require Export SyntheticComputability.Synthetic.simple.
+Require Export SyntheticComputability.ReducibilityDegrees.simple.
 Require Export SyntheticComputability.Shared.embed_nat.
 Require Export List Arith.
+
+Import Assume_EA.
 
 Export EmbedNatNotations.
 

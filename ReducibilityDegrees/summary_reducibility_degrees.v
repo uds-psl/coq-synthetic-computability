@@ -1,37 +1,6 @@
-From SyntheticComputability Require Import simple simple_construction hypersimple hypersimple_construction myhill MoreEnumerabilityFacts ReducibilityFacts.
+From SyntheticComputability Require Import simple simple_construction hypersimple hypersimple_construction MoreEnumerabilityFacts ReducibilityFacts.
 
-Theorem Myhill_Isomorphism_Theorem :
-  forall X : Set, discrete X -> enumerableᵗ X ->
-  forall Y : Set, discrete Y -> enumerableᵗ Y ->
-  forall p : X -> Prop, forall q : Y -> Prop,
-      p ⪯₁ q -> q ⪯₁ p -> exists f g, reduces_m f p q /\ reduces_m g q p /\ forall x y, f (g y) = y /\ g (f x) = x.
-Proof.
-  intros X [dX HdX] [eX HeX] Y [dY HdY] [eY HeY] p q [f [f_inj Hf]] [g [g_inj Hg]].
-  assert (inhabited (eq_dec X)) as [eq_dec_X]  by (eapply discrete_iff; firstorder).
-  assert (inhabited (eq_dec Y)) as [eq_dec_Y]  by (eapply discrete_iff; firstorder).
-  destruct (enumerator_retraction _ _ _ HdX HeX) as [IX HIX].
-  destruct (enumerator_retraction _ _ _ HdY HeY) as [IY HIY].
-  eexists _, _. repeat eapply conj.
-  - unshelve eapply f'_red; eauto; firstorder. 
-  - unshelve eapply g'_red; eauto; firstorder.
-  - intros. split.
-    + eapply f'_g'.
-    + eapply g'_f'.
-Qed.
-
-Corollary Computational_Cantor_Bernstein :
-  forall X : Set, discrete X -> enumerableᵗ X ->
-  forall Y : Set, discrete Y -> enumerableᵗ Y ->
-  forall f : X -> Y, (forall x1 x2, f x1 = f x2 -> x1 = x2) ->
-  forall g : Y -> X, (forall y1 y2, g y1 = g y2 -> y1 = y2) ->
-  exists (f' : X -> Y) (g' : Y -> X), forall x y, f' (g' y) = y /\ g' (f' x) = x.
-Proof.
-  intros X HX1 HX2 Y HY1 HY2 f Hf g Hg.
-  destruct (@Myhill_Isomorphism_Theorem X HX1 HX2 Y HY1 HY2 (fun _ => True) (fun _ => True)) as (f' & g' & Hf' & Hg' & H).
-  - exists f. firstorder.
-  - exists g. firstorder.
-  - exists f', g'. eapply H.
-Qed.
+Import Assume_EA.
 
 Theorem Posts_problem_many_one :
   exists p : nat -> Prop, simple p /\ enumerable p /\ ~ decidable p /\ ~ uncurry W ⪯ₘ p.
@@ -134,6 +103,5 @@ Proof.
     eapply m_complete_W. eauto.
 Qed.
 
-Print Assumptions Myhill_Isomorphism_Theorem.
 Print Assumptions Posts_problem_many_one.
 Print Assumptions Posts_problem_truth_table.

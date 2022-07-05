@@ -1,4 +1,4 @@
-From SyntheticComputability Require Import DecidabilityFacts EnumerabilityFacts SemiDecidabilityFacts ListEnumerabilityFacts Axioms.bestaxioms embed_nat reductions partial.
+From SyntheticComputability Require Import DecidabilityFacts EnumerabilityFacts SemiDecidabilityFacts ListEnumerabilityFacts Axioms.Equivalence embed_nat reductions partial.
 
 Require Import SyntheticComputability.Synthetic.EnumerabilityFacts.
 
@@ -11,7 +11,6 @@ Proof.
   split.
   - intros. eapply semi_decidable_enumerable; eauto.
   - intros. eapply enumerable_semi_decidable; eauto.
-    eapply discrete_iff. econstructor. exact _.
 Qed.
 
 Lemma EPF_SCT_halting :

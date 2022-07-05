@@ -1,7 +1,7 @@
 From Coq.Logic Require Import ConstructiveEpsilon.
 Require Import Lia Nat.
 From stdpp Require Import numbers list list_numbers.
-From SyntheticComputability Require Import SemiDecidabilityFacts DecidabilityFacts EnumerabilityFacts reductions Axioms.bestaxioms halting FinChoice.
+From SyntheticComputability Require Import SemiDecidabilityFacts DecidabilityFacts EnumerabilityFacts reductions Axioms.Equivalence halting FinChoice.
 
 (** * CT in relation to other axioms  *)
 

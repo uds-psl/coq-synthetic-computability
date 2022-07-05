@@ -6,6 +6,8 @@ Require Import SyntheticComputability.Synthetic.DecidabilityFacts SyntheticCompu
 Require Import SyntheticComputability.Shared.ListAutomation.
 Require Import List Arith.
 
+Import Assume_EA.
+
 Import ListNotations ListAutomationNotations.
 
 Definition productive (p : nat -> Prop) := exists f : nat -> nat, forall c, (forall x, W c x -> p x) -> p (f c) /\ ~ W c (f c).
