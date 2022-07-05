@@ -1,19 +1,44 @@
-# Computability in Constructive Type Theory
+# Synthetic Computability Theory in Coq
 
-This is the Coq mechanisation of part I of "Computability in Constructive Type Theory", the PhD thesis of Yannick Forster.
+## Meta
 
-## How to compile the code
+- Author(s):
+  - Yannick Forster
+  - Felix Jahn
+  - Dominik Kirst
+  - Fabian Kunze
+  - Nils Lauermann
+  - Niklas Mück
+- Maintainer:
+  - Yannick Forster ([**@yforster**](https://github.com/yfrster))
+- License: [MIT License](LICENSE)
+- Compatible Coq versions: 8.15.2
+- Additional dependencies: 
+  - the [`stdpp` library](https://gitlab.mpi-sws.org/iris/stdpp)
+  - optionally, the [Coq Library of Undecidability Proofs](https://github.com/uds-psl/coq-library-undecidability)
+- Coq namespace: `SyntheticComputability``
+- Related publication(s):
+  - [Computability in Constructive Type Theory](https://ps.uni-saarland.de/~forster/thesis.php) doi:[10.22028/D291-35758 ](https://dx.doi.org/10.22028/D291-35758)
+  - [Synthetic Kolmogorov Complexity in Coq](https://hal.inria.fr/hal-03596267)
 
-You need `The Coq Proof Assistant, version 8.13.2`, the [`stdpp` library](https://gitlab.mpi-sws.org/iris/stdpp), the [Smpl](https://github.com/uds-psl/smpl) package, the [MetaCoq](metacoq.github.io/) package and the [Equations](https://mattam82.github.io/Coq-Equations/) package installed.
+## Description
 
-Afterwards, you can type `make`.
+This library contains results on synthetic computability theory.
 
-## How to install Coq
+- Equivalence proofs for various axioms of synthetic computability in `Axioms/Equivalence.v`
+- Rice's theorem in `Basic/Rice.v`
+- Myhill's isomorphism theorem in `Basic/Myhill.v`
+- The existence of simple and hypersimple predicates in `ReducibilityDegrees.summary_reducibility_degrees.v`
+- A proof that nonrandom numbers defined via Kolmogorov Complexity form a simple predicate in `KolmogorovComplexity/Kolmogorov_gen.v`
 
-The easiest way to install Coq and required libraries is via `opam` (version `2`).
-```
-opam switch create coq-synthetic-computability 4.07.1+flambda
+## Installation
+
+```sh
+opam switch create coq-synthetic-computability --packages=ocaml-variants.4.14.0+options,ocaml-option-flambda
 eval $(opam env)
 opam repo add coq-released https://coq.inria.fr/opam/released
-opam install coq.8.13.2 coq-equations.1.2.3+8.13 coq-stdpp.1.5.0 coq-metacoq-template.1.0~beta2+8.13 coq-smpl
+opam install coq.8.15.3 stdpp
+make
+make install
 ```
+
