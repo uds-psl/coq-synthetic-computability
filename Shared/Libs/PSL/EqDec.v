@@ -1,4 +1,4 @@
-From Undecidability.Shared.Libs.PSL Require Import Prelim.
+From SyntheticComputability.Shared.Libs.PSL Require Import Prelim.
 
 (* * Decidable predicates *)
 

@@ -1,4 +1,4 @@
-From Undecidability Require Import Synthetic.simple_construction Synthetic.hypersimple Axioms.EA.
+From SyntheticComputability Require Import Synthetic.simple_construction Synthetic.hypersimple Axioms.EA.
 
 Lemma list_max_cns L:
   list_max L = 0 \/ In (list_max L) L.

@@ -1,5 +1,5 @@
 Require Import List Morphisms Lia.
-Require Import Undecidability.Synthetic.DecidabilityFacts Undecidability.Synthetic.EnumerabilityFacts Undecidability.Shared.partial Undecidability.Shared.embed_nat Undecidability.Shared.FinitenessFacts.
+Require Import SyntheticComputability.Synthetic.DecidabilityFacts SyntheticComputability.Synthetic.EnumerabilityFacts SyntheticComputability.Shared.partial SyntheticComputability.Shared.embed_nat SyntheticComputability.Shared.FinitenessFacts.
 Export EmbedNatNotations.
 
 (** ** Semi-decidability  *)

@@ -1,4 +1,5 @@
-From Undecidability.L Require Export L Datatypes.LNat Datatypes.LBool Functions.Encoding Computability.Seval.
+From Undecidability.L Require Export L Datatypes.LNat Datatypes.LBool Functions.Encoding.
+From SyntheticComputability Require Export Models.Seval.
 Require Import Coq.Logic.ConstructiveEpsilon.
 
 Definition cChoice := constructive_indefinite_ground_description_nat_Acc.
@@ -11,12 +12,12 @@ Proof.
   - destruct (IHs t). left; congruence. right; congruence.    
 Qed.
 
-Lemma enc_extinj {X} {H:registered X} (m n:X) : enc m == enc n -> m = n.
+Lemma enc_extinj {X} {H:encodable X} {HI : encInj H } (m n:X) : enc m == enc n -> m = n.
 Proof.
   intros eq. apply unique_normal_forms in eq; try Lproc. now apply inj_enc.
 Qed.
 
-Lemma lcomp_comp Y {Ry:registered Y} (u:term) (g: term -> Y):
+Lemma lcomp_comp Y {Ry:encodable Y} (u:term) (g: term -> Y):
   (forall x (y:Y), enc y = x -> y = g x) ->
   (exists y:Y, u == enc y) -> {y:Y| u == enc y}.
 Proof.

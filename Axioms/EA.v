@@ -1,4 +1,4 @@
-From Undecidability Require Import Synthetic.DecidabilityFacts Synthetic.SemiDecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.ListEnumerabilityFacts reductions partial embed_nat ReducibilityFacts truthtables bestaxioms.
+From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.SemiDecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.ListEnumerabilityFacts reductions partial embed_nat ReducibilityFacts truthtables bestaxioms.
 Require Import Setoid Program Lia List.
 
 Axiom EA : EA.
@@ -30,7 +30,7 @@ Proof.
   eapply W_spec.
 Qed.
 
-Hint Resolve discrete_nat : core.
+Global Hint Resolve discrete_nat : core.
 
 Lemma EAS' :
   forall p : nat -> nat -> Prop, enumerable (fun! ⟨x,y⟩ => p x y) ->
@@ -77,7 +77,7 @@ Proof.
   eapply EAS_list. 
   eapply decidable_enumerable. 2:eauto.
   eapply decidable_iff. econstructor.
-  intros [x y]. cbn. exact _. 
+  intros [x y]. cbn. eapply ListAutomation.list_in_dec. exact _.
 Qed.
 
 Notation π1 := (fun! ⟨x, y⟩ => x).

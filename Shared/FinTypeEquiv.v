@@ -1,5 +1,5 @@
 
-From Undecidability.Shared.Libs.PSL Require Import FinTypes.
+From SyntheticComputability.Shared.Libs.PSL Require Import FinTypes.
 
 Fixpoint position {X : eqType} (x : X) (l : list X) : option (Fin.t (length l)).
 Proof.

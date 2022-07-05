@@ -3,7 +3,7 @@
 (* Author: Maximilian Wuttke *)
 
 
-From Undecidability.Shared.Libs.PSL Require Import Base.
+From SyntheticComputability.Shared.Libs.PSL Require Import Base.
 
 
 Section Bijection.

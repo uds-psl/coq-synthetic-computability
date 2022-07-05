@@ -1,4 +1,4 @@
-From Undecidability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.SemiDecidabilityFacts reductions partial embed_nat.
+From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.SemiDecidabilityFacts reductions partial embed_nat.
 Require Import Setoid Program Lia.
 
 (** * Axioms for synthetic computability *)
@@ -233,7 +233,7 @@ Qed.
 Definition EA := ∑ ψ : nat -> (nat -> option nat),
     forall p : nat -> nat -> Prop, penumerable p -> exists γ, parametric_enumerator (fun x => ψ (γ x)) p.
 
-From Undecidability Require Import reductions ReducibilityFacts EnumerabilityFacts ListEnumerabilityFacts.
+From SyntheticComputability Require Import reductions ReducibilityFacts EnumerabilityFacts ListEnumerabilityFacts.
 
 Lemma EA_iff_enumerable :
   EA ↔ ∑ ψ : nat -> (nat -> option nat),
@@ -303,7 +303,7 @@ Proof.
     eapply (Hf (x,y')). eauto.
 Qed.
 
-Require Import Undecidability.Synthetic.ReducibilityFacts.
+Require Import SyntheticComputability.Synthetic.ReducibilityFacts.
 
 Fixpoint mk_mono {X} (f : nat -> option X) (n : nat) : option X :=
   match n with
@@ -361,7 +361,7 @@ Proof.
   split. 1: intros; eapply monotonic_mk_mono.
   intros f.
   destruct (EA (fun x => fun! ⟨n, m⟩ => f x n = m)) as [c Hc].
-  { eapply enumerable_red. 4:eapply enumerable_graph with (f0 := (fun '(x,n) => f x n)).
+  { eapply enumerable_red. 4:eapply enumerable_graph with (f := (fun '(x,n) => f x n)).
     - exists (fun '(x,nm) => (fun! ⟨n,m⟩ => ((x,n),m)) nm).
       intros [x nm]. cbn. 
       destruct (unembed nm) as [n m].

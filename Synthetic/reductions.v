@@ -1,9 +1,9 @@
 From stdpp Require Import prelude.
 Require Import ssreflect.
 
-From Undecidability.Synthetic Require Import Definitions DecidabilityFacts EnumerabilityFacts ListEnumerabilityFacts MoreEnumerabilityFacts.
-From Undecidability.Synthetic Require Import truthtables.
-From Undecidability.Shared Require Import Dec FinitenessFacts.
+From SyntheticComputability.Synthetic Require Import Definitions DecidabilityFacts EnumerabilityFacts ListEnumerabilityFacts MoreEnumerabilityFacts.
+From SyntheticComputability.Synthetic Require Import truthtables.
+From SyntheticComputability.Shared Require Import Dec FinitenessFacts.
 
 Ltac inv H := inversion H; subst; clear H.
 Definition LEM := forall P, P \/ ~ P.
@@ -103,7 +103,7 @@ Lemma red_m_compl_compl_LEM_3 :
 Proof.
   split.
   - move => H.
-    eapply red_m_compl_compl_LEM.
+    rewrite - red_m_compl_compl_LEM.
     move => *.
     eapply H. 
     exists (fun x => x). firstorder.
@@ -652,19 +652,3 @@ Section upper_semi_lattice.
   Qed.
 
 End upper_semi_lattice.
-
-Section Turing.
-
-  Context {Part : partiality}.
-
-  Definition reduces_Turing {X} {Y} (f : (Y -> bool) -> part (X -> bool)) (P : X -> Prop) (Q : Y -> Prop) :=
-    forall d, decider d Q -> exists g, f d =! g /\ decider g P.
-
-  Definition red_Turing {X} {Y} (P : X -> Prop) (Q : Y -> Prop) :=
-    exists f : (Y -> bool) -> part (X -> bool),
-      reduces_Turing f P Q.
-  Notation "P ⪯ᴛ Q" := (red_Turing P Q) (at level 50).
-
-End Turing.
-
-

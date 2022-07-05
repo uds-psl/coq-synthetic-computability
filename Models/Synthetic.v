@@ -1,5 +1,6 @@
-From Undecidability.Synthetic Require Import DecidabilityFacts EnumerabilityFacts ListEnumerabilityFacts ReducibilityFacts.
-From Undecidability.L Require Import Computability.MuRec Computability.Computability Functions.Eval.
+From SyntheticComputability.Synthetic Require Import DecidabilityFacts EnumerabilityFacts ListEnumerabilityFacts ReducibilityFacts.
+From SyntheticComputability Require Import LMuRecursion.
+From Undecidability.L Require Import Computability.Computability Functions.Eval.
 From Undecidability.L.Datatypes Require Import LNat LOptions LProd Lists.
 
 Require Import Datatypes.
@@ -9,22 +10,22 @@ Inductive is_computable {A} {t : TT A} (a : A) : Prop :=
 
 Notation enumerates f p := (forall x, p x <-> exists n : nat, f n = Some x).
 
-Definition L_decidable {X} `{registered X} (P : X -> Prop) :=
+Definition L_decidable {X} `{encodable X} (P : X -> Prop) :=
   exists f : X -> bool, is_computable f /\ forall x, P x <-> f x = true.
 
-Definition L_enumerable {X} `{registered X} (p : X -> Prop) := 
+Definition L_enumerable {X} `{encodable X} (p : X -> Prop) := 
   exists f : nat -> option X, is_computable f /\ (enumerates f p).
 
-Definition L_recognisable {X} `{registered X} (p : X -> Prop) :=
+Definition L_recognisable {X} `{encodable X} (p : X -> Prop) :=
   exists f : X -> nat -> bool, is_computable f /\ forall x, p x <-> exists n, f x n = true.
 
-Definition L_recognisable' {X} `{registered X} (p : X -> Prop) :=
+Definition L_recognisable' {X} `{encodable X} (p : X -> Prop) :=
   exists s : term, forall x, p x <-> converges (L.app s (enc x)).
 
 Notation "s ▹ t" := (eval s t) (at level 50).
 Import L_Notations.
 
-Lemma modesty_func {X} {HX : registered X} {Y} {HY : registered Y} s unenc :
+Lemma modesty_func {X} {HX : encodable X} {Y} {HY : encodable Y} s unenc :
   (forall t (y:Y), enc y = t -> y = unenc t) ->
   proc s -> (forall x : X, exists y : Y, s (enc x) ▹ (enc y)) -> {f : X -> Y | forall x, s (enc x) ▹ enc (f x)}.
 Proof.
@@ -46,7 +47,7 @@ Proof.
   intros -> [? ->]. econstructor.
 Qed.
 
-Lemma L_decidable_iff {X} `{HR : registered X} (p : X -> Prop) :
+Lemma L_decidable_iff {X} `{HR : encodable X} (p : X -> Prop) :
   L_decidable p <-> exists s, closed s /\ forall x, (s (enc x) ▹ enc true /\ p x) \/ (s (enc x) ▹ enc false /\ ~ p x).
 Proof.
   split.
@@ -81,7 +82,7 @@ Proof.
            cbn. red in Hp. now rewrite Hp. Lproc. reflexivity.
 Qed.
 
-Lemma L_recognisable_iff {X} `{HR : registered X} (p : X -> Prop) :
+Lemma L_recognisable_iff {X} `{HR : encodable X} (p : X -> Prop) :
   computable (enc (X := X)) ->
   L_recognisable p <-> L_recognisable' p.
 Proof.
@@ -122,7 +123,7 @@ Proof.
   - fold (unembed n). rewrite IHn. now destruct (unembed n).
 Qed.
 
-Lemma L_enumerable_iff {X} {HR : registered X} (p : X -> Prop) unenc :
+Lemma L_enumerable_iff {X} {HR : encodable X} {HI : encInj HR} (p : X -> Prop) unenc :
    (forall (t : term) (y : X), enc y = t <-> Some y = unenc t) ->
    computable unenc ->
    L_enumerable p <-> exists t, proc t /\ forall x, p x <-> exists n : nat, t (enc n) ▹ enc x.
@@ -165,7 +166,7 @@ Qed.
 Section L_enum_rec.
 
   Variable X : Type.
-  Context `{registered X}.
+  Context `{encodable X}.
   Variable (p : X -> Prop).
 
   Hypotheses (f : nat -> option X) (c_f : computable f) (H_f : enumerates f p).
@@ -237,9 +238,9 @@ Qed.
 (*   extract. *)
 (* Qed. *)
 
-Require Import Undecidability.Shared.embed_nat Nat.
+Require Import SyntheticComputability.Shared.embed_nat Nat.
 
-(* Instance term_nat_rec {X : Set} `{registered X} : computable (@nat_rec (fun _ => X)). *)
+(* Instance term_nat_rec {X : Set} `{encodable X} : computable (@nat_rec (fun _ => X)). *)
 (* Proof. *)
 (*   unfold nat_rec, nat_rect. extract. *)
 (* Qed. *)
@@ -309,7 +310,7 @@ Qed.
 (*   extract. *)
 (* Qed. *)
 
-(* Instance term_ofNat X `{registered X} : *)
+(* Instance term_ofNat X `{encodable X} : *)
 (*   computable (@ofNat X). *)
 (* Proof. *)
 (*   extract. *)
@@ -318,10 +319,10 @@ Qed.
 Definition lenumerates {X} L (p : X -> Prop) :=
   cumulative L /\ (forall x : X, p x <-> (exists m : nat, x el L m)).
 
-Definition L_enum {X} `{registered X} (p : X -> Prop) :=
+Definition L_enum {X} `{encodable X} (p : X -> Prop) :=
   exists L, is_computable L /\ lenumerates L p.
 
-Lemma projection X Y {HX : registered X} {HY : registered Y} (p : X * Y -> Prop) :
+Lemma projection X Y {HX : encodable X} {HY : encodable Y} (p : X * Y -> Prop) :
   L_enumerable p -> L_enumerable (fun x => exists y, p (x,y)).
 Proof.
   intros (f & [cf] & ?).
@@ -334,7 +335,7 @@ Proof.
       exists y. eapply H. eauto.
 Qed.
 
-Lemma L_enumerable_ext X `{registered X} p q : L_enumerable p -> (forall x : X, p x <-> q x) -> L_enumerable q.
+Lemma L_enumerable_ext X `{encodable X} p q : L_enumerable p -> (forall x : X, p x <-> q x) -> L_enumerable q.
 Proof.
   intros (f & cf & Hf) He. exists f; split; eauto.
   intros ?. rewrite <- He. eapply Hf.
@@ -342,12 +343,12 @@ Qed.
 
 Definition F1 {X} (T : nat -> list X) :=  (fun n => let (n, m) := unembed n in nth_error (T n) m).
 
-Instance term_F1 {X} {H : registered X} :  @computable ((nat -> list X) -> nat -> option X) ((! nat ~> ! list X) ~> ! nat ~> ! option X) (@F1 X).
+Instance term_F1 {X} {H : encodable X} :  @computable ((nat -> list X) -> nat -> option X) ((! nat ~> ! list X) ~> ! nat ~> ! option X) (@F1 X).
 Proof.
   extract.  
 Qed.
 
-Lemma L_enumerable_enum {X} `{registered X} (p : X -> Prop) :
+Lemma L_enumerable_enum {X} `{encodable X} (p : X -> Prop) :
   L_enum p -> L_enumerable p.
 Proof.
   intros (f & [cf] & Hf).
@@ -358,7 +359,7 @@ Proof.
     now rewrite list_enumerator_to_enumerator.
 Qed.
 
-Lemma L_enumerable_halt {X} `{registered X} (p : X -> Prop) :
+Lemma L_enumerable_halt {X} `{encodable X} (p : X -> Prop) :
   L_decidable (X := X * X) (fun '(x,y) => x = y) ->
   L_enumerable p -> p ⪯ converges.
 Proof.
@@ -371,7 +372,7 @@ Qed.
 
 Import L_Notations.
 
-Lemma L_recognisable'_recognisable {X} `{registered X} (p : X -> Prop) :
+Lemma L_recognisable'_recognisable {X} `{encodable X} (p : X -> Prop) :
   L_recognisable p -> L_recognisable' p.
 Proof.
   intros (f & [c_f] & H_f).
@@ -387,13 +388,13 @@ Proof.
   - intros. exists (f x n). now Lsimpl.
 Qed.    
 
-Lemma L_recognisable_halt {X} `{registered X} (p : X -> Prop) :
+Lemma L_recognisable_halt {X} `{encodable X} (p : X -> Prop) :
   L_recognisable p -> p ⪯ converges.
 Proof.
   intros. eapply L_recognisable'_recognisable in H0 as  (f & H_f). now exists (fun x0 => f (enc x0)). 
 Qed.
 
-Lemma L_recognisable_HaltL {X} `{registered X} (p : X -> Prop) :
+Lemma L_recognisable_HaltL {X} `{encodable X} (p : X -> Prop) :
   L_recognisable p -> p ⪯ HaltL.
 Proof.
   intros. eapply L_recognisable'_recognisable in H0 as  (f & H_f). exists (fun x0 => f (enc x0)). 

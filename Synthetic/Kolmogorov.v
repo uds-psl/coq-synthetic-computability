@@ -1,7 +1,7 @@
-From Undecidability Require Import Definitions.
-From Undecidability Require Import mu_nat partial equiv_on.
+From SyntheticComputability Require Import Definitions.
+From SyntheticComputability Require Import mu_nat partial equiv_on.
 
-From Undecidability Require Import simple principles EnumerabilityFacts.
+From SyntheticComputability Require Import simple principles EnumerabilityFacts.
 
 Require Import Nat Arith Lia.
 
@@ -348,7 +348,7 @@ Proof.
     + congruence.
 Qed.
 
-From Undecidability Require Import FinitenessFacts.
+From SyntheticComputability Require Import FinitenessFacts.
 From stdpp Require Import base.
 Require Import List.
 
@@ -362,9 +362,9 @@ Proof.
     + eapply IHL in H. unfold list_max in H. lia.
 Qed.
 
-From Undecidability Require Import Pigeonhole.
+From SyntheticComputability Require Import Pigeonhole.
 
-From Undecidability Require Import Dec.
+From SyntheticComputability Require Import Dec.
 
 Lemma non_finite_unbounded_fun (p : nat -> Prop) f :
   (forall n, exists L, forall x, f x <= n -> In x L) ->
@@ -740,7 +740,7 @@ Proof.
   unshelve epose proof (MP_choice _ mp _ unboundedR) as [g Hg].
   - cbn. eapply decidable_enumerable. 2:eauto.
     eapply DecidabilityFacts.decidable_iff.
-    eapply DecidabilityFacts.decidable_iff in Hdec. destruct Hdec.
+    rewrite DecidabilityFacts.decidable_iff in Hdec. destruct Hdec.
     econstructor. intros (x, y).
     exact _.
   - destruct (dist_again g) as [d].
@@ -781,7 +781,7 @@ Proof.
   - exact unboundedR.
   - cbn. eapply decidable_enumerable. 2:eauto.
     eapply DecidabilityFacts.decidable_iff.
-    eapply DecidabilityFacts.decidable_iff in Hdec. destruct Hdec.
+    rewrite DecidabilityFacts.decidable_iff in Hdec. destruct Hdec.
     econstructor. intros (x, y).
     exact _.
   - eapply length_sublinear with (d := d).

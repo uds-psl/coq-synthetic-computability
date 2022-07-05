@@ -1,10 +1,10 @@
 From stdpp Require Import list.
 
-From Undecidability Require Import reductions ReducibilityFacts EnumerabilityFacts Synthetic.Definitions DecidabilityFacts truthtables principles Dec.
-Require Import Undecidability.Shared.partial.
+From SyntheticComputability Require Import reductions ReducibilityFacts EnumerabilityFacts Synthetic.Definitions DecidabilityFacts truthtables principles Dec.
+Require Import SyntheticComputability.Shared.partial.
 Require Import Setoid Morphisms.
 
-From Undecidability Require Import Pigeonhole.
+From SyntheticComputability Require Import Pigeonhole.
 
 Axiom FunExt : forall (X : Type) (Y : X -> Type) (f g : forall x : X, Y x), (forall x, f x = g x) -> f = g.
 Axiom PropExt : forall P1 P2 : Prop, P1 <-> P2 -> P1 = P2.
@@ -536,7 +536,7 @@ Proof.
   - intros H0. inv H0.  eapply ret_hasvalue.
   - destruct l; cbn. intros ? % ret_hasvalue_inv. congruence.
     intros (? & ? & (? & ? & ? % ret_hasvalue_inv) % bind_hasvalue) % bind_hasvalue.
-    inv H2. econstructor. 2: firstorder. now eapply Hg.
+    inv H1. econstructor. 2: firstorder. now eapply Hg.
   - intros HL. inv HL. cbn. eapply Hg in H2; eauto.
     eapply bind_hasvalue. 
     eexists; split; eauto.
@@ -614,7 +614,7 @@ Proof.
     + intros (L & ? % (pcomputes_part_map _ _ _ _ _ Hg) & <- % ret_hasvalue_inv) % bind_hasvalue.
       exists (map (eq true) L). split.
       * eapply Forall2_fmap_r, Forall2_impl; eauto.
-        cbn. clear - H0. intros ? [] ?; firstorder. (* enough (true = false) by congruence. all: eapply R; eauto. *)
+        cbn. clear - H. intros ? [] ?; firstorder. (* enough (true = false) by congruence. all: eapply R; eauto. *)
       * eapply Hf.
     + intros (L & HL1 & HL2).
       apply MP_hasvalue_stable; eauto. intros G.
@@ -824,7 +824,7 @@ Proof.
 Qed.
 
 Lemma Forall2_Forall {A B} P (l1 : list A) (l2 : list B) :
-  Forall2 P l1 l2 → Forall (curry P) (zip l1 l2).
+  Forall2 P l1 l2 → Forall (uncurry P) (zip l1 l2).
 Proof. induction 1; constructor; auto. Qed.
 
 Lemma bla {X Y Z1 Z2} (r : FunRel Y Z1 -> FunRel X Z2) {Heq : eq_dec Y} :
@@ -945,7 +945,7 @@ Lemma pcomputes_decider {X} f (R : FunRel X bool) :
   pcomputes f R -> (forall x, ter (f x)) -> decidable (fun x => R x true).
 Proof.
   intros Hf HR.
-  eapply partial_decidable with (f0 := f).
+  eapply partial_decidable with (f := f).
   - intros x. eauto. 
   - intros x. split.
     + intros H. now eapply Hf.
@@ -1248,7 +1248,7 @@ Proof.
   - cbn in H. now rewrite of_o_char, <- H, to_o_char.
 Qed.
 
-From Undecidability Require Import hypersimple_construction.
+From SyntheticComputability Require Import hypersimple_construction.
 
 Lemma non_finite_to {p : nat -> Prop} (f : nat -> nat) :
   Inj (=) (=) f ->
@@ -1293,7 +1293,7 @@ Lemma neg_neg_least {X} p (f : X -> nat) :
   (~~ exists x, p x (f x)) -> ~~ exists x, p x (f x) /\ forall y, p y (f y) -> f x <= f y.
 Proof.
   intros H. cunwrap. destruct H as (x & Hx).
-  revert Hx. pattern x. eapply size_ind with (f0 := f). clear. intros x IH H.
+  revert Hx. pattern x. eapply size_ind with (f := f). clear. intros x IH H.
   destruct (f x) eqn:E.
   - cprove exists x. split. congruence. intros. rewrite E. lia.
   - ccase (exists y, f y <= n /\ p y (f y)) as [Hf | Hf].
@@ -1330,7 +1330,7 @@ Proof.
   cunwrap. destruct H as (L & HL).
   intros H. apply Hp. exists L.
   intros x Hx. eapply HL.
-  cstart. intros Hfx. eapply neg_neg_least with (p0 := fun x fx => p x /\ f x >= z). cprove exists x. split. eauto. lia.
+  cstart. intros Hfx. eapply neg_neg_least with (p := fun x fx => p x /\ f x >= z). cprove exists x. split. eauto. lia.
   intros (x' & [] & Hx''). apply H. exists x'. split. eauto. split. eauto.
   intros ? []. eapply Hx''. firstorder.
 Qed.
@@ -1361,6 +1361,8 @@ Section HS.
       lia. lia.
     * intros (? & ? & ?) % in_map_iff. subst. eapply E_I_enum. eauto.
   Qed.
+
+  From SyntheticComputability Require Import ListAutomation.
 
   Lemma red : MP -> I ⪯ᴛ HS E_I.
   Proof.
@@ -1469,4 +1471,3 @@ Section HS.
 
 End HS.
 
-Print Assumptions red.

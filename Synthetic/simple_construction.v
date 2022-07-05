@@ -6,14 +6,14 @@
     (1) Saarland University, Saarbrücken, Germany
 *)
 
-Require Export Undecidability.Axioms.EA.
-Require Export Undecidability.Shared.Pigeonhole.
-Require Export Undecidability.Shared.FinitenessFacts.
-Require Export Undecidability.Synthetic.reductions Undecidability.Synthetic.truthtables.
-Require Export Undecidability.Synthetic.DecidabilityFacts Undecidability.Synthetic.EnumerabilityFacts Undecidability.Synthetic.SemiDecidabilityFacts.
-Require Export Undecidability.Shared.ListAutomation.
-Require Export Undecidability.Synthetic.simple.
-Require Export Undecidability.Shared.embed_nat.
+Require Export SyntheticComputability.Axioms.EA.
+Require Export SyntheticComputability.Shared.Pigeonhole.
+Require Export SyntheticComputability.Shared.FinitenessFacts.
+Require Export SyntheticComputability.Synthetic.reductions SyntheticComputability.Synthetic.truthtables.
+Require Export SyntheticComputability.Synthetic.DecidabilityFacts SyntheticComputability.Synthetic.EnumerabilityFacts SyntheticComputability.Synthetic.SemiDecidabilityFacts.
+Require Export SyntheticComputability.Shared.ListAutomation.
+Require Export SyntheticComputability.Synthetic.simple.
+Require Export SyntheticComputability.Shared.embed_nat.
 Require Export List Arith.
 
 Export EmbedNatNotations.
@@ -708,7 +708,7 @@ Section S_Star.
     repeat split.
     - now rewrite map_length, seq_length.
     - eapply NoDup_map. 2: eapply seq_NoDup. intros ? ? ? % (f_equal unembed).
-      rewrite !embedP in H1. congruence.
+      rewrite !embedP in H0. congruence.
     - intros x (? & <- & ? % in_seq) % in_map_iff. red. now rewrite embedP.
   Qed. 
 

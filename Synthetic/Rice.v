@@ -1,4 +1,4 @@
-From Undecidability Require Import bestaxioms EA equiv_on DecidabilityFacts SemiDecidabilityFacts Definitions reductions EnumerabilityFacts ReducibilityTransport.
+From SyntheticComputability Require Import bestaxioms EA equiv_on DecidabilityFacts SemiDecidabilityFacts Definitions reductions EnumerabilityFacts ReducibilityTransport.
 
 Import EmbedNatNotations.
 
@@ -41,11 +41,11 @@ Proof.
     apply Hc; clear Hc. intros [? | ?].
     + clear Hp2. eapply K0_not_enumerable; eauto.
       eapply enumerable_red; eauto.
-      1: eapply Rice with (c_bot0 := c_bot); eauto.
+      1: eapply Rice with (c_bot := c_bot); eauto.
       firstorder.
     + clear Hp1. eapply K0_not_enumerable; eauto.
       eapply enumerable_red; eauto.
-      1: eapply Rice with (c_bot0 := c_bot) (c := c1); eauto.
+      1: eapply Rice with (c_bot := c_bot) (c := c1); eauto.
       1: firstorder.
       intros ? ? ? H1 ?. eapply H1, Hequiv; eauto; firstorder.
 Qed.

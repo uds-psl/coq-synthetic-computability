@@ -216,7 +216,7 @@ Proof.
            (~ ext_eval_tt' n (drop (length (gen_lists n)) t) (Vector.tl l) -> @Vector.hd Prop _ l)).
 Defined.
 
-(* (* From Undecidability.Shared.Libs.PSL Require Import Vectors. *) *)
+(* (* From SyntheticComputability.Shared.Libs.PSL Require Import Vectors. *) *)
 Lemma nth_error_drop:
   ∀ (t : truthtable) (n0 m : nat), nth_error (drop m t) n0 = nth_error t (m + n0).
 Proof.

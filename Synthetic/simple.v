@@ -1,9 +1,9 @@
-Require Import Undecidability.Axioms.EA.
-Require Import Undecidability.Shared.Pigeonhole.
-Require Import Undecidability.Shared.FinitenessFacts.
-Require Import Undecidability.Synthetic.reductions Undecidability.Synthetic.truthtables.
-Require Import Undecidability.Synthetic.DecidabilityFacts Undecidability.Synthetic.EnumerabilityFacts Undecidability.Synthetic.SemiDecidabilityFacts Undecidability.Synthetic.ReducibilityFacts.
-Require Import Undecidability.Shared.ListAutomation.
+Require Import SyntheticComputability.Axioms.EA.
+Require Import SyntheticComputability.Shared.Pigeonhole.
+Require Import SyntheticComputability.Shared.FinitenessFacts.
+Require Import SyntheticComputability.Synthetic.reductions SyntheticComputability.Synthetic.truthtables.
+Require Import SyntheticComputability.Synthetic.DecidabilityFacts SyntheticComputability.Synthetic.EnumerabilityFacts SyntheticComputability.Synthetic.SemiDecidabilityFacts SyntheticComputability.Synthetic.ReducibilityFacts.
+Require Import SyntheticComputability.Shared.ListAutomation.
 Require Import List Arith.
 
 Import ListNotations ListAutomationNotations.
@@ -82,8 +82,8 @@ Qed.
 Lemma simple_undecidable p :
   simple p -> ~ decidable p.
 Proof.
-  intros ? ? % decidable_complement % decidable_enumerable; eauto.
-  now eapply simple_non_enumerable in H1.
+  intros Hs Hd % decidable_complement % decidable_enumerable; eauto.
+  now eapply simple_non_enumerable in Hs.
 Qed.
 
 Lemma simple_m_incomplete p :

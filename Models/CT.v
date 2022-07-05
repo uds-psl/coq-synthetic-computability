@@ -1,8 +1,8 @@
 Require Import Undecidability.L.Datatypes.LNat.
 Require Import Undecidability.L.Datatypes.List.List_in Undecidability.L.Datatypes.List.List_basics.
-Require Import Undecidability.L.Functions.Unenc.
-Require Import Undecidability.Shared.ListAutomation.
-Require Import Undecidability.Shared.embed_nat.
+From SyntheticComputability Require Import Unenc.
+Require Import SyntheticComputability.Shared.ListAutomation.
+Require Import SyntheticComputability.Shared.embed_nat.
 
 Require Import Undecidability.L.Datatypes.List.List_extra Undecidability.L.Datatypes.LProd.
 Require Import Undecidability.L.Datatypes.LTerm Undecidability.L.Functions.Eval.
@@ -108,10 +108,10 @@ Definition T_L (c : nat) (x : nat) (n : nat) :=
 (*   extract. *)
 (* Qed. *)
 
-Require Import Undecidability.Axioms.bestaxioms.
-Require Import Undecidability.L.Util.L_facts Undecidability.L.Computability.Seval.
-Require Import Undecidability.Synthetic.ListEnumerabilityFacts Undecidability.Synthetic.EnumerabilityFacts Undecidability.Synthetic.DecidabilityFacts.
-Require Import Undecidability.Shared.ListAutomation Undecidability.Shared.Dec.
+Require Import SyntheticComputability.Axioms.bestaxioms.
+Require Import Undecidability.L.Util.L_facts SyntheticComputability.Models.Seval.
+Require Import SyntheticComputability.Synthetic.ListEnumerabilityFacts SyntheticComputability.Synthetic.EnumerabilityFacts SyntheticComputability.Synthetic.DecidabilityFacts.
+Require Import SyntheticComputability.Shared.ListAutomation Undecidability.Shared.Dec.
 
 Lemma list_enumerator_term_correct : list_enumeratorᵗ list_enumerator_term term.
 Proof with (try eapply cum_ge'; eauto; lia).
@@ -197,7 +197,7 @@ Qed.
 
 Definition CT_L := CT T_L.
 
-From Undecidability.L Require Import Synthetic.
+From SyntheticComputability Require Import Synthetic.
 
 Definition CT_L_elem :=
   forall f : nat -> nat, exists t : term, closed t /\ forall n, L.eval (L.app t (enc n)) (enc (f n)).
@@ -361,7 +361,7 @@ Proof.
   - intros [n [= <-]]. eauto.
 Qed.
 
-Require Import Undecidability.L.Computability.MuRec.
+Require Import SyntheticComputability.Models.LMuRecursion.
 
 Lemma CT_L_enumerable_to_CT_L_elem :
   CT_L_enumerable -> CT_L_elem.
@@ -513,7 +513,7 @@ Proof.
     now rewrite H2, Hg.
 Qed.
 
-From Undecidability Require Import principles.
+From SyntheticComputability Require Import principles.
 
 Lemma CT_L_MP_equiv :
   CT_L ->
@@ -528,7 +528,7 @@ Proof.
     + eapply (H2 0). eapply He. now rewrite <- H2.
 Qed.
 
-From Undecidability Require Import reductions.
+From SyntheticComputability Require Import reductions.
 
 Lemma CT_L_enumerable_equiv :
   CT_L -> forall p : nat -> Prop, enumerable p <-> p ⪯ₘ HaltL.

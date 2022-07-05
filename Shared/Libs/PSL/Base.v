@@ -5,7 +5,7 @@
    - Acknowlegments: Sigurd Schneider, Dominik Kirst, Yannick Forster, Fabian Kunze, Maximilian Wuttke
  *)
 
-From Undecidability.Shared.Libs.PSL Require Export 
+From SyntheticComputability.Shared.Libs.PSL Require Export 
         Prelim
         Numbers
         BaseLists

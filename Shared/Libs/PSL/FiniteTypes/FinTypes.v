@@ -1,5 +1,5 @@
-From Undecidability.Shared.Libs.PSL Require Export BasicDefinitions.
-From Undecidability.Shared.Libs.PSL Require Import Bijection.
+From SyntheticComputability.Shared.Libs.PSL Require Export BasicDefinitions.
+From SyntheticComputability.Shared.Libs.PSL Require Import Bijection.
 
 (* ** Formalisation of finite types using canonical structures and type classes *)
 
@@ -168,5 +168,5 @@ Qed.
 
 Lemma index_leq (A:finType) (x:A): index x <= length (elem A).
 Proof.
-  eapply Nat.lt_le_incl,index_le.
+  eapply PeanoNat.Nat.lt_le_incl,index_le.
 Qed.

@@ -1,5 +1,5 @@
 
-From Undecidability.Shared Require Import FinitenessFacts.
+From SyntheticComputability.Shared Require Import FinitenessFacts.
 Require Import List.
 
 Definition total {X Y} (R : X -> Y -> Prop) :=

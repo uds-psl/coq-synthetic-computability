@@ -1,4 +1,4 @@
-From Undecidability.Shared.Libs.PSL Require Export Prelim EqDec.
+From SyntheticComputability.Shared.Libs.PSL Require Export Prelim EqDec.
 
 Export ListNotations.
 Notation "x 'el' A" := (In x A) (at level 70).
@@ -260,7 +260,7 @@ Section Inclusion.
   Lemma incl_rcons x A B :
     A <<= x::B -> ~ x el A -> A <<= B.
 
-  Proof. intros C D y E. destruct (C y E) as [F|F]; congruence. Qed.
+  Proof. intros C D y E. destruct (C y E) as [F|F]; subst; firstorder. Qed.
 
   Lemma incl_lrcons x A B :
     x::A <<= x::B -> ~ x el A -> A <<= B.

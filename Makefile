@@ -13,7 +13,14 @@ clean: Makefile.coq
 
 mkCoqProject: _CoqProject.in
 	yes | cp _CoqProject.in _CoqProject
+	git ls-files "*.v" | grep -v "Models/" >> _CoqProject
+
+models: _CoqProject.in
+	yes | cp _CoqProject.in _CoqProject
 	git ls-files "*.v" >> _CoqProject
+	coq_makefile -f _CoqProject -o Makefile.coq
+	export TIMED
+	@+$(MAKE) -f Makefile.coq all
 
 Makefile.coq: mkCoqProject
 	coq_makefile -f _CoqProject -o Makefile.coq

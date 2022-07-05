@@ -1,5 +1,5 @@
 Require Import stdpp.list stdpp.list_numbers.
-From Undecidability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts reductions partial Axioms.bestaxioms principles kleenetree Synthetic.MoreEnumerabilityFacts mu_nat Shared.Dec.
+From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts reductions partial Axioms.bestaxioms principles kleenetree Synthetic.MoreEnumerabilityFacts mu_nat Shared.Dec.
 Require Import ssreflect Nat.
 
 (** ** Continuity  *)
@@ -727,8 +727,8 @@ Proof.
     intros ? ? % in_seq. f_equal.
     eapply help. intros.
     eapply H. split. lia.
-    destruct H1 as [_ [? H1] % nat_le_sum].
-    cbn in H1. inv H1.
+    destruct H0 as [_ [? H0] % nat_le_sum].
+    cbn in H0. inv H0.
     replace (S (a + x0)) with (S a + x0) by lia.
     rewrite seq_app map_app app_sum_list_with. lia.
 Qed.

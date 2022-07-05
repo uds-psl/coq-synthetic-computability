@@ -1,4 +1,4 @@
-From Undecidability.Shared.Libs.PSL Require Export BaseLists Filter Lists.Cardinality.
+From SyntheticComputability.Shared.Libs.PSL Require Export BaseLists Filter Lists.Cardinality.
 
 (* *** Duplicate-free lists *)
 

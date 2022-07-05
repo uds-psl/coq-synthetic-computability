@@ -1,4 +1,4 @@
-From Undecidability.Shared.Libs.PSL Require Export BaseLists Dupfree.
+From SyntheticComputability.Shared.Libs.PSL Require Export BaseLists Dupfree.
 
 Definition elAt := nth_error.
 Notation "A '.[' i  ']'" := (elAt A i) (no associativity, at level 50).
@@ -86,7 +86,7 @@ Section Fix_X.
                                 pos x (l ++ l') = Some ( i + |l| ).
   Proof.
     revert i l'; induction l; simpl; intros.
-    - rewrite plus_comm. eauto.
+    - rewrite PeanoNat.Nat.add_comm. eauto.
     - destruct _; subst; try congruence.
       destruct (pos x l) eqn:EE. congruence.
       erewrite IHl; eauto.

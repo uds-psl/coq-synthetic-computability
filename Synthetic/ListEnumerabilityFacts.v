@@ -1,5 +1,5 @@
-From Undecidability.Synthetic Require Import DecidabilityFacts SemiDecidabilityFacts EnumerabilityFacts.
-From Undecidability Require Import Shared.embed_nat.
+From SyntheticComputability.Synthetic Require Import DecidabilityFacts SemiDecidabilityFacts EnumerabilityFacts.
+From SyntheticComputability Require Import Shared.embed_nat.
 Require Import List Lia.
 Import ListNotations EmbedNatNotations.
 
@@ -193,7 +193,7 @@ Proof.
   intros. now rewrite <- to_cumul_spec.
 Qed.
 
-Require Import Undecidability.Shared.ListAutomation.
+Require Import SyntheticComputability.Shared.ListAutomation.
 Import ListAutomationNotations.
 
 Notation cumul := (to_cumul).

@@ -1,4 +1,4 @@
-Require Export List Undecidability.Shared.Dec Undecidability.Shared.FilterFacts.
+Require Export List SyntheticComputability.Shared.Dec SyntheticComputability.Shared.FilterFacts.
 Export ListNotations.
 
 Module ListAutomationNotations.
@@ -16,7 +16,7 @@ Module ListAutomationNotations.
 End ListAutomationNotations.
 Import ListAutomationNotations.
 
-Instance list_in_dec X (x : X) (A : list X) :
+#[export] Instance list_in_dec X (x : X) (A : list X) :
   eq_dec X -> dec (x el A).
 Proof.
   intros D. apply in_dec. exact D.
@@ -139,7 +139,7 @@ Section Inclusion.
   Lemma incl_rcons x A B :
     A <<= x::B -> ~ x el A -> A <<= B.
 
-  Proof. intros C D y E. destruct (C y E) as [F|F]; congruence. Qed.
+  Proof. intros C D y E. destruct (C y E) as [F|F]; subst; firstorder. Qed.
 
   Lemma incl_lrcons x A B :
     x::A <<= x::B -> ~ x el A -> A <<= B.
@@ -160,7 +160,7 @@ End Inclusion.
 
 Require Import Setoid Morphisms.
 
-Instance incl_preorder X : 
+#[export] Instance incl_preorder X : 
   PreOrder (@incl X).
 Proof. 
   constructor; hnf; unfold incl; auto. 
@@ -170,49 +170,49 @@ Definition equi X (A B : list X) : Prop := incl A B /\ incl B A.
 Local Notation "A === B" := (equi A B) (at level 70).
 Hint Unfold equi : core.
 
-Instance equi_Equivalence X : 
+#[export] Instance equi_Equivalence X : 
   Equivalence (@equi X).
 Proof. 
   constructor; hnf; firstorder. 
 Qed.
 
-Instance incl_equi_proper X : 
+#[export] Instance incl_equi_proper X : 
   Proper (@equi X ==> @equi X ==> iff) (@incl X).
 Proof. 
   hnf. intros A B D. hnf. firstorder. 
 Qed.
 
-Instance cons_incl_proper X x : 
+#[export] Instance cons_incl_proper X x : 
   Proper (@incl X ==> @incl X) (@cons X x).
 Proof.
   hnf. apply incl_shift.
 Qed.
 
-Instance cons_equi_proper X x : 
+#[export] Instance cons_equi_proper X x : 
   Proper (@equi X ==> @equi X) (@cons X x).
 Proof. 
   hnf. firstorder.
 Qed.
 
-Instance in_incl_proper X x : 
+#[export] Instance in_incl_proper X x : 
   Proper (@incl X ==> Basics.impl) (@In X x).
 Proof.
   intros A B D. hnf. auto.
 Qed.
 
-Instance in_equi_proper X x : 
+#[export] Instance in_equi_proper X x : 
   Proper (@equi X ==> iff) (@In X x).
 Proof. 
   intros A B D. firstorder. 
 Qed.
 
-Instance app_incl_proper X : 
+#[export] Instance app_incl_proper X : 
   Proper (@incl X ==> @incl X ==> @incl X) (@app X).
 Proof. 
   intros A B D A' B' E. auto.
 Qed.
 
-Instance app_equi_proper X : 
+#[export] Instance app_equi_proper X : 
   Proper (@equi X ==> @equi X ==> @equi X) (@app X).
 Proof. 
   hnf. intros A B D. hnf. intros A' B' E.

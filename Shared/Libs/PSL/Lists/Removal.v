@@ -1,4 +1,4 @@
-From Undecidability.Shared.Libs.PSL Require Export BaseLists Filter.
+From SyntheticComputability.Shared.Libs.PSL Require Export BaseLists Filter.
 
 (* *** Element removal *)
 

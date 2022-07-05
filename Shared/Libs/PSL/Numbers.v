@@ -1,5 +1,5 @@
-From Undecidability.Shared.Libs.PSL Require Import Prelim.
-From Undecidability.Shared.Libs.PSL Require Import EqDec.
+From SyntheticComputability.Shared.Libs.PSL Require Import Prelim.
+From SyntheticComputability.Shared.Libs.PSL Require Import EqDec.
 
 (* ** Numbers **)
 
@@ -35,8 +35,8 @@ Proof.
   apply G.
 Qed.
 
-Instance nat_le_dec (x y : nat) : dec (x <= y) := 
-  le_dec x y.
+Global Instance nat_le_dec (x y : nat) : dec (x <= y) := 
+  Compare_dec.le_dec x y.
 
 Lemma size_recursion (X : Type) (sigma : X -> nat) (p : X -> Type) :
   (forall x, (forall y, sigma y < sigma x -> p y) -> p x) -> 

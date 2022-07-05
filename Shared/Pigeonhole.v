@@ -1,4 +1,4 @@
-Require Undecidability.Shared.Dec.
+Require SyntheticComputability.Shared.Dec.
 Require Import Setoid Morphisms.
 Require Export Lia List NPeano.
 Import ListNotations.
@@ -105,7 +105,7 @@ Proof.
   induction 1; cbn; firstorder try congruence; lia.
 Qed.
 
-Require Import Undecidability.Shared.Dec Undecidability.Shared.ListAutomation.
+Require Import SyntheticComputability.Shared.Dec SyntheticComputability.Shared.ListAutomation.
 
 Lemma IsFilter_filter {X} p (D : forall x : X, {p x} + {~ p x}) l :
   IsFilter p l (filter (fun x => if D x then true else false) l).

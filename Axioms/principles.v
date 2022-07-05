@@ -1,21 +1,21 @@
 From Coq.Logic Require Import ConstructiveEpsilon.
 Require Import Lia Nat.
 From stdpp Require Import numbers list list_numbers.
-From Undecidability Require Import SemiDecidabilityFacts DecidabilityFacts EnumerabilityFacts reductions Axioms.bestaxioms halting FinChoice.
+From SyntheticComputability Require Import SemiDecidabilityFacts DecidabilityFacts EnumerabilityFacts reductions Axioms.bestaxioms halting FinChoice.
 
 (** * CT in relation to other axioms  *)
 
 (** ** Provable choice axioms  *)
 
 Lemma decidable_AC X :
-  forall R : X -> nat -> Prop, decidable (curry R) -> (forall x, exists n, R x n) -> exists f, forall x, R x (f x).
+  forall R : X -> nat -> Prop, decidable (uncurry R) -> (forall x, exists n, R x n) -> exists f, forall x, R x (f x).
 Proof.
   intros R [f Hf] Htot.
   destruct (decider_AC _ f R) as [g Hg]; eauto.
 Qed.
 
 Lemma semi_decidable_AC X :
-  forall R : X -> nat -> Prop, semi_decidable (curry R) -> (forall x, exists n, R x n) -> exists f, forall x, R x (f x).
+  forall R : X -> nat -> Prop, semi_decidable (uncurry R) -> (forall x, exists n, R x n) -> exists f, forall x, R x (f x).
 Proof.
   intros R [f Hf] Htot.
   destruct (semi_decider_AC _ f R) as [g Hg]; eauto.
@@ -41,7 +41,7 @@ Proof.
 Qed.
 
 Lemma enumerable_AC :
-  forall X, discrete X -> forall Y, forall R : X -> Y -> Prop, enumerable (curry R) -> (forall x, exists n, R x n) -> exists f, forall x, R x (f x).
+  forall X, discrete X -> forall Y, forall R : X -> Y -> Prop, enumerable (uncurry R) -> (forall x, exists n, R x n) -> exists f, forall x, R x (f x).
 Proof.
   intros X [d Hd] Y R [f Hf] Htot.
   destruct (enumerator_AC _ _ f d _ Hd Hf Htot) as [g Hg].
@@ -311,7 +311,7 @@ Proof.
 Qed.
 
 Lemma DM_Sigma_0_1_iff_totality :
-  DM_Sigma_0_1 <-> (forall X (R : X -> bool -> Prop), co_semi_decidable (curry R) -> forall n, ~~ (exists b, R n b) -> exists b, R n b).
+  DM_Sigma_0_1 <-> (forall X (R : X -> bool -> Prop), co_semi_decidable (uncurry R) -> forall n, ~~ (exists b, R n b) -> exists b, R n b).
 Proof.
   split.
   - intros H X R [f Hf'] n.
@@ -655,7 +655,7 @@ Proof.
 Qed.
 
 Lemma MP_iff_sdec_weak_total :
-  MP_semidecidable <-> (forall X (R : X -> bool -> Prop), semi_decidable (curry R) -> forall x, ~~ (exists b, R x b) -> exists b, R x b).
+  MP_semidecidable <-> (forall X (R : X -> bool -> Prop), semi_decidable (uncurry R) -> forall x, ~~ (exists b, R x b) -> exists b, R x b).
 Proof.
   split.
   - intros H X R [f Hf] x Hx.
@@ -720,9 +720,9 @@ Proof.
   split; eauto. eapply mp.
 Qed.
 
-Require Import Undecidability.Shared.FinitenessFacts.
+Require Import SyntheticComputability.Shared.FinitenessFacts.
 
-Require Import Undecidability.Shared.Dec.
+Require Import SyntheticComputability.Shared.Dec.
 
 Lemma semi_decidable_generative (p : nat -> Prop) :
   MP -> semi_decidable p ->

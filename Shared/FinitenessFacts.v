@@ -1,7 +1,7 @@
-Require Undecidability.Shared.Dec Undecidability.Shared.ListAutomation.
+Require SyntheticComputability.Shared.Dec SyntheticComputability.Shared.ListAutomation.
 Require Import Setoid Morphisms.
-Require Import Undecidability.Synthetic.Definitions Lia List NPeano.
-From Undecidability.Shared Require Import mu_nat equiv_on Pigeonhole Dec partial.
+Require Import SyntheticComputability.Synthetic.Definitions Lia List NPeano.
+From SyntheticComputability.Shared Require Import mu_nat equiv_on Pigeonhole Dec partial.
 Import ListNotations.
 
 Definition lists {X} (l : list X) (p : X -> Prop) := forall x, p x <-> List.In x l. 
@@ -352,8 +352,8 @@ Proof.
     cunwrap. destruct H as (m & H1 & H2).
     cprove exists m. split; eauto.
     assert (list_max l <= list_max l) as ? % list_max_le by lia.
-    rewrite Forall_forall in H0.
-    intros ? % H0. lia.
+    rewrite Forall_forall in H.
+    intros ? % H. lia.
 Qed.
 
 Lemma unbounded_non_finite_fun (p : nat -> Prop) (f : nat -> nat) :
@@ -401,8 +401,8 @@ Proof.
   - intros H l. specialize (H (1 + list_max l)) as (m & H1 & H2).
     exists m. split; eauto.
     assert (list_max l <= list_max l) as ? % list_max_le by lia.
-    rewrite Forall_forall in H0.
-    intros ? % H0. lia.
+    rewrite Forall_forall in H.
+    intros ? % H. lia.
 Qed.
 
 Definition unbounded {X} (p : X -> Prop) :=
@@ -635,8 +635,8 @@ Proof.
   - intros [H]. econstructor. intros l. specialize (H (1 + list_max l)) as (m & H1 & H2).
     exists m. split; eauto.
     assert (list_max l <= list_max l) as ? % list_max_le by lia.
-    rewrite Forall_forall in H0.
-    intros ? % elem_of_list_In % H0. lia.
+    rewrite Forall_forall in H.
+    intros ? % elem_of_list_In % H. lia.
 Qed. 
 
 Lemma dedekind_infinite_problem {X} (p : X -> Prop) :

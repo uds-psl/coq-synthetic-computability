@@ -5,8 +5,8 @@
    - Acknowlegments: Sigurd Schneider, Dominik Kirst, Yannick Forster, Fabian Kunze, Maximilian Wuttke
  *)
 
-Require Export Bool Omega Lia List Setoid Morphisms.
-From Undecidability.Shared.Libs.PSL Require Export Tactics.
+Require Export Bool Lia List Setoid Morphisms.
+From SyntheticComputability.Shared.Libs.PSL Require Export Tactics.
 
 Global Set Implicit Arguments. 
 Global Unset Strict Implicit.

@@ -1,5 +1,6 @@
 From Undecidability.L Require Export Util.L_facts.
-
+From Undecidability.L Require Export Seval.
+(* 
 Require Import Coq.Logic.ConstructiveEpsilon. 
 
 Import L_Notations.
@@ -122,7 +123,7 @@ Proof.
   intros H. eapply eva_seval in H. eapply seval_eva.
   eapply seval_S. eassumption.
 Qed.
-
+ *)
 Lemma eva_le n1 n2 s t : eva n1 s = Some t -> n1 <= n2 -> eva n2 s = Some t.
 Proof.
   intros H1 Hle. induction Hle.
@@ -168,6 +169,7 @@ Qed.
 
 (* If an application converges, both sides converge *)
 
+Import L_Notations.
 Lemma app_converges (s t : term) : (converges (s t)) -> converges s /\ converges t.
 Proof.
   intros H. split;

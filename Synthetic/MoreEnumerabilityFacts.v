@@ -6,8 +6,8 @@
     (1) Saarland University, Saarbrücken, Germany
 *)
 
-From Undecidability.Synthetic Require Import DecidabilityFacts EnumerabilityFacts ListEnumerabilityFacts.
-From Undecidability.Shared Require Import ListAutomation Dec.
+From SyntheticComputability.Synthetic Require Import DecidabilityFacts EnumerabilityFacts ListEnumerabilityFacts.
+From SyntheticComputability.Shared Require Import ListAutomation Dec.
 Require Import List Lia.
 Import ListNotations ListAutomationNotations.
 
@@ -17,7 +17,7 @@ Proof.
   split. eapply enumerable_list_enumerable. eapply list_enumerable_enumerable.
 Qed.
 
-Hint Extern 4 => match goal with [H : list_enumerator _ ?p |- ?p _ ] => eapply H end : core.
+#[export] Hint Extern 4 => match goal with [H : list_enumerator _ ?p |- ?p _ ] => eapply H end : core.
 
 Lemma decider_eq_dec {X} {d} :
   decider d (eq_on X) -> eq_dec X.
@@ -94,7 +94,7 @@ Qed.
 
 
 Require Import ConstructiveEpsilon.
-From Undecidability Require Import Shared.ListAutomation Shared.mu_nat.
+From SyntheticComputability Require Import Shared.ListAutomation Shared.mu_nat.
 
 
 Import ListAutomationNotations.
@@ -103,10 +103,12 @@ Definition mu_nat_p := constructive_indefinite_ground_description_nat.
 
 Lemma mu_nat_p_least (P : nat -> Prop) d H : forall m, P m -> m >= proj1_sig (@mu_nat_p P d H).
 Proof.
-  intros. unfold mu_nat_p, constructive_indefinite_ground_description_nat in *.
-  destruct (Compare_dec.le_lt_dec (proj1_sig (linear_search P d 0 (let (n, p) := H in O_witness P n (stop P n p)))) m).
+  intros m Hm. unfold mu_nat_p, constructive_indefinite_ground_description_nat in *.
+  destruct (Compare_dec.le_lt_dec (proj1_sig (linear_search P d 0 (let (n, p) := H in O_witness P n (stop P n p)))) m) as [Hl|Hl].
   eassumption. exfalso.
-  eapply linear_search_smallest. split. 2:eassumption. eapply le_0_n. eassumption.
+  unfold linear_search in Hl.
+  destruct (linear_search_conform P d 0) as [r Hr].
+  eapply (rel_ls_lower_bound _ Hr) in Hm. cbn in Hl. all:lia.
 Qed.
 
 Opaque mu_nat.

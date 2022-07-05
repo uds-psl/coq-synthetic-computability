@@ -1,9 +1,9 @@
-Require Import Undecidability.Axioms.EA.
-Require Import Undecidability.Shared.Pigeonhole.
-Require Import Undecidability.Shared.FinitenessFacts.
-Require Import Undecidability.Synthetic.reductions Undecidability.Synthetic.truthtables.
-Require Import Undecidability.Synthetic.DecidabilityFacts.
-Require Import Undecidability.Shared.ListAutomation.
+Require Import SyntheticComputability.Axioms.EA.
+Require Import SyntheticComputability.Shared.Pigeonhole.
+Require Import SyntheticComputability.Shared.FinitenessFacts.
+Require Import SyntheticComputability.Synthetic.reductions SyntheticComputability.Synthetic.truthtables.
+Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
+Require Import SyntheticComputability.Shared.ListAutomation.
 Require Import List Arith.
 
 Import ListNotations ListAutomationNotations.
@@ -56,7 +56,7 @@ Proof.
   - eauto.
 Qed.
 
-From Undecidability.Shared.Libs.PSL Require Import Power EqDec.
+From SyntheticComputability.Shared.Libs.PSL Require Import Power EqDec.
 
 Definition gen (n : nat) : list (list nat) := power (seq 0 (S n)).
 

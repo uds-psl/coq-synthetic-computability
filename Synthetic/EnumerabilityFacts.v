@@ -1,5 +1,5 @@
-From Undecidability.Synthetic Require Import DecidabilityFacts.
-From Undecidability.Shared Require Export embed_nat equiv_on partial mu_nat.
+From SyntheticComputability.Synthetic Require Import DecidabilityFacts.
+From SyntheticComputability.Shared Require Export embed_nat equiv_on partial mu_nat.
 Require Import List Morphisms Lia.
 Export EmbedNatNotations.
 
@@ -509,7 +509,7 @@ Qed.
 
 Definition retraction_tight {X} {Y} (I : X -> Y) R := forall x : X, R (I x) = Some x /\ forall y, R y = Some x -> I x = y.
 
-From Undecidability Require Import Dec.
+From SyntheticComputability Require Import Dec.
 
 Lemma retraction_to_tight {X} {Y} (I : X -> Y) R (HY : eq_dec Y) :
   retraction' I R ->
@@ -571,7 +571,7 @@ Proof.
       * exists x. inversion H0. subst. eauto.
 Qed.
 (* 
-Require Import Undecidability.Shared.Dec Undecidability.Shared.Pigeonhole.
+Require Import SyntheticComputability.Shared.Dec SyntheticComputability.Shared.Pigeonhole.
 
 Section dedekind_infinite.
 

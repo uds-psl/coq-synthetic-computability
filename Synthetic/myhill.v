@@ -1,9 +1,9 @@
 From stdpp Require Import prelude.
 Require Import ssreflect.
 
-From Undecidability.Synthetic Require Import Definitions DecidabilityFacts EnumerabilityFacts.
-From Undecidability.Shared Require Import Dec.
-From Undecidability.Synthetic Require Import reductions.
+From SyntheticComputability.Synthetic Require Import Definitions DecidabilityFacts EnumerabilityFacts.
+From SyntheticComputability.Shared Require Import Dec ListAutomation.
+From SyntheticComputability.Synthetic Require Import reductions.
 
 Require Import Equations.Prop.Subterm Equations.Prop.DepElim.
 From Equations Require Import Equations.
@@ -100,7 +100,7 @@ Section fixes.
   Equations γ (C : list (X * Y)) : X -> X by wf (length C) lt := 
     γ C x with Dec (In2 (f x) C) => {
       | left H with In2_compute _ _ H => {
-          | exist _ x' H :=  γ (remove (eq_dec_pair eX eY) (x', f x) C) x'
+          | exist _ x' H_ :=  γ (remove (eq_dec_pair eX eY) (x', f x) C) x'
           };
       | right _ := x
     }.
@@ -114,12 +114,12 @@ Section fixes.
     ~ In1 x C -> correspondence p q C ->
     (p x <-> p (γ C x)) /\ In (γ C x) (x :: map fst C) /\ ~ In2 (f (γ C x)) C.
   Proof.
-    funelim (γ C x); try rename H into IH.
+    funelim (γ C x); try rename H0 into IH.
     - intros Hx HC. rewrite <- Heqcall. eauto.
     - intros Hx HC.
       specialize (IH ) as (IH1 & IH2 & IH3).
       { intros ([] & E & [] % in_remove) % in_map_iff; cbn in E; subst.
-        apply H0. f_equal. eapply HC; eauto. }
+        apply H1. f_equal. eapply HC; eauto. }
       { eapply correspondence_remove; eauto. }
       split. 2:split.
       + etransitivity. eapply f_red.
@@ -130,8 +130,8 @@ Section fixes.
       + rewrite Heqcall in IH3, IH2, IH1 |- *.
         intros ([] & E & ?) % (in_map_iff). cbn in E. subst.
         eapply IH3. eapply in_map_iff.
-        eexists (x1, _). split. cbn. reflexivity.
-        eapply in_in_remove. 2:exact H.
+        eexists (x0, _). split. cbn. reflexivity.
+        eapply in_in_remove. 2:exact H0.
         intros [= -> E % inj_f]. apply Hx.
         rewrite E in IH2. 
         specialize IH2 as [-> | ([] & EE & [] % in_remove) % in_map_iff]; cbn in *; subst; eauto.

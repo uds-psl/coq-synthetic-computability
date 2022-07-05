@@ -1,9 +1,9 @@
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Import stdpp.list stdpp.list_numbers.
-From Undecidability Require Import Synthetic.DecidabilityFacts Synthetic.SemiDecidabilityFacts Synthetic.EnumerabilityFacts reductions partial Axioms.bestaxioms  principles Shared.Dec.
+From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.SemiDecidabilityFacts Synthetic.EnumerabilityFacts reductions partial Axioms.bestaxioms  principles Shared.Dec.
 Require Import ssreflect Nat.
-Require Import Undecidability.Shared.FilterFacts.
+Require Import SyntheticComputability.Shared.FilterFacts.
 
 Section Reverse_Induction.
 
@@ -511,7 +511,7 @@ Proof.
       intros ? % tree_from_f_bounded_iff.
       eapply bounded_infinite_contra; eauto.
     + right. intros ? % forall_neg_exists_iff.
-      rewrite <- tree_from_f_bounded_iff in H2.
+      rewrite <- tree_from_f_bounded_iff in H1.
       eapply H0. eapply not_bounded_infinite; eauto.
 Qed.
 
@@ -1069,22 +1069,22 @@ Proof.
     + replace (S n) with (n + 1) by lia.
       rewrite seq_app map_app. cbn.
       rewrite !Hd in IHn |- *.
-      intros H m. destruct (H (S m)) as (v & Hv1 & Hv2).
+      intros m. destruct (IHn (S m)) as (v & Hv1 & Hv2).
       destruct v as [ | [] v]; inv Hv1.
       * destruct (f n) eqn:E.
         -- exists v. split; eauto.
            rewrite <- app_assoc. eassumption.
         -- edestruct Dd. eassumption.
            specialize (Hf n (length v)) as [].
-           congruence. rewrite E in H0.
-           cbn in *. destruct H0.
+           congruence. rewrite E in H.
+           cbn in *. destruct H.
            exists v. split. eauto.
            now rewrite <- app_assoc.
       * destruct (f n) eqn:E.
         -- edestruct Dd. eassumption.
            specialize (Hf n (length v)) as [].
-           congruence. rewrite E in H0.
-           cbn in *. destruct H0.
+           congruence. rewrite E in H.
+           cbn in *. destruct H.
            exists v. split. eauto.
            now rewrite <- app_assoc.
         -- exists v. split; eauto.
