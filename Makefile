@@ -22,6 +22,12 @@ models: _CoqProject.in
 	export TIMED
 	@+$(MAKE) -f Makefile.coq all
 
+install-models: models
+	@+$(MAKE) -f Makefile.coq install
+
+install: all
+	@+$(MAKE) -f Makefile.coq install
+
 Makefile.coq: mkCoqProject
 	coq_makefile -f _CoqProject -o Makefile.coq
 
