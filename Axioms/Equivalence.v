@@ -93,7 +93,7 @@ Proof.
 Qed.
 
 Lemma EPF_to_CT_SMN {Part : partiality} :
-  EPF -> exists ϕ, CT_for ϕ /\ SMN_for ϕ.
+  EPF -> ∑ ϕ, CT_for ϕ /\ SMN_for ϕ.
 Proof.
   intros (θ & EPF).
   exists (fun c x n => seval (θ c x) n). split. split.
@@ -364,4 +364,82 @@ Proof.
     now destruct a0; cbn.
   - intros H. eexists. split. 1:eexists; split. 1: eassumption.
     eapply ret_hasvalue. destruct v; eapply ret_hasvalue.
+Qed.
+
+Lemma EPF_nonparam_to_CT { Part : partiality} :
+  EPF_nonparam -> ∑ ϕ, CT_for ϕ.
+Proof.
+  intros [e EPF].
+  unshelve eexists; [ | split].
+  - exact (fun c x n => Part.(seval) (e c x) n).
+  - cbn. intros c x y n1 Hn1 n2 len.
+    eapply seval_mono; eauto.
+  - intros f.
+    destruct (EPF (fun n => ret (f n))) as [c Hc].
+    exists c. intros x.
+    cbn. specialize (Hc x (f x)).
+    eapply seval_hasvalue, Hc, ret_hasvalue.
+Qed. 
+
+Lemma CT_to_EPF_nonparam `{partiality} :
+  (∑ ϕ, CT_for ϕ) -> EPF_nonparam.
+Proof.
+  intros [ϕ [Hmono CT]].
+  exists (fun c x => mkpart (fun arg => let (n, m) := unembed arg in match ϕ c ⟨ x, n ⟩ m with Some (S x) => Some x | _ => None end)).
+  intros f. destruct (partial_to_total f) as [f' Hf'].
+  destruct (CT f') as [c Hc].
+  exists c. intros x y.
+
+  transitivity (exists n m, ϕ c ⟨ x, n ⟩ m = Some (S y)). {
+    rewrite mkpart_hasvalue.
+    split.
+    - intros [n Hn]. destruct (unembed n) as [n' m] eqn:E.
+      exists n', m.
+      destruct ϕ as [ [] | ]; try congruence.
+    - intros [n [m HT]]. exists ⟨ n, m ⟩. now rewrite embedP, HT.
+    - intros n1' n2' x1 x2 H1 H2.
+      destruct (unembed n1') as [n1 m1], (unembed n2') as [n2 m2].
+      destruct (Hc ⟨x,n1⟩) as [m3 H3], (Hc ⟨x,n2⟩) as [m4 H4].
+      destruct (ϕ c ⟨ x, n1 ⟩ m1) eqn:E1; try congruence.
+      destruct (ϕ c ⟨ x, n2 ⟩ m2) eqn:E2; try congruence.
+      eapply (monotonic_agnostic (Hmono _ _) H3) in E1; eauto. subst n.
+      eapply (monotonic_agnostic (Hmono _ _) H4) in E2; eauto. subst n0.
+      destruct (f' ⟨ x, n1 ⟩) eqn:E1; try congruence.
+      destruct (f' ⟨ x, n2 ⟩) eqn:E2; try congruence.
+      inv H1. inv H2.
+      assert (f x =! x1) by (eapply Hf'; eauto).
+      assert (f x =! x2) by (eapply Hf'; eauto).
+      eapply hasvalue_det; eauto.
+  }
+  
+  rewrite Hf'. 
+
+  split.
+  - intros [n [m HT]].
+    destruct (Hc ⟨ x, n ⟩).
+    eapply (monotonic_agnostic (Hmono _ _) H0) in HT; eauto.
+  - intros [n Hn].
+    destruct (Hc ⟨ x, n ⟩).
+    rewrite Hn in H0. eauto.
+Qed.
+
+Theorem equivalence : 
+  ((∑ ϕ, CT_for ϕ /\ SMN_for ϕ) -> SCT) *
+  (SCT -> EPF) *
+  (EPF -> EA) *
+  (EA -> EPF_bool) *
+  (EPF_bool -> SCT_bool) *
+  (SCT_bool -> EPF_nonparam) *
+  (EPF_nonparam -> (∑ ϕ, CT_for ϕ)) *
+  ((∑ ϕ, CT_for ϕ) -> (∑ ϕ, CT_for ϕ /\ SMN_for ϕ)).
+Proof.
+  repeat split.
+  - now eapply CT_SMN_to_SCT.
+  - now eapply SCT_to_EPF.
+  - now intros ? % EPF_to_SCT % SCTS_to_EAS.
+  - now intros ? % EA_to_SCT % SCT_to_EPF % EPF_to_EPF_bool.
+  - now intros ? % EPF_bool_to_SCT_bool.
+  - now intros ? % R_spec.SCT_bool_to_SCT % SCT_to_EPF % EPF_iff_nonparametric.
+  - now eapply EPF_nonparam_to_CT.
+  - now intros ? % CT_to_EPF_nonparam % EPF_iff_nonparametric % EPF_to_CT_SMN.
 Qed.

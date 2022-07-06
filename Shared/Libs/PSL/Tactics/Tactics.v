@@ -149,5 +149,3 @@ Ltac print_goal_cbn :=
 
 Ltac print_type e := first [ let x := type of e in idtac x | idtac "Untyped:" e ].
 
-
-From SyntheticComputability.Shared.Libs.PSL Require Export AutoIndTac.

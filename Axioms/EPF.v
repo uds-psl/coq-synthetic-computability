@@ -26,10 +26,11 @@ Proof.
     + exists γ. intros i x y. eapply Hγ.
 Qed.    
 
+Definition EPF_nonparam `{partiality} := 
+    ∑ θ : nat -> (nat ↛ nat), forall f : nat ↛ nat, exists c, θ c ≡{nat ↛ nat} f.
+
 Lemma EPF_iff_nonparametric :
-  EPF ↔ 
-    ∑ θ : nat -> (nat ↛ nat), forall f : nat ↛ nat,
-        exists c, θ c ≡{nat ↛ nat} f.
+  EPF ↔ EPF_nonparam.    
 Proof.
   split.
   - intros [θ H]. exists θ. intros f. destruct (H (fun _ => f)) as [c Hc].

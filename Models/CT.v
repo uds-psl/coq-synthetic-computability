@@ -108,7 +108,7 @@ Definition T_L (c : nat) (x : nat) (n : nat) :=
 (*   extract. *)
 (* Qed. *)
 
-Require Import SyntheticComputability.Axioms.bestaxioms.
+Require Import SyntheticComputability.Axioms.Equivalence.
 Require Import Undecidability.L.Util.L_facts SyntheticComputability.Models.Seval.
 Require Import SyntheticComputability.Synthetic.ListEnumerabilityFacts SyntheticComputability.Synthetic.EnumerabilityFacts SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Import SyntheticComputability.Shared.ListAutomation Undecidability.Shared.Dec.
@@ -195,7 +195,7 @@ Proof.
   - Lproc.
 Qed.
 
-Definition CT_L := CT T_L.
+Definition CT_L := CT_for T_L.
 
 From SyntheticComputability Require Import Synthetic.
 
