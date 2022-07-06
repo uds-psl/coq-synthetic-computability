@@ -8,22 +8,40 @@ Section pos.
   Context {X : Type}.
   Variable d : forall x y : X, {x = y} + {x <> y}.
 
-  Definition pos : X -> list X -> nat. Admitted.
-  Lemma nth_error_pos : forall x (l : list X), In x l -> nth_error l (pos x l) = Some x. Admitted.
-  Lemma pos_app : forall (x : X) A B,  In x A -> pos x (A ++ B) = pos x A. Admitted.
-  Lemma pos_length : forall (x : X) l, In x l -> pos x l < length l. Admitted.
+  Fixpoint pos (x : X) (l : list X) : nat :=
+    match l with
+      [] => 0
+    | x' :: l => if d x x' then 0 else S (pos x l)
+    end.
+
+  Lemma nth_error_pos : forall x (l : list X), In x l -> nth_error l (pos x l) = Some x.
+  Proof.
+    induction l as [ | x' l IH]; cbn; [ tauto | ].
+    intros [? | Hl];  destruct (d x x'); subst; firstorder.
+  Qed.
+
+  Lemma pos_app : forall (x : X) A B,  In x A -> pos x (A ++ B) = pos x A.
+  Proof.
+    induction A as [ | a]; cbn; [tauto | ].
+    intros B [? | Hl]; destruct (d x a); subst; firstorder.
+  Qed.
+
+  Lemma pos_length : forall (x : X) l, In x l -> pos x l < length l.
+  Proof.
+    intros. eapply nth_error_Some. rewrite nth_error_pos; congruence.
+  Qed.
+
+  Lemma pos_prop (x : X) l1 l2 : In x (l1 ++ l2) -> length l1 > pos x (l1 ++ l2) -> In x l1.
+  Proof.
+    intros H Hlen.
+    destruct (in_dec d x l1) as [| Hl1]; eauto.
+    eapply in_app_iff in H as H'. destruct H' as [ | Hl2]; eauto.
+    eapply nth_error_pos in H.
+    rewrite nth_error_app1 in H; eauto.
+    eapply nth_error_In; eauto.
+  Qed.
 
 End pos.
-
-Lemma pos_prop : forall {X} (d : forall x y : X, {x = y} + {x <> y}) (x : X) l1 l2, In x (l1 ++ l2) -> length l1 > pos d x (l1 ++ l2) -> In x l1.
-Proof.
-  intros X d x l1 l2 H Hlen.
-  destruct (in_dec d x l1) as [| Hl1]; eauto.
-  eapply in_app_iff in H as H'. destruct H' as [ | Hl2]; eauto.
-  eapply nth_error_pos in H.
-  rewrite nth_error_app1 in H; eauto.
-  eapply nth_error_In; eauto.
-Qed.
 
 Class good X :=
   {

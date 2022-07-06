@@ -76,26 +76,9 @@ Section fixes.
   Variable f : X -> Y.
   Hypothesis inj_f : Inj (=) (=) f.
   Hypothesis f_red : reduces_o f p q.
-  (* 
-  Variable g : Y -> X.
-  Hypothesis inj_g : Inj (=) (=) g.
-  Hypothesis g_red : reduces_o g q p. *)
     
   Variable eX : eq_dec X.
   Variable eY : eq_dec Y.
-  
-  (* Unset Equations With Funext. *)
-
-  (* Ltac Subterm.unfold_FixWf ::= *)
-  (*   match goal with *)
-  (*     |- context [ @FixWf ?A ?R ?WF ?P ?f ?x ] => *)
-  (*     let step := fresh in *)
-  (*     set(step := fun y (_ : R y x) => @FixWf A R WF P f y) in *; *)
-  (*     unshelve erewrite (@FixWf_unfold_step A R WF P f x _ step); *)
-  (*     [red; intros; simp_sigmas (* Extensionality proof *) *)
-  (*     |hidebody step; DepElim.red_eq_lhs (* Unfold the functional *) *)
-  (*     |reflexivity] *)
-  (*   end. *)
 
   Equations γ (C : list (X * Y)) : X -> X by wf (length C) lt := 
     γ C x with Dec (In2 (f x) C) => {
