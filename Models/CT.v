@@ -135,6 +135,14 @@ Proof.
   unfold I_term. destruct datatype_term as [? H]. eapply H.
 Qed.
 
+Lemma I_term_correct'' s : closed s -> enum_closed (I_term s) = Some s.
+Proof.
+  intros H1 % closed_dcl.
+  unfold enum_closed.
+  rewrite I_term_correct.
+  destruct bound_dec. reflexivity. tauto.
+Qed.
+
 Lemma I_term_correct' s : proc s -> enum_closed (I_term s) = Some s.
 Proof.
   intros [H1 % closed_dcl [s' ->]].
@@ -197,6 +205,22 @@ Qed.
 
 Definition CT_L := CT_for T_L.
 
+Import partial.implementation.
+Existing Instance  monotonic_functions.
+
+Lemma monotonic_T_L c x : monotonic (T_L c x).
+Proof.
+  intros n1 v H n2 Hle.
+  unfold T_L in *.
+  destruct (enum_closed); try congruence.
+  destruct (eva n1) eqn:E; try congruence.
+  erewrite eva_le; eauto.
+Qed.
+
+Definition θ_L : nat -> (nat ↛ nat) := fun c x : nat => Build_part (@monotonic_T_L c x).
+
+Definition EPF_L := EPF_nonparam_for θ_L.
+
 From SyntheticComputability Require Import Synthetic.
 
 Definition CT_L_elem :=
@@ -213,6 +237,173 @@ Definition CT_L_enumerable :=
 
 Definition CT_L_decidable :=
   forall p : nat -> Prop, decidable p -> L_decidable p.
+
+Lemma enumerable_graph_part (f : nat -> part nat) :
+  enumerable (fun! ⟨x, y⟩ => hasvalue (f x) y).
+Proof.
+  exists (fun! ⟨n, m⟩ => if seval (f n) m is Some y then Some ⟨n, y⟩ else None).
+  intros xy. destruct (unembed xy) as [x y] eqn:E. split; cbn.
+  - intros [m Hm] % (@seval_hasvalue monotonic_functions).
+    exists ⟨x, m⟩. rewrite embedP. unfold seval. rewrite Hm. f_equal.
+    eapply (f_equal embed) in E. now rewrite unembedP in E.
+  - intros [mn H]. destruct (unembed mn) as [m n].
+    destruct (seval (f m) n) as [x' | ] eqn:E2; try congruence.
+    inv H.
+    rewrite embedP in E. inv E.
+    eapply (seval_hasvalue (partiality := monotonic_functions)).
+    eexists. eapply E2.
+Qed.
+
+Import L_Notations.
+
+From SyntheticComputability Require Import partial.
+
+Lemma partial_to_total `{Part : partiality} (f : nat ↛ nat) :
+  {f' : nat -> nat | forall x a, f x =! a <-> exists n, f' ⟨x, n⟩ = S a }.
+Proof.
+  exists (fun arg => let (x,n) := unembed arg in match seval (f x) n with Some a => S a | None => 0 end).
+  intros x a. split.
+  - intros [n H] % seval_hasvalue. 
+    exists n. now rewrite embedP, H.
+  - intros [n H]. rewrite embedP in H.
+    eapply seval_hasvalue. exists n.
+    destruct seval; congruence.
+Qed.
+
+Lemma T_L_iff t x v : proc t ->
+  (exists n, T_L (I_term t) x n = Some v) <-> t (enc x) == enc v.
+Proof.
+  intros Ht. split.
+  - intros [n Hn]. unfold T_L in *.
+    rewrite I_term_correct' in Hn; eauto.
+    destruct (eva n) eqn:E; try congruence.
+    eapply eva_equiv. rewrite E.
+    eapply unenc_correct2 in Hn. subst. reflexivity.
+  - intros He.
+    eapply equiv_eva in He as [n Hn]. 2:Lproc.
+    exists n. unfold T_L. rewrite I_term_correct'; eauto. rewrite Hn.
+    now rewrite unenc_correct.
+Qed.
+
+Lemma closed_subst s n t : closed s -> subst s n t = s.
+Proof.
+  intros H. eapply H.
+Qed.
+
+Lemma closed_converges_proc s :
+  closed s -> exists t, proc t /\ forall n : nat, s (enc n) == t (enc n).
+Proof.
+  intros Hs.
+  exists (lam (s 0)). split. Lproc.
+  intros n. now rewrite Eta; try Lproc.
+Qed.
+
+Lemma CT_L_to_EPF_L : CT_L -> EPF_L.
+Proof.
+  intros [_ ct] f.
+  pose proof (partial_to_total f) as [f' H].
+  destruct (ct f') as [c Hc].
+  unfold T_L in Hc.
+  destruct (enum_closed c) as [t | ] eqn:E.
+  2: now destruct (Hc 0) as (? & [=]).
+  rename t into t'.
+  destruct (@closed_converges_proc t') as [t [Hproc Hequiv]].
+  now eapply enum_closed_proc.
+  exists (I_term (lam (t (ext embed (ext (@pair nat nat) 0
+                                    (LMuRecursion.mu (lam ((t (ext embed (ext (@pair nat nat) 1 0))) (enc false) (lam (enc true))))))) (lam Omega) (lam (lam 1 )) I))).
+  unfold θ_L. intros x.
+  cbn. unfold equiv. cbn. unfold implementation.hasvalue at 1. cbn.
+  intros v. rewrite T_L_iff, H. 2:{ eapply enum_closed_proc in E. Lproc. }
+  assert (lam
+    (t
+       (ext embed
+          (ext (@pair nat nat) # 0
+             (LMuRecursion.mu
+                (lam
+                   (t (ext embed (ext (@pair nat nat) # 1 # 0)) (enc false) (lam (enc true)))))))
+       (lam Omega) (lam (lam 1)) I) (enc x) ==
+    (t
+       (ext embed
+          (ext (@pair nat nat) (enc x)
+             (LMuRecursion.mu
+                (lam
+                   (t (ext embed (ext (@pair nat nat) (enc x) # 0)) (enc false) (lam (enc true)))))))
+       (lam Omega) (lam (lam 1)) I)) as ->.
+  { eapply enum_closed_proc in E.
+    econstructor.
+    eapply CT.step_beta. 2: Lproc.
+    cbn. rewrite !closed_subst; try Lproc.
+    reflexivity. }
+  assert (Ht : forall xv : nat, t (enc xv) == enc (f' xv)). {
+    intros xv. specialize (Hc xv) as [n Hn].
+    destruct (eva n) as [v' | ] eqn:E' ; try congruence.
+    eapply eva_equiv in E'.
+    eapply unenc_correct2 in Hn. subst. rewrite <- Hequiv. exact E'.
+  }
+  clear E Hc t' Hequiv.
+  assert (Hfun : forall n0 : nat,
+  exists b : bool,
+    lam (t (ext embed (ext (@pair nat nat) (enc x) # 0)) (enc false) (lam (enc true)))
+      (ext n0) == ext b). {
+    intros m.
+    destruct (f' ⟨ x, m ⟩) eqn:E_.
+    - exists false. Lsimpl. rewrite Ht, E_. now Lsimpl.
+    - exists true. Lsimpl. rewrite Ht, E_. now Lsimpl.
+  }
+  split.
+  - intros He.
+    match type of He with (L_facts.equiv ?L ?R) => assert (Hcon : converges L) end.
+    { eexists. split; eauto. Lproc. }
+    do 3 eapply app_converges in Hcon as [Hcon _].
+    eapply app_converges in Hcon as [_ Hcon].
+    eapply app_converges in Hcon as [_ Hcon].
+    eapply app_converges in Hcon as [_ Hcon].
+    eapply LMuRecursion.mu_spec in Hcon as [n Hn].
+    + edestruct LMuRecursion.mu_complete as [n' Hn'].
+      4: rewrite Hn' in He.
+      Lproc. 2: eauto. eauto. 
+      exists n'. destruct (f' ⟨x, n'⟩) eqn:Ef.
+      * assert (lambda (enc v)) as [s Hs] by Lproc.
+        edestruct Omega_diverges.
+        rewrite <- Hs, <- He. symmetry.
+        Lsimpl. rewrite Ht, Ef. Lsimpl.
+        repeat econstructor.
+      * f_equal. eapply enc_extinj.
+        rewrite <- He. symmetry.
+        Lsimpl. rewrite Ht, Ef. now Lsimpl.
+    + Lproc.
+    + eauto.
+  - intros [n Hn].
+    specialize (Ht ⟨x, n⟩) as Ht'.
+    edestruct LMuRecursion.mu_complete as [n' Hn'].
+    4: rewrite Hn'. 1:Lproc. eauto.
+    Lsimpl. 
+    instantiate (1 := n). Lsimpl.
+    rewrite Ht, Hn. now Lsimpl.
+    Lsimpl. eapply LMuRecursion.mu_sound in Hn' as Hn_.
+    2:Lproc. 2:eauto.
+    destruct Hn_ as (n_ & E_ & He & Hmin).
+    eapply inj_enc in E_ as <-.
+    rewrite Ht.
+    destruct (f' ⟨x, n'⟩) eqn:Ef.
+    + enough (true = false) by congruence.
+      eapply enc_extinj. rewrite <- He.
+      Lsimpl.
+      rewrite Ht, Ef. now Lsimpl.
+    + enough (n0 = v) as -> by now Lsimpl.
+      eapply hasvalue_det; eapply H; eauto.
+    + Lproc.
+Qed.
+
+Lemma EPF_L_to_CT_L : EPF_L -> CT_L.
+Proof.
+  intros epf. split. 1:eapply monotonic_T_L.
+  intros f. destruct (epf (fun x => ret (f x))) as [c Hc].
+  exists c. intros x. specialize (Hc x (f x)). cbn in Hc.
+  destruct Hc as [_ Hc].
+  unfold θ_L in *.  eapply Hc. 
+  eapply (ret_hasvalue (partiality := monotonic_functions)).
+Qed.
 
 Lemma CT_L_iff_CT_L_elem : CT_L <-> CT_L_elem.
 Proof.
@@ -251,7 +442,6 @@ Proof.
 Qed.
 
 Import L_Notations.
-
 
 Lemma subst_closed s n u : closed s -> subst s n u = s.
 Proof.

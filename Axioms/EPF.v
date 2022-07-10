@@ -3,9 +3,12 @@ Require Import Setoid Program Lia.
 
 Global Instance equiv_part `{partiality} {A} : equiv_on (part A) := {| equiv_rel := @partial.equiv _ A |}.
 
-Definition EPF `{partiality} :=
-  ∑ θ : nat -> (nat ↛ nat), forall f : nat -> nat ↛ nat,
+Definition EPF_for `{partiality} (θ : nat -> (nat ↛ nat)) :=
+  forall f : nat -> nat ↛ nat,
       exists γ, forall x, θ (γ x) ≡{nat ↛ nat} f x.
+
+Definition EPF `{partiality} :=
+  ∑ θ : nat -> (nat ↛ nat), EPF_for θ.
 
 Local Notation "A ↔ B" := ((A -> B) * (B -> A))%type (at level 95).
 
@@ -26,20 +29,13 @@ Proof.
     + exists γ. intros i x y. eapply Hγ.
 Qed.    
 
-Definition EPF_nonparam `{partiality} := 
-    ∑ θ : nat -> (nat ↛ nat), forall f : nat ↛ nat, exists c, θ c ≡{nat ↛ nat} f.
 
-Lemma EPF_iff_nonparametric :
-  EPF ↔ EPF_nonparam.    
-Proof.
-  split.
-  - intros [θ H]. exists θ. intros f. destruct (H (fun _ => f)) as [c Hc].
-    exists (c 0). eapply Hc.
-  - intros [θ EPF]. exists (fun ic x => let (i, c) := unembed ic in θ c (embed (i, x))). intros f.
-    destruct (EPF (fun x => let (k, l) := unembed x in f k l)) as [c Hc].
-    exists (fun i => embed (i, c)). intros i x. rewrite embedP.
-    rewrite (Hc ⟨i,x⟩). rewrite embedP. reflexivity.
-Qed.
+Definition CTp_for `{partiality} (θ : nat -> (nat ↛ nat)) := forall f : nat -> nat, exists c, forall x, θ c x =! f x.
+
+Definition EPF_nonparam_for `{partiality} (θ : nat -> (nat ↛ nat)) := forall f : nat ↛ nat, exists c, θ c ≡{nat ↛ nat} f.
+
+Definition EPF_nonparam `{partiality} := 
+    ∑ θ : nat -> (nat ↛ nat), EPF_nonparam_for θ.
 
 Lemma partial_to_total `{Part : partiality} (f : nat ↛ nat) :
   {f' : nat -> nat | forall x a, f x =! a <-> exists n, f' ⟨x, n⟩ = S a }.
@@ -51,6 +47,18 @@ Proof.
   - intros [n H]. rewrite embedP in H.
     eapply seval_hasvalue. exists n.
     destruct seval; congruence.
+Qed.
+
+Lemma EPF_iff_nonparametric :
+  EPF ↔ EPF_nonparam.    
+Proof.
+  split.
+  - intros [θ H]. exists θ. intros f. destruct (H (fun _ => f)) as [c Hc].
+    exists (c 0). eapply Hc.
+  - intros [θ EPF]. exists (fun ic x => let (i, c) := unembed ic in θ c (embed (i, x))). intros f.
+    destruct (EPF (fun x => let (k, l) := unembed x in f k l)) as [c Hc].
+    exists (fun i => embed (i, c)). intros i x. rewrite embedP.
+    rewrite (Hc ⟨i,x⟩). rewrite embedP. reflexivity.
 Qed.
 
 Definition EPF_bool `{partiality} :=
