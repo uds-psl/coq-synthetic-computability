@@ -552,7 +552,7 @@ Proof.
   - intros. apply non_exhaustible_generative; eauto.
 Qed.
 
-Definition dedekind_infinite {X} (p : X -> Prop) := 
+Definition cantor_infinite {X} (p : X -> Prop) := 
   exists f : nat -> X, forall n1, p (f n1) /\ forall n2, f n1 = f n2 -> n1 = n2.
 
 Lemma map_NoDup {X Y} (f : X -> Y) l : (forall x1 x2, f x1 = f x2 -> x1 = x2) -> NoDup l -> NoDup (map f l).
@@ -561,8 +561,8 @@ Proof.
   now intros (? & <- % Hinj & ?) % in_map_iff.
 Qed.
 
-Lemma dedekind_infinite_unbounded {X} (p : X -> Prop) :
-  dedekind_infinite p -> unbounded p.
+Lemma cantor_infinite_unbounded {X} (p : X -> Prop) :
+  cantor_infinite p -> unbounded p.
 Proof.
   intros [f Hf] n. exists (map f (seq 0 n)). repeat split.
   - now rewrite map_length, seq_length.
@@ -588,9 +588,9 @@ Proof.
   induction 1; cbn; eauto.
 Qed.
 
-Lemma weakly_generative_dedekind_infinite  {X} (p : X -> Prop) :
+Lemma weakly_generative_cantor_infinite  {X} (p : X -> Prop) :
   inhabited (forall l, ∑ x, (forall x, In x l -> p x) -> ~ In x l /\ p x) ->
-  dedekind_infinite p.
+  cantor_infinite p.
 Proof.
   intros [F].
   pose (f x := proj1_sig (F x)).
@@ -609,8 +609,8 @@ Proof.
       destruct F; cbn in *. firstorder.
 Qed.
 
-Lemma dedekind_infinite_spec {X} (p : X -> Prop) (Hd : forall x1 x2 : X, dec (x1 <> x2)) :
-  dedekind_infinite p <-> inhabited (forall l, ∑ x, ~ In x l /\ p x).
+Lemma cantor_infinite_spec {X} (p : X -> Prop) (Hd : forall x1 x2 : X, dec (x1 <> x2)) :
+  cantor_infinite p <-> inhabited (forall l, ∑ x, ~ In x l /\ p x).
 Proof.
   split.
   - intros [f Hf]. econstructor. intros l.
@@ -618,15 +618,15 @@ Proof.
     + eapply map_NoDup. firstorder. eapply seq_NoDup.
     + rewrite map_length, seq_length. lia.
     + exists x. eapply in_map_iff in H1 as (? & <- & ?). firstorder.
-  - intros [F]. eapply weakly_generative_dedekind_infinite.
+  - intros [F]. eapply weakly_generative_cantor_infinite.
     econstructor. intros l.
     destruct (F l) as [x]. exists x. eauto.
 Qed.
 
-Lemma dedekind_infinite_nat (p : nat -> Prop) :
-  dedekind_infinite p <-> inhabited (forall n, ∑ m, m >= n /\ p m).
+Lemma cantor_infinite_nat (p : nat -> Prop) :
+  cantor_infinite p <-> inhabited (forall n, ∑ m, m >= n /\ p m).
 Proof.
-  rewrite dedekind_infinite_spec. 2: exact _.
+  rewrite cantor_infinite_spec. 2: exact _.
   split.
   - intros [H]. econstructor. intros n. specialize (H (seq 0 n)) as (x & H1 & H2).
     exists x. split; eauto.
@@ -639,8 +639,8 @@ Proof.
     intros ? % elem_of_list_In % H. lia.
 Qed. 
 
-Lemma dedekind_infinite_problem {X} (p : X -> Prop) :
-  dedekind_infinite p -> exists q, enumerable q /\ dedekind_infinite q /\ forall x, q x -> p x.
+Lemma cantor_infinite_problem {X} (p : X -> Prop) :
+  cantor_infinite p -> exists q, enumerable q /\ cantor_infinite q /\ forall x, q x -> p x.
 Proof.
   intros [f Hf]. exists (fun x => exists n, f n = x). split. 2:split.
   - exists (fun n => Some (f n)). red. intros x; split; intros [n H]; exists n; congruence.

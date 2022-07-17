@@ -568,7 +568,7 @@ Lemma generative_truthtable : generative (fun _ : {_ : list nat & truthtables.tr
 Proof.
   eapply unbounded_generative. 
   - intros x1 x2; destruct (eq_dec_truthtable x1 x2); firstorder congruence.
-  - eapply dedekind_infinite_unbounded. unshelve eexists.
+  - eapply cantor_infinite_unbounded. unshelve eexists.
     + intros n. exists (repeat 0 n). exact [].
     + intros. split; eauto. intros ? [= H0 % (f_equal length)].
       now rewrite !repeat_length in H0.

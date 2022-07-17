@@ -709,7 +709,56 @@ Proof.
   }
   rewrite H.
   eapply MP.
-Qed.  
+Qed.
+
+Module assume_EA.
+
+  Import Assume_EA. (* assumes EA as an axiom, i.e. a parametrically universal enumerator *)
+
+  Lemma MP_iff_stable_W :
+    MP <-> Definitions.stable (uncurry W).
+  Proof.
+    split.
+    - intros mp. eapply MP_to_MP_semidecidable; eauto.
+      eapply enumerable_semi_decidable. eauto.
+      eapply enumerable_W.
+    - intros mp. eapply Post_to_MP, Post_logical_to_Post, MP_semidecidable_to_Post_logical,
+        MP_semidecidable_nat_to_MP_semidecidable.
+      intros p H % enum_iff % m_complete_W.
+      eapply red_m_transports_stable. eauto.
+      eapply red_m_transitive; eauto. eapply W_uncurry_red.
+  Qed.
+
+  Lemma MP_iff_stable_K :
+    MP <-> Definitions.stable K0.
+  Proof.
+    rewrite MP_iff_stable_W.
+    split; intros; eapply red_m_transports_stable; eauto.
+    - eapply K0_red.
+    - eapply red_m_transitive. eapply W_uncurry_red'. eapply W_red_K0.
+  Qed.
+
+  Lemma MP_iff_every_stable_m_complete :
+    MP <-> forall p : nat -> Prop, enumerable p -> m-complete p -> Definitions.stable p.
+  Proof.
+    rewrite MP_iff_stable_K. split.
+    - intros H p He Hp. eapply red_m_transports_stable. exact H.
+      eapply m_complete_K0; eauto.
+    - intros H. eapply H. eapply K0_enum. eapply m_complete_K0.
+  Qed.
+
+  Lemma MP_iff_any_stable_m_complete :
+    MP <-> exists p : nat -> Prop, enumerable p /\ m-complete p /\ Definitions.stable p.
+  Proof.
+    rewrite MP_iff_every_stable_m_complete. split.
+    - intros H. exists K0. repeat split. 3: eapply H.
+      all: eauto using m_complete_K0, K0_enum.
+    - intros (p & He & Hm & Hp) q Heq Hmq.
+      eapply red_m_transports_stable. exact Hp.
+      eapply Hm; eauto.
+  Qed.
+
+End assume_EA.
 
 Lemma DNE_sdec_to_cosdec :
   DNE ->
@@ -735,18 +784,14 @@ Proof.
   - apply non_finite_spec; eauto. intros. destruct (Nat.eqb_spec x1 x2); firstorder.
 Qed.
 
-(* 
-Lemma rev : 
-  (forall X (p : X -> Prop), discrete X -> semi_decidable p -> ~ exhaustible p -> generative p) -> 
-  MP_semidecidable.
+Lemma MP_non_finite_generative (p : nat -> Prop) :
+  MP -> enumerable p ->
+  ~ exhaustible p -> generative p.
 Proof.
-  intros H X p Hp x Hx.
-  destruct (P_inf_spec (p x)) as [_ [HH | HH]]; try tauto.
-  eapply unbounded_inhabited, generative_unbounded, H.
-  - exact discrete_nat.
-  - eapply decidable_semi_decidable. exists Nat.even.
-    intros n. red. unfold P_inf. destruct Nat.even; try now firstorder congruence.
-*)
+  intros.
+  eapply semi_decidable_generative; eauto.
+  eapply enum_iff; eauto.
+Qed.
 
 (** ** Choice axioms *)
 

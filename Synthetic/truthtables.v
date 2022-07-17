@@ -204,8 +204,6 @@ Proof.
       * intros. eapply (Heq (S n)). lia.
 Qed.
 
-From Equations Require Import Equations.
-
 Fixpoint ext_eval_tt' (n : nat) (t : truthtable) (l : Vector.t Prop n) : Prop.
 Proof.
   induction n.
@@ -216,7 +214,6 @@ Proof.
            (~ ext_eval_tt' n (drop (length (gen_lists n)) t) (Vector.tl l) -> @Vector.hd Prop _ l)).
 Defined.
 
-(* (* From SyntheticComputability.Shared.Libs.PSL Require Import Vectors. *) *)
 Lemma nth_error_drop:
   ∀ (t : truthtable) (n0 m : nat), nth_error (drop m t) n0 = nth_error t (m + n0).
 Proof.
@@ -277,38 +274,3 @@ Proof.
   - cbn. reflexivity.
   - cbn. rewrite <- !IHl. now rewrite (map_length (eq true) l) at 3.
 Qed.
-
-(* 
-Require Import Eqdep_dec.
-
-Lemma ext_tt {n} (t1 t2 : truthtable n) :
-  (forall l, length l = n -> eval_tt t1 l = eval_tt t2 l)
-  -> t1 = t2.
-Proof.
-  intros. destruct t1 as [t1 Ht1], t2 as [t2 Ht2].
-  enough (t1 = t2). subst. f_equal. eapply UIP_dec. decide equality.
-  eapply nth_error_eq. congruence.
-  intros i Hi. rewrite Ht1 in Hi.
-  destruct (nth_error (gen_lists n) i) eqn:Eq. 2:{ 
-    eapply nth_error_Some in Hi. congruence.
-  } 
-  assert (Hl : length l = n). {
-    eapply gen_list_spec, nth_error_In; eauto.
-  }
-  specialize (H l Hl). unfold eval_tt in H.
-  destruct nat_eq_dec; try congruence.
-  destruct pos eqn:Epos.
-  - cbn in *. eapply pos_nthe in Epos.
-    eapply NoDup_nth_error in Epos; eauto. 2:eapply gen_list_NoDup.
-    subst.
-    destruct (nth_error t1 n0) eqn:E1, (nth_error t2 n0) eqn:E2.
-    + congruence.
-    + eapply nth_error_None in E2. enough (n0 < length t1) by lia.
-      eapply nth_error_Some. congruence.
-    + eapply nth_error_None in E1. enough (n0 < length t2) by lia.
-      eapply nth_error_Some. congruence.
-    + reflexivity.
-  - exfalso. eapply nth_error_In, el_pos in Eq as [? He].
-    rewrite He in Epos. congruence.
-Qed.
- *)

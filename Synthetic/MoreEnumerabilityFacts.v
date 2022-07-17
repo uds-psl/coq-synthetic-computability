@@ -294,8 +294,8 @@ Proof.
     + intros [n <-]. eapply F_p.
 Qed.
 
-Lemma generative_dedekind_infinite {X} (p : X -> Prop) : 
-  discrete X -> enumerable p -> generative p -> dedekind_infinite p.
+Lemma generative_cantor_infinite {X} (p : X -> Prop) : 
+  discrete X -> enumerable p -> generative p -> cantor_infinite p.
 Proof.
   intros H1 H2 H3.
   destruct (generative_enumerable_strong H1 H2 H3) as [f [Hf1 Hf2]].

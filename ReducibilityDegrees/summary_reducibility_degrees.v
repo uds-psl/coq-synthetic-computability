@@ -50,7 +50,7 @@ Proof.
 Qed.
 
 Theorem Posts_problem_truth_table :
-  exists p : nat -> Prop, hyper_simple p /\ enumerable p /\ ~ decidable p /\ ~ uncurry W ⪯ₜₜ p.
+  exists p : nat -> Prop, hypersimple p /\ enumerable p /\ ~ decidable p /\ ~ uncurry W ⪯ₜₜ p.
 Proof.
   destruct (@generative_enumerable_strong _ (fun! ⟨n,m⟩ => W n m)) as [f Hf].
   - eapply discrete_nat.

@@ -35,10 +35,10 @@ Proof.
       rewrite numbers.Nat_iter_S in *. lia.
 Qed.
 
-Lemma dedekind_infinite_exceeds (p q : nat -> Prop) :
-  (forall x, q x -> p x) -> dedekind_infinite q -> exists f, exceeds f p.
+Lemma cantor_infinite_exceeds (p q : nat -> Prop) :
+  (forall x, q x -> p x) -> cantor_infinite q -> exists f, exceeds f p.
 Proof.
-  intros Hq [F] % dedekind_infinite_spec. 2: exact _.
+  intros Hq [F] % cantor_infinite_spec. 2: exact _.
   exists (fun n => proj1_sig (F (seq 0 (S n)))).
   intros n. destruct F as [i [Hi1 Hi2]]; cbn.
   cprove exists i; repeat split; eauto.
@@ -222,34 +222,37 @@ Proof.
      + eapply IHlp. intros. eapply Hpstar. eauto. eauto. eauto.
 Qed.
 
+From SyntheticComputability Require Import principles.
 
+Definition hypersimple (p: nat -> Prop) : Prop
+  := enumerable p /\ ~ exhaustible (compl p) /\
+      ~ exists f, majorizes f (compl p).
 
-(* Check tt_complete_exceeds. *)
-(* Print Assumptions tt_complete_exceeds. *)
+Lemma hyperimmune_immune p :
+  MP -> ~ (exists f, majorizes f p) -> ~ exists q : nat -> Prop, (forall x, q x -> p x) /\ ~ exhaustible q /\ enumerable q.
+Proof.
+  intros mp Hi (q & Hsub & Hinf & Henum).
+  eapply MP_non_finite_generative in Hinf; eauto.
+  eapply MoreEnumerabilityFacts.generative_cantor_infinite in Hinf; eauto.
+  eapply cantor_infinite_exceeds in Hinf as (f & Hexc); eauto.
+  eapply Hi. eexists. eapply exceeds_majorizes; eauto.
+Qed.
 
-(** Output:
+Lemma hypersimple_tt_incomplete p :
+  hypersimple p -> ~ (forall q : nat -> Prop, enumerable q -> q ⪯ₜₜ p).
+Proof.
+  intros (He & Hinf & Himm) H.
+  specialize (H _ K0_enum).
+  eapply tt_complete_exceeds in H as (f & H).
+  eapply Himm. eexists. eapply exceeds_majorizes; eauto.
+Qed.
 
-<<
-tt_complete_exceeds
-	 : forall (ax : CT) (p : nat -> Prop),
-       K0 (CT_to_EA ax) ⪯ₜₜ p -> exists f : nat -> nat, exceeds f (compl p)
-Axioms:
-ttId
-  : forall (model : model_of_computation) (ax : CT)
-	  (f : nat -> {_ : list nat & truthtable}),
-    exists c : list nat -> nat,
-      forall (l : list nat) (x : nat),
-      W (CT_to_EA ax) (c l) x <->
-      eval_tt (projT2 (f x))
-        [negb (inb (uncurry Nat.eqb) x0 l) | x0 ∈ projT1 (f x)] = false
-star_of_nnex
-  : forall model : model_of_computation,
-    CT ->
-    forall (n : nat) (p : nat -> Prop),
-    ~
-    ~
-    (exists i : nat,
-       i < 2 ^ n /\
-       (forall z : nat, ~ z el nth i (gen n) [] <-> star_of p n z))
->>
-*)
+From SyntheticComputability Require Import simple.
+
+Lemma hypersimple_simple p :
+  MP -> hypersimple p -> simple p.
+Proof.
+  intros mp (He & Hinf & Himm). repeat split; eauto.
+  intros (q & Heq & Hinfq & Hsub).
+  eapply hyperimmune_immune; eauto.
+Qed.

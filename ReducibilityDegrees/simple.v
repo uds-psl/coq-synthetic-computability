@@ -27,11 +27,11 @@ Proof.
   specialize (H c). unfold K0, compl in *. tauto.
 Qed.
 
-Lemma productive_dedekind_infinite p :
-  productive p -> dedekind_infinite p.
+Lemma productive_cantor_infinite p :
+  productive p -> cantor_infinite p.
 Proof.
   specialize List_id as [c_l c_spec]. intros [f Hf].
-  eapply (weakly_generative_dedekind_infinite). econstructor.
+  eapply (weakly_generative_cantor_infinite). econstructor.
   intros l.
   exists (f (c_l l)). intros Hl. split.
   - specialize (Hf (c_l l)).
@@ -42,11 +42,11 @@ Qed.
 
 Lemma productive_subpredicate p :
   productive p ->
-  exists q : nat -> Prop, enumerable q /\ dedekind_infinite q /\ (forall x, q x -> p x).
+  exists q : nat -> Prop, enumerable q /\ cantor_infinite q /\ (forall x, q x -> p x).
 Proof.
   intros H.
-  eapply dedekind_infinite_problem.
-  eapply productive_dedekind_infinite. eauto.
+  eapply cantor_infinite_problem.
+  eapply productive_cantor_infinite. eauto.
 Qed.
 
 Lemma productive_red p q :
@@ -63,7 +63,7 @@ Qed.
 
 Lemma many_one_complete_subpredicate p :
   m-complete p ->
-  exists q : nat -> Prop, enumerable q /\ dedekind_infinite q /\ (forall x, q x -> compl p x).
+  exists q : nat -> Prop, enumerable q /\ cantor_infinite q /\ (forall x, q x -> compl p x).
 Proof.
   intros Hcomp. eapply productive_subpredicate.
   eapply productive_red.
@@ -93,7 +93,7 @@ Lemma simple_m_incomplete p :
 Proof.
   intros (H1 & H2 & H3) (q & Hq1 & Hq2 & Hq3) % many_one_complete_subpredicate.
   eapply H3. exists q; repeat split; eauto.
-  now eapply unbounded_non_finite, dedekind_infinite_unbounded.
+  now eapply unbounded_non_finite, cantor_infinite_unbounded.
 Qed.
 
 Lemma non_finite_non_empty {X} (p : X -> Prop) :
@@ -112,7 +112,7 @@ Proof.
   - eapply semi_decidable_enumerable; eauto.
     exists (fun x n => Nat.eqb x (f (x0, n))).
     intros x. split; intros [n H]; exists n; destruct (Nat.eqb_spec x (f (x0, n))); firstorder congruence.
-  - eapply unbounded_non_finite, dedekind_infinite_unbounded.
+  - eapply unbounded_non_finite, cantor_infinite_unbounded.
     exists (fun n => f (x0, n)). intros. split. eauto.
     now intros ? [=] % inj_f.
   - intros ? [n ->]. red. now rewrite <- (Hf (x0, n)).
