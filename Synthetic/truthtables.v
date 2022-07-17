@@ -204,7 +204,7 @@ Proof.
       * intros. eapply (Heq (S n)). lia.
 Qed.
 
-From Equations Require Import Equations.
+(* From Equations Require Import Equations. *)
 
 Fixpoint ext_eval_tt' (n : nat) (t : truthtable) (l : Vector.t Prop n) : Prop.
 Proof.

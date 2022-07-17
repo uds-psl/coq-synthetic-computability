@@ -33,12 +33,7 @@ Proof.
     destruct L; cbn in *; lia. 
 Qed.
 
-Definition hyper_simple (p: nat -> Prop) : Prop
-  := enumerable p /\ ~ exhaustible (compl p) /\
-      ~ exists f, majorizes f (compl p).
-
 Definition injective {X Y : Type} (f : X -> Y) := forall x1 x2 : X, f x1 = f x2 -> x1 = x2.
-
 
 Section HS. 
   Import  Coq.Init.Nat. 
@@ -82,111 +77,127 @@ Section HS.
 
   Definition HS x := exists y, x < y /\ E_I y < E_I x.
   
-  (* Prooving HS to be undecidable via decidable HS -> decidable W *)
+  (* Proving HS to be undecidable via decidable HS -> decidable W *)
 
-  Lemma HS_undec_help0 n start step:
-    (forall x, dec (HS x)) -> E_I start > n -> {x | ~ exists y, x < y /\ E_I y <= n} 
-                      + {x | x > start /\ E_I x <= n}
-                        + {L | length L = step /\ NoDup L 
-                                  /\ forall x, In x L -> n < E_I x <= E_I start}.
+  Definition boundable n: Type
+    := {x | E_I x >= n /\ compl HS x}.
+
+  Lemma greater_el n x':
+    {x | x >= x' /\ E_I x > n}.
   Proof.
-    intros D E. induction step. 
-    - right.  exists nil; intuition; try constructor; firstorder.
-    - destruct IHstep. 
-      + destruct s.
-        * left. now left.
-        * left. now right.
-      + destruct s as [L H]. destruct (D (Nat.max start (list_max L) )).
-        * apply mu_nat_dep in h as [y h]. destruct (le_gt_dec (E_I y) n).
-          ** left. right. exists y. intuition. 
-          ** right. exists (y::L). cbn; intuition.
-             *** constructor; intuition. apply list_max_in in H1; lia.
-             *** rewrite <- H5. destruct (list_max_cns L). 
-                **** rewrite H1, Nat.max_0_r in H2. lia. 
-                **** apply H4 in H1. 
-                     destruct (Nat.max_spec start (list_max L)) as [[_ E3]|[_ E3]]; rewrite E3 in *; lia.
-             (* *** apply H4, H5. *)
-             (* *** apply H4, H5. *)
-          ** intros y. destruct (le_gt_dec y (Nat.max start (list_max L) )); 
-                       destruct (le_gt_dec (E_I (Nat.max start (list_max L) )) (E_I y) ); try (right; lia). 
-             left. firstorder.
-        * left. left. exists (Nat.max (list_max L) start). intros [y [H1 H2]]. apply n0.
-          exists y. intuition. destruct (Max.max_spec start (list_max L)) as [[E1 ->]|[E1 ->]].
-          ** destruct (list_max_cns L). 
-            *** lia.   
-            *** apply H4 in H3. lia.     
-          ** lia. 
+    assert (NoDup (map E_I (seq x' (2+n)))).
+    { apply map_NoDup; try assumption. apply seq_NoDup. }
+    eapply pigeonhole_Sigma in H. 
+    - instantiate (1:= seq 0 (1 + n)) in H.
+      destruct H as (Ex & H1 & H2).
+      apply in_map_sig in H1 as [x [H1 H1']].
+      + exists x. rewrite in_seq in H1', H2. split; try lia.
+      + exact _.
+    - exact _.
+    - rewrite map_length. repeat rewrite seq_length. lia.
+  Qed.
+  
+  Lemma bound_dec:
+    (forall n, boundable n) -> decidable I.
+  Proof.
+    intros H. 
+    assert (forall n, {x | E_I x >= n /\ forall x0, x0 > x -> E_I x0 > E_I x}).
+    { intros n. destruct (H n). 
+      exists x. intuition. enough (~ E_I x0 <= E_I x) by lia.
+      intros E. apply H1. exists x0. intuition. 
+      assert (E_I x0 < E_I x \/ E_I x0 = E_I x) as [E1 | E1 % E_I_injective] by lia; lia.
+    }
+    assert (forall n, {x | forall x0, x0 > x -> E_I x0 > n}).
+    { intros n. destruct (H0 n).
+      exists x. intros x0 E; try lia. 
+      destruct a. specialize (H2 x0 E). lia.
+    }
+    apply decidable_iff. constructor. 
+    intros n. destruct (H1 n). decide (In n (map E_I (seq 0 (x + 1)))).
+    - left. apply in_map_iff in i as [x0 H2]. 
+      apply E_I_enum. now exists x0.
+    - right. intros [n1 H2] % E_I_enum. apply n0. 
+      apply in_map_iff. exists n1; intuition.
+      apply in_seq. enough (~ n1 > x) by lia.
+      intros E % g. lia. 
   Qed.
 
+  Lemma sizerecursion {X: Type} (s: X -> nat) (p: X -> Type):
+    (forall x, (forall y, s y < s x -> p y) -> p x) -> forall x, p x.
+  Proof.
+    intros H. 
+    enough (forall n x, s x < n -> p x).
+    - intros x. eapply X0. eauto.
+    - induction n. 
+      + intros x H1. lia. 
+      + intros x E. apply H. 
+        intros y E1. apply IHn. lia. 
+  Qed.  
 
-  Lemma HS_undec_help1 n start:
-    (forall x, dec (HS x)) -> E_I start > n -> {x | ~ exists y, x < y /\ E_I y <= n} 
-                      + {x | x > start /\ E_I x <= n}. 
+  Lemma wo_HS {x}:
+    (exists y, x < y /\ E_I y < E_I x) -> {y | x < y /\ E_I y < E_I x}.
   Proof.
-    intros D E.
-    apply (@HS_undec_help0 n start (E_I start + 1)) in D. destruct D. 
-    - destruct s.
-      + now left.
-      + now right.
-    - destruct s as (L & H1 & H2 & H3). 
-      assert (incl (map E_I L) (seq (n+1) (E_I start))). 
-      + intros y [x [I1 I2]] % in_map_iff. apply H3 in I2. 
-        rewrite <- I1. apply in_seq. lia.
-      + apply (pigeonhole_length _) in H. 
-        * rewrite map_length, seq_length, H1 in H. lia.
-        * intros x1 x2; decide (x1 = x2); eauto.
-        * apply NoDup_map, H2. apply E_I_injective. 
-    - exact E. 
+    intros H. apply mu_nat_dep in H as [y h]. 
+    - now exists y.
+    - intros y.
+      destruct (lt_dec x y); destruct (lt_dec (E_I y) (E_I x)); try (left; lia); try (right; lia).
+  Qed.  
+
+  Lemma inner_loop:
+    (forall x, dec (HS x)) -> forall n x', boundable n + {x | x > x' /\ E_I x <= n}.
+  Proof.
+    intros H n x'. destruct (greater_el n x').
+    revert x a. 
+    apply (@sizerecursion _ E_I (fun x => x >= x' /\ E_I x > n -> boundable n + {x0 : nat | x0 > x' /\ E_I x0 <= n})). 
+    intros x IH x0. 
+    destruct (H x). 
+    - apply wo_HS in h as [y h].
+      + specialize (IH y (proj2 h)). destruct (le_dec (E_I y) n).
+        * right. exists y; lia.
+        * apply IH. lia.  
+    - left. exists x. intuition.
+  Qed. 
+
+  Lemma outer_loop step:
+    (forall x, dec (HS x)) -> forall n, boundable n + {L | NoDup L /\ length L = step
+                                                      /\ forall x, In x L -> E_I x <= n}.
+  Proof. 
+    intros H n. induction step. 
+    - right. exists nil; firstorder. constructor. 
+    - destruct IHstep; try now left.
+      destruct s as (L & H1 & H2 & H3). 
+      destruct (inner_loop H n (list_max L)); try now left.
+      destruct s as (x & H4 & H5). 
+      right. exists (x::L); intuition.
+      + eapply NoDupBoundH. 
+        * exact H1. 
+        * intros x0 E % list_max_in. now instantiate (1:= list_max L).
+        * exact H4.
+      + destruct H0 as [<- | E]; firstorder. 
   Qed.
 
-  Lemma HS_undec_help2 n step:
-    (forall x, dec (HS x)) -> {x | ~ exists y, x < y /\ E_I y <= n} 
-                      + {L | length L = step /\ NoDup L /\ forall x, In x L -> E_I x <= n }.
+  Lemma all_boundable:
+    (forall x, dec (HS x)) -> forall n, boundable n.
   Proof.
-    intros D. induction step. 
-    - right. exists nil; intuition.
-      + constructor.
-    - destruct IHstep. 
-      + now left.
-      + destruct s as [L H]. destruct (E_I_first_n n (list_max L)). 
-        destruct (@HS_undec_help1 n x D). 
-        * apply a.
-        * now left. 
-        * destruct s as [x0 H1]. right. exists (x0::L). cbn; intuition. 
-          constructor; intuition. apply list_max_in in H2. lia. 
+    intros H n.
+    destruct (outer_loop (2 + n) H n).
+    - exact b. 
+    - exfalso. destruct s as (L & H0 & H1 & H2).
+      assert (incl (map E_I L) (seq 0 (n + 1))).
+      { intros x [x0 [<- H4]] % in_map_iff. apply H2 in H4.
+        apply in_seq. lia. }
+      apply pigeonhole_length in H3.
+      + rewrite seq_length, map_length in H3. lia.
+      + intros x1 x2; decide(x1 = x2); firstorder.
+      + now apply map_NoDup.
   Qed.
-     
-  Lemma HS_undec_help n:
-    (forall x, dec (HS x)) -> {x | ~ exists y, x < y /\ E_I y <= n}.
-  Proof.
-    intros D % (HS_undec_help2 n (n+2)).
-    destruct D. 
-    - exact s. 
-    - destruct s as (L & H1 & H2 & H3). 
-      assert (incl (map E_I L) (seq 0 (n+1))). 
-      + intros y [x [I1 I2]] % in_map_iff. apply H3 in I2. 
-        rewrite <- I1. apply in_seq. lia.
-      + apply (pigeonhole_length _) in H. 
-        * rewrite map_length, seq_length, H1 in H. lia.
-        * intros x1 x2; decide (x1 = x2); eauto.
-        * apply NoDup_map, H2. apply E_I_injective.    
-  Qed.
- 
+
   Lemma HS_red:
     decidable HS -> decidable I.
   Proof.
     intros [H] % decidable_iff.
-    apply decidable_iff.
-    constructor.
-    intros n. destruct (HS_undec_help n H) as [x H1].
-    decide (In n (map E_I (seq 0 (x+1)))) as [HI | HI].
-    - apply in_map_iff in HI. left.
-      apply E_I_enum. firstorder. 
-    - right. intros [n0 E] % E_I_enum. destruct (le_gt_dec n0 x).
-      + apply HI. apply in_map_iff. exists n0. intuition.
-        apply in_seq. lia.
-      + apply H1. exists n0. lia. 
-  Qed. 
+    apply bound_dec, all_boundable, H.
+  Qed.
 
   Corollary HS_undec:
     ~ decidable HS.
@@ -257,7 +268,7 @@ Section HS.
   Qed.  
 
   Lemma HS_hypersimple:
-    hyper_simple HS.
+    hypersimple HS.
   Proof.
     repeat split.
     - apply HS_enumerable.

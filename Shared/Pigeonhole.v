@@ -41,6 +41,12 @@ Proof.
   tauto.
 Qed.
 
+Lemma stable_iff_negative P :
+  (~~P -> P) <-> (exists Q, P <-> ~ Q).
+Proof.
+  firstorder. exists (~P). firstorder.
+Qed.
+
 Definition MP := forall f : nat -> bool, ~~ (exists n, f n = true) -> exists n, f n = true.
 
 Lemma MP_ca (f : nat -> bool) P Q :

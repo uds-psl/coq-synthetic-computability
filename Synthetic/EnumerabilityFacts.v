@@ -573,7 +573,7 @@ Qed.
 (* 
 Require Import SyntheticComputability.Shared.Dec SyntheticComputability.Shared.Pigeonhole.
 
-Section dedekind_infinite.
+Section cantor_infinite.
 
   Variable X : Type.
   Variable E : eq_dec X.
@@ -679,5 +679,5 @@ Section dedekind_infinite.
 
 
 
-End dedekind_infinite.
+End cantor_infinite.
  *)
