@@ -13,7 +13,7 @@ clean: Makefile.coq
 
 mkCoqProject: _CoqProject.in
 	yes | cp _CoqProject.in _CoqProject
-	git ls-files "*.v" | grep -v "Models/" >> _CoqProject
+	git ls-files "*.v" | grep -v "Models/" | grep -v "PostsTheorem/" >> _CoqProject
 
 models: _CoqProject.in
 	yes | cp _CoqProject.in _CoqProject
