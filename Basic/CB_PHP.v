@@ -7,7 +7,7 @@ From SyntheticComputability.Synthetic Require Import reductions.
 
 Require Import Equations.Prop.Subterm Equations.Prop.DepElim.
 From Equations Require Import Equations.
-    
+
 Notation In1 x L := (In x (map fst L)).
 Notation In2 y L := (In y (map snd L)).
 
@@ -32,121 +32,139 @@ Proof.
   intros ([] & ? & ?) % In_compute; cbn in *; subst; eauto.
 Qed.
 
-Definition correspondence {X} {Y} (p : X -> Prop) (q : Y -> Prop ) (C : list (X * Y)) :=
-    (forall x y, In (x,y) C -> p x <-> q y) /\
+Definition correspondence {X} {Y} (C : list (X * Y)) :=
+  NoDup (map fst C) /\ NoDup (map snd C).
+
+Definition correspondence' {X} {Y} (C : list (X * Y)) :=
     (forall x y1 y2, In (x,y1) C -> In (x,y2) C -> y1 = y2) /\
     (forall x1 x2 y, In (x1,y) C -> In (x2,y) C -> x1 = x2).
+
+Lemma correspondence_to {X} {Y} (C : list (X * Y)) :
+  correspondence C -> correspondence' C.
+Proof.
+  induction C as [ | [x y] C IH].
+  - firstorder.
+  - intros [H1 H2]. inv H1. inv H2.
+    split; intros ? ? ? [ [= -> ->] | ] [ [=] | ]; eauto.
+    all: firstorder; subst.
+    all: exfalso.
+    1-2: eapply H3. 3-4: eapply H1.
+    all: eapply in_map_iff; eexists (_, _); cbn; eauto.
+Qed.
 
 Lemma eq_dec_pair {X} {Y} : eq_dec X -> eq_dec Y -> eq_dec (X * Y).
 Proof.
   intros. exact _.
 Qed.
 
-Lemma correspondence_swap {X Y} (p : X -> Prop) (q : Y -> Prop) C :
-  correspondence p q C -> correspondence q p (map (fun '(x,y) => (y,x)) C).
+Lemma correspondence_swap {X Y} (C : list (X * Y)) :
+  correspondence C -> correspondence (map (fun '(x,y) => (y,x)) C).
 Proof.
-  intros (H1 & H2 & H3).
-  split. 2:split.
-  - intros ? ? ([] & [=] & ?) % in_map_iff; subst. symmetry. eapply H1; eauto.
-  - intros ? ? ? ([] & [=] & ?) % in_map_iff ([] & [=] & ?) % in_map_iff; subst.
-    eapply H3; eauto.
-  - intros ? ? ? ([] & [=] & ?) % in_map_iff ([] & [=] & ?) % in_map_iff; subst.
-    eapply H2; eauto.
+  intros (H2 & H3).
+  induction C as [ | [x y] C IHC]; cbn.
+  - repeat econstructor.
+  - inv H2. inv H3.
+    split; cbn; repeat econstructor; cbn in *.
+    2, 4: firstorder.
+    intros ([] & ? & ([] & ? & ?) % in_map_iff) % in_map_iff; cbn in *; subst; firstorder.
+    inv H0. eapply H2.
+    eapply in_map_iff. exists (x0, y). cbn. firstorder.
+    intros ([] & ? & ([] & ? & ?) % in_map_iff) % in_map_iff; cbn in *; subst; firstorder.
+    inv H0. eapply H1.
+    eapply in_map_iff. exists (x, y0). cbn. firstorder.
 Qed.
 
-Lemma correspondence_remove {X Y} {eX : eq_dec X} `{eY: eq_dec Y} C x y p q :
-  correspondence p q C ->
-  correspondence p q (remove (eq_dec_pair eX eY) (x,y) C).
+Lemma NoDup_remove {X} (eX : eq_dec X) x L :
+  NoDup L -> NoDup (remove eX x L).
 Proof.
-  intros HC. split. 2: split.
-  - intros ? ? [] % in_remove. now eapply HC.
-  - intros ? ? ? [] % in_remove [] % in_remove.
-    eapply HC; eauto.
-  - intros ? ? ? [] % in_remove [] % in_remove.
-    eapply HC; eauto.
+  induction 1; cbn.
+  - econstructor.
+  - destruct eX; cbn; eauto.
+    econstructor; firstorder.
+    intros ? % in_remove. firstorder.
 Qed.
 
-  
+Lemma NoDup_map_remove {X Y} (eX : eq_dec X) (eY : eq_dec Y) x L (f : X -> Y) :
+  NoDup (map f L) -> NoDup (map f (remove eX x L)).
+Proof.
+  induction L; cbn.
+  - eauto.
+  - inversion 1; subst. destruct eX; cbn; eauto.
+    econstructor; firstorder.
+    intros (? & ? & ? % in_remove) % in_map_iff.
+    firstorder.
+    eapply H2. eapply in_map_iff. eauto.
+Qed.
+
+Lemma correspondence_remove {X Y} {eX : eq_dec X} `{eY: eq_dec Y} C x y :
+  correspondence C ->
+  correspondence (remove (eq_dec_pair eX eY) (x,y) C).
+Proof.
+  intros HC. split.
+  all: eapply NoDup_map_remove; eauto.
+  all: eapply HC.
+Qed.
+
 Section fixes.
-  
+
   Variables (X Y : Type).
-  
-  Variable p : X -> Prop.
-  Variable q : Y -> Prop.
-  
+
   Variable f : X -> Y.
   Hypothesis inj_f : Inj (=) (=) f.
-  Hypothesis f_red : reduces_o f p q.
-    
+
   Variable eX : eq_dec X.
   Variable eY : eq_dec Y.
 
-  Equations γ (C : list (X * Y)) : X -> X by wf (length C) lt := 
-    γ C x with Dec (In2 (f x) C) => {
-      | left H with In2_compute _ _ H => {
-          | exist _ x' H_ :=  γ (remove (eq_dec_pair eX eY) (x', f x) C) x'
-          };
-      | right _ := x
-    }.
-  Next Obligation.
-    abstract (apply remove_length_lt; eauto).
+  Fixpoint php (l1 : list Y) (l2 : list Y) : option Y :=
+    match l1 with
+    | x :: l1 => if in_dec eY x l2 is left H then php l1 (remove eY x l2) else Some x
+    | [] => None
+    end.
+
+  Lemma php_spec l1 l2 :
+    NoDup l1 -> length l1 > length l2 ->
+    exists x, php l1 l2 = Some x /\ In x l1 /\ ~ In x l2.
+  Proof.
+    induction 1 in l2 |- *; intros Hlen; cbn in *.
+    - lia.
+    - destruct (in_dec eY x l2) as [Hi | Hni].
+      2: firstorder.
+      destruct (IHNoDup (remove eY x l2)) as (x0 & H1 & H2 & H3).
+      + eapply lt_le_trans. eapply remove_length_lt. 1: eauto. lia.
+      + exists x0. firstorder. intros Hx0.
+        eapply H3. eapply in_in_remove. 2: eauto.
+        congruence.
+  Qed.
+  
+  Definition find C x := if php (f x :: map (fun '(x', y) => f x') C) (map snd C) is
+                              Some y then y else f x.
+
+  Definition find_spec C (x : X) :
+    correspondence C -> 
+     ~ In1 x C -> 
+    correspondence ((x, find C x) :: C).
+  Proof.
+    intros HC Hx. split.
+    - cbn. econstructor; eauto.
+      eapply HC.
+    - cbn. econstructor; eauto. 2: eapply HC.
+      unfold find.
+      destruct (php_spec (f x :: map (λ '(x', _), f x') C) (map snd C)) as (y' & E & H1 & H2).
+      * econstructor. rewrite in_map_iff. intros ([] & -> % inj_f & ?).
+        eapply Hx. eapply in_map_iff. firstorder.
+        erewrite map_ext.
+        erewrite <- map_map with (f := fst) (g := f).
+        eapply map_NoDup; firstorder.
+        now intros [].
+      * cbn. rewrite !map_length. lia.
+      * rewrite E. eauto.
   Qed.
 
-  Arguments remove {_ _} _ _.
-  
-  Lemma γ_spec (C : list (X * Y)) x : 
-    ~ In1 x C -> correspondence p q C ->
-    (p x <-> p (γ C x)) /\ In (γ C x) (x :: map fst C) /\ ~ In2 (f (γ C x)) C.
-  Proof.
-    funelim (γ C x); try rename H0 into IH.
-    - intros Hx HC. rewrite <- Heqcall. eauto.
-    - intros Hx HC.
-      specialize (IH ) as (IH1 & IH2 & IH3).
-      { intros ([] & E & [] % in_remove) % in_map_iff; cbn in E; subst.
-        apply H1. f_equal. eapply HC; eauto. }
-      { eapply correspondence_remove; eauto. }
-      split. 2:split.
-      + etransitivity. eapply f_red.
-        rewrite <- Heqcall. 
-        rewrite <- IH1. symmetry. now eapply HC.
-      + rewrite <- Heqcall.  specialize IH2 as [EE | ([] & E & [] % in_remove) % in_map_iff]; eauto.
-        rewrite <- EE. right. eapply in_map_iff. eexists (_, _). eauto.
-      + rewrite Heqcall in IH3, IH2, IH1 |- *.
-        intros ([] & E & ?) % (in_map_iff). cbn in E. subst.
-        eapply IH3. eapply in_map_iff.
-        eexists (x0, _). split. cbn. reflexivity.
-        eapply in_in_remove. 2:exact H0.
-        intros [= -> E % inj_f]. apply Hx.
-        rewrite E in IH2. 
-        specialize IH2 as [-> | ([] & EE & [] % in_remove) % in_map_iff]; cbn in *; subst; eauto.
-        * eapply in_map_iff. eexists (_, _). eauto.
-        * eapply in_map_iff. eexists (_, _). eauto.
-  Qed.
-  
-  Definition find C x := f (γ C x).
-  
-  Definition find_spec C (x : X) :
-    correspondence p q C -> 
-     ~ In1 x C -> 
-    correspondence p q ((x, find C x) :: C).
-  Proof.
-    intros HC Hx. split. 2:split.
-    - intros ? ? [[= <- <-] | ].
-      + etransitivity. eapply γ_spec; eauto. eapply f_red.
-      + now eapply HC.
-    - intros ? ? ? [[= <- <-] | ] [[= <-] | ]; eauto. 3: eapply HC; eauto.
-      + exfalso. apply Hx. eapply in_map_iff. eexists (_,_). eauto.
-      + exfalso. apply Hx. eapply in_map_iff. eexists (_,_). eauto.
-    - intros ? ? ? [[= <- <-] | ] [[= <-] | ]; eauto. 3: eapply HC; eauto.
-      + exfalso. eapply γ_spec; eauto. eapply in_map_iff. eexists (_,_). eauto.
-      + subst. exfalso. eapply γ_spec; eauto. eapply in_map_iff. eexists (_,_). eauto.
-  Qed.
-  
-  Definition extendX C x := if x is Some x then 
+  Definition extendX C x := if x is Some x then
     if Dec (In x (map fst C)) then C else (x, (find C x)) :: C else C.
-  
+
   Lemma extendX_spec C x :
-    correspondence p q C -> correspondence p q (extendX C x) /\ (forall z, In z C -> In z (extendX C x)) /\
+    correspondence C -> correspondence (extendX C x) /\ (forall z, In z C -> In z (extendX C x)) /\
     if x is Some x' then In x' (map fst (extendX C x)) else True.
   Proof.
     intros HC.
@@ -157,20 +175,20 @@ Section fixes.
       + eapply find_spec; eauto. 
       + split; eauto.
   Qed.
-  
+
 End fixes.
-  
+
 Section fixes2.
-  
+
   Variables (X Y : Set).
-  
+
   Variable p : X -> Prop.
   Variable q : Y -> Prop.
-  
+
   Variable f : X -> Y.
   Hypothesis inj_f : Inj (=) (=) f.
   Hypothesis f_red : reduces_o f p q.
-  
+
   Variables (IX : _) (RX : _) (HX : retraction IX RX X nat) (HRX : forall x n, RX n = Some x -> n = IX x).
   Variables (IY : _) (RY : _) (HY : retraction IY RY Y nat) (HRY : forall y n, RY n = Some y -> n = IY y).
   
@@ -185,7 +203,7 @@ Section fixes2.
     map (fun '(x,y) => (y,x)) (extendX Y X g dY dX (map (fun '(x,y) => (y,x)) C) y).
   
   Lemma extendY_spec C y :
-    correspondence p q C -> correspondence p q (extendY C y) /\ (forall z, In z C -> In z (extendY C y)) /\
+    correspondence C -> correspondence (extendY C y) /\ (forall z, In z C -> In z (extendY C y)) /\
     if y is Some y' then In y' (map snd (extendY C y)) else True.
   Proof.
     intros HC. split. 2:split.
@@ -195,7 +213,7 @@ Section fixes2.
       eapply in_map_iff. exists (y', x). split; eauto.
       eapply extendX_spec; eauto. now eapply correspondence_swap.
       eapply in_map_iff. exists (x, y'); eauto.
-    - eapply correspondence_swap in HC. unshelve eapply (extendX_spec Y X q p) in HC; eauto.
+    - eapply correspondence_swap in HC. unshelve eapply (extendX_spec Y X) in HC; eauto.
       destruct HC as (_ & _ & HC). unfold extendY.
       destruct y; eauto.
       eapply in_map_iff in HC as ([] & <- & ?).
@@ -212,10 +230,10 @@ Section fixes2.
     | S n => extendY (extendX (build_corr n) (RX n)) (RY n)
     end.
 
-  Lemma build_corr_corr (n : nat) : correspondence p q (build_corr n).
+  Lemma build_corr_corr (n : nat) : correspondence (build_corr n).
   Proof.
     induction n.
-    - cbv. clear. firstorder lia.
+    - cbv. clear. repeat econstructor.
     - cbn.
       eapply extendY_spec.
       eapply extendX_spec; eauto.
@@ -237,7 +255,7 @@ Section fixes2.
     induction n; intros Hx; try lia.
     assert (IX x = n \/ IX x < n) as [<- | H % IHn] by lia.
     - cbn. rewrite HX.
-      unshelve epose proof (extendX_spec _ _ _ _ _ _ _ _ _ (build_corr (IX x)) (Some x)) as (_ & _ & H); eauto.    
+      unshelve epose proof (extendX_spec _ _ _ _ _ _ (build_corr (IX x)) (Some x)) as (_ & _ & H); eauto.    
       eapply in_map_iff in H as ([] & E & ?); cbn in E; subst.
       eapply extendY_spec in H.
       eapply in_map_iff. exists (x,y). eauto. eapply extendX_spec; eauto.
@@ -261,25 +279,14 @@ Section fixes2.
   Definition f' x := proj1_sig (In1_compute _ _ (build_corrX x (S (IX x)) ltac:(abstract lia))).
   Definition g' y := proj1_sig (In2_compute _ _ (build_corrY y (S (IY y)) ltac:(abstract lia))).
   
-  Lemma f'_red : reduces_m f' p q.
-  Proof.
-    intros x. unfold f'. destruct In1_compute. cbn.
-    now apply build_corr_corr in i.
-  Qed.
-  
-  Lemma g'_red : reduces_m g' q p.
-  Proof.
-    intros y. unfold g'. destruct In2_compute. cbn.
-    now apply build_corr_corr in i.
-  Qed.
-  
   Lemma f'_g' y :
     f' (g' y) = y.
   Proof.
     unfold g', f'. destruct In1_compute, In2_compute; cbn -[build_corr] in *.
     assert (S (IY y) <= S (IX x0) \/ S (IX x0) <= S (IY y)) as [H | H] by lia.
-    - eapply build_corr_mono in H; eauto. eapply build_corr_corr; eauto.
-    - eapply build_corr_mono in H; eauto. eapply build_corr_corr; eauto.
+    all: eapply build_corr_mono in H; eauto.
+    all: eapply (@correspondence_to X Y).
+    1,4: eapply build_corr_corr. all: eauto.
   Qed.
   
   Lemma g'_f' x :
@@ -288,41 +295,27 @@ Section fixes2.
     unfold g', f'. destruct In1_compute, In2_compute; cbn -[build_corr] in *.
     rename x0 into y0.
     assert (S (IX x) <= S (IY y0) \/ S (IY y0) <= S (IX x)) as [H | H] by lia.
-    - eapply build_corr_mono in H; eauto. eapply build_corr_corr; eauto.
-    - eapply build_corr_mono in H; eauto. eapply build_corr_corr; eauto.
+    all: eapply build_corr_mono in H; eauto.
+    all: eapply (@correspondence_to X Y).
+    eapply build_corr_corr. all: eauto.
   Qed.
-  
+
 End fixes2.
 
-Theorem Myhill_Isomorphism_Theorem :
+Corollary Computational_Cantor_Bernstein :
   forall X : Set, discrete X -> enumerableᵗ X ->
-  forall Y : Set, discrete Y -> enumerableᵗ Y ->
-  forall p : X -> Prop, forall q : Y -> Prop,
-      p ⪯₁ q -> q ⪯₁ p -> exists f g, reduces_m f p q /\ reduces_m g q p /\ forall x y, f (g y) = y /\ g (f x) = x.
+             forall Y : Set, discrete Y -> enumerableᵗ Y ->
+                        forall f : X -> Y, (forall x1 x2, f x1 = f x2 -> x1 = x2) ->
+                                     forall g : Y -> X, (forall y1 y2, g y1 = g y2 -> y1 = y2) ->
+                                                  exists (f' : X -> Y) (g' : Y -> X), forall x y, f' (g' y) = y /\ g' (f' x) = x.
 Proof.
-  intros X [dX HdX] [eX HeX] Y [dY HdY] [eY HeY] p q [f [f_inj Hf]] [g [g_inj Hg]].
+  intros X [dX HdX] [eX HeX] Y [dY HdY] [eY HeY] f f_inj g g_inj.
   assert (inhabited (eq_dec X)) as [eq_dec_X]  by (eapply discrete_iff; firstorder).
   assert (inhabited (eq_dec Y)) as [eq_dec_Y]  by (eapply discrete_iff; firstorder).
   destruct (enumerator_retraction _ _ _ HdX HeX) as [IX HIX].
   destruct (enumerator_retraction _ _ _ HdY HeY) as [IY HIY].
   eexists _, _. repeat eapply conj.
-  - unshelve eapply f'_red; eauto; firstorder. 
-  - unshelve eapply g'_red; eauto; firstorder.
   - intros. split.
-    + eapply f'_g'.
+    + unshelve eapply f'_g' with (f := f) (g := g); eauto.
     + eapply g'_f'.
-Qed.
-
-Corollary Computational_Cantor_Bernstein :
-  forall X : Set, discrete X -> enumerableᵗ X ->
-  forall Y : Set, discrete Y -> enumerableᵗ Y ->
-  forall f : X -> Y, (forall x1 x2, f x1 = f x2 -> x1 = x2) ->
-  forall g : Y -> X, (forall y1 y2, g y1 = g y2 -> y1 = y2) ->
-  exists (f' : X -> Y) (g' : Y -> X), forall x y, f' (g' y) = y /\ g' (f' x) = x.
-Proof.
-  intros X HX1 HX2 Y HY1 HY2 f Hf g Hg.
-  destruct (@Myhill_Isomorphism_Theorem X HX1 HX2 Y HY1 HY2 (fun _ => True) (fun _ => True)) as (f' & g' & Hf' & Hg' & H).
-  - exists f. firstorder.
-  - exists g. firstorder.
-  - exists f', g'. eapply H.
 Qed.
