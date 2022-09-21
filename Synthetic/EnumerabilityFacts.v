@@ -15,6 +15,27 @@ Notation retraction I R X Y := (@retraction' X Y I R).
 Definition retract X Y := exists I R, retraction I R X Y.
 Definition datatype X := retract X nat.
 
+Lemma retraction_discrete X Y I R :
+  retraction I R X Y -> discrete Y -> discrete X.
+Proof.
+  intros HR [f Hf].
+  exists (fun '(x1, x2) => f (I x1, I x2)).
+  intros [x1 x2]. unfold decider, reflects in *.
+  rewrite <- Hf.
+  split.
+  - now intros ->.
+  - intros H % (f_equal R). rewrite !HR in H. congruence.
+Qed.
+
+Lemma retraction_enumerable X Y I R :
+  retraction I R X Y -> enumerableᵗ Y -> enumerableᵗ X.
+Proof.
+  intros HR [f Hf].
+  exists (fun n => match f n with Some x => R x | None => None end).
+  intros x. destruct (Hf (I x)) as [n Hn].
+  exists n. rewrite Hn. eapply HR.
+Qed.
+
 Lemma enumerator_retraction X d e :
   decider d (eq_on X) -> enumeratorᵗ e X -> {I | retraction I e X nat}.
 Proof.
