@@ -4,7 +4,7 @@ all: Makefile.coq
 
 html: all Makefile.coq
 	@+$(MAKE) -f Makefile.coq html
-	mv html/*.html website
+	mv html/*.html gh-pages
 	rm -rf html
 
 clean: Makefile.coq
@@ -37,6 +37,3 @@ force Makefile _CoqProject.in: ;
 	@+$(MAKE) -f Makefile.coq $@
 
 .PHONY: all html clean force mkCoqProject deploy
-
-deploy: html
-	rsync -r website/ forster@alfred.ps.uni-saarland.de:~/public_html/thesis/synthetic-coq/
