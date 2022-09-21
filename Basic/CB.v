@@ -1,4 +1,4 @@
-Require Import List Lia Arith.
+Require Import List Lia PeanoNat Nat.
 Import ListNotations.
 
 Set Default Goal Selector "!".
@@ -117,7 +117,7 @@ Section get_better.
   Proof.
     intros x n [H | H]; unfold index_ in *.
     - pose proof (occ_spec x).
-      destruct (Nat.le_ge_cases n (occ x)).
+      destruct (PeanoNat.Nat.le_ge_cases n (occ x)).
       + eapply e_prefix in H1 as [l' E]. rewrite E in *. clear E.
         rewrite pos_app; eauto. now eapply nth_error_pos.
       +eapply e_prefix in H1 as [l' E]. rewrite E in *. clear E.
@@ -144,7 +144,7 @@ Section get_better.
 
 End get_better.
 
-Hint Resolve occ_spec e_spec.
+Local Hint Resolve occ_spec e_spec : core.
 
 Notation injective f := (forall x1 x2, f x1 = f x2 -> x1 = x2).
 
@@ -164,7 +164,7 @@ Section Def_F.
     forall x : X, index x < length (e (gen (map f (e (occ x))))).
   Proof.
     intros x.
-    eapply lt_le_trans.
+    eapply Nat.lt_le_trans.
     2: eapply gen_spec. 2:eapply NoDup_map; eauto.
     rewrite map_length.
     eapply nth_error_Some.
@@ -176,7 +176,7 @@ Section Def_F.
     nth_error (e (gen (map f (e (occ x))))) (index x) <> None.
   Proof.
     intros E. eapply nth_error_None in E. revert E.
-    eapply lt_not_le, index_length.
+    eapply Nat.lt_nge, index_length.
   Qed.
     
   Definition F_ (x : X) : Y :=

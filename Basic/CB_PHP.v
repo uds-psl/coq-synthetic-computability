@@ -1,15 +1,22 @@
-From stdpp Require Import prelude.
-Require Import ssreflect.
-
 From SyntheticComputability.Synthetic Require Import Definitions DecidabilityFacts EnumerabilityFacts.
-From SyntheticComputability.Shared Require Import Dec ListAutomation.
-From SyntheticComputability.Synthetic Require Import reductions.
+From SyntheticComputability.Shared Require Import Dec.
+Require Import PeanoNat Nat Lia.
+Require Import List.
 
 Require Import Equations.Prop.Subterm Equations.Prop.DepElim.
 From Equations Require Import Equations.
 
 Notation In1 x L := (In x (map fst L)).
 Notation In2 y L := (In y (map snd L)).
+
+Lemma map_NoDup {X Y} (f : X -> Y) l : (forall x1 x2, f x1 = f x2 -> x1 = x2) -> NoDup l -> NoDup (map f l).
+Proof.
+  intros Hinj Hl. induction Hl; cbn; econstructor; eauto.
+  now intros (? & <- % Hinj & ?) % in_map_iff.
+Qed.
+
+Definition injective {X Y} (f : X -> Y) :=
+  forall x1 x2, f x1 = f x2 -> x1 = x2.
 
 Lemma In_compute {X Y} f {eX : eq_dec X} (x : X) L : In x (map f L) -> {y : Y| In y L /\ f y = x}.
 Proof.
@@ -110,7 +117,7 @@ Section fixes.
   Variables (X Y : Type).
 
   Variable f : X -> Y.
-  Hypothesis inj_f : Inj (=) (=) f.
+  Hypothesis inj_f : injective f.
 
   Variable eX : eq_dec X.
   Variable eY : eq_dec Y.
@@ -118,7 +125,7 @@ Section fixes.
   Fixpoint php (l1 : list Y) (l2 : list Y) : option Y :=
     match l1 with
     | x :: l1 => if in_dec eY x l2 is left H then php l1 (remove eY x l2) else Some x
-    | [] => None
+    | nil => None
     end.
 
   Lemma php_spec l1 l2 :
@@ -130,7 +137,7 @@ Section fixes.
     - destruct (in_dec eY x l2) as [Hi | Hni].
       2: firstorder.
       destruct (IHNoDup (remove eY x l2)) as (x0 & H1 & H2 & H3).
-      + eapply lt_le_trans. eapply remove_length_lt. 1: eauto. lia.
+      + eapply Nat.lt_le_trans. eapply remove_length_lt. 1: eauto. lia.
       + exists x0. firstorder. intros Hx0.
         eapply H3. eapply in_in_remove. 2: eauto.
         congruence.
@@ -149,7 +156,7 @@ Section fixes.
       eapply HC.
     - cbn. econstructor; eauto. 2: eapply HC.
       unfold find.
-      destruct (php_spec (f x :: map (λ '(x', _), f x') C) (map snd C)) as (y' & E & H1 & H2).
+      destruct (php_spec (f x :: map (fun '(x', _) => f x') C) (map snd C)) as (y' & E & H1 & H2).
       * econstructor. rewrite in_map_iff. intros ([] & -> % inj_f & ?).
         eapply Hx. eapply in_map_iff. firstorder.
         erewrite map_ext.
@@ -161,7 +168,7 @@ Section fixes.
   Qed.
 
   Definition extendX C x := if x is Some x then
-    if Dec (In x (map fst C)) then C else (x, (find C x)) :: C else C.
+    if in_dec eX x (map fst C) then C else (x, (find C x)) :: C else C.
 
   Lemma extendX_spec C x :
     correspondence C -> correspondence (extendX C x) /\ (forall z, In z C -> In z (extendX C x)) /\
@@ -169,7 +176,7 @@ Section fixes.
   Proof.
     intros HC.
     destruct x as [x | ]. 2: eauto. cbn.
-    decide (In x (map fst C)); cbn.
+    destruct in_dec; cbn. 
     - eauto.
     - split.
       + eapply find_spec; eauto. 
@@ -182,19 +189,14 @@ Section fixes2.
 
   Variables (X Y : Set).
 
-  Variable p : X -> Prop.
-  Variable q : Y -> Prop.
-
   Variable f : X -> Y.
-  Hypothesis inj_f : Inj (=) (=) f.
-  Hypothesis f_red : reduces_o f p q.
+  Hypothesis inj_f : injective f.
 
   Variables (IX : _) (RX : _) (HX : retraction IX RX X nat) (HRX : forall x n, RX n = Some x -> n = IX x).
   Variables (IY : _) (RY : _) (HY : retraction IY RY Y nat) (HRY : forall y n, RY n = Some y -> n = IY y).
   
   Variable g : Y -> X.
-  Hypothesis inj_g : Inj (=) (=) g.
-  Hypothesis g_red : reduces_o g q p.
+  Hypothesis inj_g : injective g.
   
   Variable dX : eq_dec X.
   Variable dY : eq_dec Y.
@@ -217,7 +219,7 @@ Section fixes2.
       destruct HC as (_ & _ & HC). unfold extendY.
       destruct y; eauto.
       eapply in_map_iff in HC as ([] & <- & ?).
-      eapply in_map_iff. eexists (_, _). split. eauto.
+      eapply in_map_iff. eexists (_, _). split. cbn. eauto.
       eapply in_map_iff. eexists (_, _). split. eauto. cbn - [extendX].
       eapply H.
   Qed.
@@ -226,7 +228,7 @@ Section fixes2.
 
   Fixpoint build_corr n :=
     match n with
-    | 0 => []
+    | 0 => nil
     | S n => extendY (extendX (build_corr n) (RX n)) (RY n)
     end.
 

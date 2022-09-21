@@ -1,9 +1,19 @@
-From stdpp Require Import prelude.
-Require Import ssreflect.
-
 From SyntheticComputability.Synthetic Require Import Definitions DecidabilityFacts EnumerabilityFacts.
-From SyntheticComputability.Shared Require Import Dec ListAutomation.
-From SyntheticComputability.Synthetic Require Import reductions.
+From SyntheticComputability.Shared Require Import Dec.
+Require Import Lia List.
+Import ListNotations.
+
+Definition reduces_m {X Y} (f : X -> Y) (P : X -> Prop) (Q : Y -> Prop) :=
+  forall x, P x <-> Q (f x).
+
+Definition injective {X Y} (f : X -> Y) :=
+  forall x1 x2, f x1 = f x2 -> x1 = x2.
+
+Definition reduces_o {X Y} (f : X -> Y) (P : X -> Prop) (Q : Y -> Prop) :=
+  injective f /\ reduces_m f P Q. 
+Definition red_o {X} {Y} (P : X -> Prop) (Q : Y -> Prop) :=
+  exists f : X -> Y, reduces_o f P Q.
+Notation "p ⪯₁ q" := (red_o p q) (at level 50).
 
 Require Import Equations.Prop.Subterm Equations.Prop.DepElim.
 From Equations Require Import Equations.
@@ -75,14 +85,14 @@ Section fixes.
   Variable q : Y -> Prop.
   
   Variable f : X -> Y.
-  Hypothesis inj_f : Inj (=) (=) f.
+  Hypothesis inj_f : injective f.
   Hypothesis f_red : reduces_o f p q.
     
   Variable eX : eq_dec X.
   Variable eY : eq_dec Y.
 
   Equations γ (C : list (X * Y)) : X -> X by wf (length C) lt := 
-    γ C x with Dec (In2 (f x) C) => {
+    γ C x with in_dec eY (f x) (map snd C) => {
       | left H with In2_compute _ _ H => {
           | exist _ x' H_ :=  γ (remove (eq_dec_pair eX eY) (x', f x) C) x'
           };
@@ -99,7 +109,7 @@ Section fixes.
     (p x <-> p (γ C x)) /\ In (γ C x) (x :: map fst C) /\ ~ In2 (f (γ C x)) C.
   Proof.
     funelim (γ C x); try rename H0 into IH.
-    - intros Hx HC. rewrite <- Heqcall. eauto.
+    - intros Hx HC. rewrite <- Heqcall. firstorder.
     - intros Hx HC.
       specialize (IH ) as (IH1 & IH2 & IH3).
       { intros ([] & E & [] % in_remove) % in_map_iff; cbn in E; subst.
@@ -109,9 +119,10 @@ Section fixes.
       + etransitivity. eapply f_red.
         rewrite <- Heqcall. 
         rewrite <- IH1. symmetry. now eapply HC.
-      + rewrite <- Heqcall.  specialize IH2 as [EE | ([] & E & [] % in_remove) % in_map_iff]; eauto.
-        rewrite <- EE. right. eapply in_map_iff. eexists (_, _). eauto.
-      + rewrite Heqcall in IH3, IH2, IH1 |- *.
+      + rewrite <- Heqcall. specialize IH2 as [EE | ([] & E & [] % in_remove) % in_map_iff]; cbn in *; eauto.
+        * rewrite <- EE. right. eapply in_map_iff. eexists (_, _). cbn. eauto.
+        * right. eapply in_map_iff. eexists (_, _). cbn. eauto.
+      + rewrite Heqcall in IH3, IH2, IH1.
         intros ([] & E & ?) % (in_map_iff). cbn in E. subst.
         eapply IH3. eapply in_map_iff.
         eexists (x0, _). split. cbn. reflexivity.
@@ -119,8 +130,8 @@ Section fixes.
         intros [= -> E % inj_f]. apply Hx.
         rewrite E in IH2. 
         specialize IH2 as [-> | ([] & EE & [] % in_remove) % in_map_iff]; cbn in *; subst; eauto.
-        * eapply in_map_iff. eexists (_, _). eauto.
-        * eapply in_map_iff. eexists (_, _). eauto.
+        * eapply in_map_iff. eexists (_, _). cbn. eauto.
+        * eapply in_map_iff. eexists (_, _). cbn. eauto. 
   Qed.
   
   Definition find C x := f (γ C x).
@@ -135,15 +146,15 @@ Section fixes.
       + etransitivity. eapply γ_spec; eauto. eapply f_red.
       + now eapply HC.
     - intros ? ? ? [[= <- <-] | ] [[= <-] | ]; eauto. 3: eapply HC; eauto.
-      + exfalso. apply Hx. eapply in_map_iff. eexists (_,_). eauto.
-      + exfalso. apply Hx. eapply in_map_iff. eexists (_,_). eauto.
+      + exfalso. apply Hx. eapply in_map_iff. eexists (_,_). cbn. eauto.
+      + exfalso. apply Hx. eapply in_map_iff. eexists (_,_). cbn. eauto.
     - intros ? ? ? [[= <- <-] | ] [[= <-] | ]; eauto. 3: eapply HC; eauto.
-      + exfalso. eapply γ_spec; eauto. eapply in_map_iff. eexists (_,_). eauto.
-      + subst. exfalso. eapply γ_spec; eauto. eapply in_map_iff. eexists (_,_). eauto.
+      + exfalso. eapply γ_spec; eauto. eapply in_map_iff. eexists (_,_). cbn. eauto.
+      + subst. exfalso. eapply γ_spec; eauto. eapply in_map_iff. eexists (_,_). cbn. eauto.
   Qed.
   
   Definition extendX C x := if x is Some x then 
-    if Dec (In x (map fst C)) then C else (x, (find C x)) :: C else C.
+    if in_dec eX x (map fst C) then C else (x, (find C x)) :: C else C.
   
   Lemma extendX_spec C x :
     correspondence p q C -> correspondence p q (extendX C x) /\ (forall z, In z C -> In z (extendX C x)) /\
@@ -151,7 +162,7 @@ Section fixes.
   Proof.
     intros HC.
     destruct x as [x | ]. 2: eauto. cbn.
-    decide (In x (map fst C)); cbn.
+    destruct in_dec; cbn. 
     - eauto.
     - split.
       + eapply find_spec; eauto. 
@@ -168,14 +179,14 @@ Section fixes2.
   Variable q : Y -> Prop.
   
   Variable f : X -> Y.
-  Hypothesis inj_f : Inj (=) (=) f.
+  Hypothesis inj_f : injective f.
   Hypothesis f_red : reduces_o f p q.
   
   Variables (IX : _) (RX : _) (HX : retraction IX RX X nat) (HRX : forall x n, RX n = Some x -> n = IX x).
   Variables (IY : _) (RY : _) (HY : retraction IY RY Y nat) (HRY : forall y n, RY n = Some y -> n = IY y).
   
   Variable g : Y -> X.
-  Hypothesis inj_g : Inj (=) (=) g.
+  Hypothesis inj_g : injective g.
   Hypothesis g_red : reduces_o g q p.
   
   Variable dX : eq_dec X.
@@ -199,7 +210,7 @@ Section fixes2.
       destruct HC as (_ & _ & HC). unfold extendY.
       destruct y; eauto.
       eapply in_map_iff in HC as ([] & <- & ?).
-      eapply in_map_iff. eexists (_, _). split. eauto.
+      eapply in_map_iff. eexists (_, _). split. cbn. eauto.
       eapply in_map_iff. eexists (_, _). split. eauto. cbn - [extendX].
       eapply H.
   Qed.

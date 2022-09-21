@@ -1,6 +1,6 @@
 Set Implicit Arguments.
 
-Hint Extern 4 => exact _ : core.
+Global Hint Extern 4 => exact _ : core.
 
 Ltac inv H := inversion H; subst; clear H.
 
@@ -33,7 +33,7 @@ Qed.
 (* Qed. *)
 
 (* Hint Resolve Dec_auto Dec_auto_not : core. *)
-Hint Extern 4 =>  (* Improves type class inference *)
+Global Hint Extern 4 =>  (* Improves type class inference *)
 match goal with
   | [  |- dec ((fun _ => _) _) ] => cbn
 end : typeclass_instances.
@@ -57,7 +57,7 @@ Proof.
   congruence.
 Qed.
 
-Hint Extern 4 =>
+Global Hint Extern 4 =>
 match goal with
   [ H : dec2bool (Dec ?P) = true  |- _ ] => apply Dec_true in  H
 | [ H : dec2bool (Dec ?P) = true |- _ ] => apply Dec_false in H
@@ -91,31 +91,31 @@ Proof.
   unfold dec. tauto.
 Qed.
 
-Instance True_dec :
+Global Instance True_dec :
   dec True.
 Proof. 
   unfold dec; tauto. 
 Qed.
 
-Instance False_dec :
+Global Instance False_dec :
   dec False.
 Proof. 
   unfold dec; tauto. 
 Qed.
 
-Instance impl_dec (X Y : Prop) :  
+Global Instance impl_dec (X Y : Prop) :  
   dec X -> dec Y -> dec (X -> Y).
 Proof. 
   unfold dec; tauto. 
 Qed.
 
-Instance and_dec (X Y : Prop) :  
+Global Instance and_dec (X Y : Prop) :  
   dec X -> dec Y -> dec (X /\ Y).
 Proof. 
   unfold dec; tauto. 
 Qed.
 
-Instance or_dec (X Y : Prop) : 
+Global Instance or_dec (X Y : Prop) : 
   dec X -> dec Y -> dec (X \/ Y).
 Proof. 
   unfold dec; tauto. 
@@ -124,13 +124,13 @@ Qed.
 (* Coq standard modules make "not" and "iff" opaque for type class inference, 
    can be seen with Print HintDb typeclass_instances. *)
 
-Instance not_dec (X : Prop) : 
+Global Instance not_dec (X : Prop) : 
   dec X -> dec (~ X).
 Proof. 
   unfold not. auto.
 Qed.
 
-Instance iff_dec (X Y : Prop) : 
+Global Instance iff_dec (X Y : Prop) : 
   dec X -> dec Y -> dec (X <-> Y).
 Proof. 
   unfold iff. auto.
@@ -148,63 +148,63 @@ Arguments EqType X {_} : rename.
 
 Canonical Structure eqType_CS X (A: eq_dec X) := EqType X.
 
-Existing Instance eqType_dec.
+Global Existing Instance eqType_dec.
 
-Instance unit_eq_dec :
+Global Instance unit_eq_dec :
   eq_dec unit.
 Proof.
   unfold dec. decide equality. 
 Qed.
 
-Instance bool_eq_dec : 
+Global Instance bool_eq_dec : 
   eq_dec bool.
 Proof.
   unfold dec. decide equality. 
 Defined.
 
-Instance nat_eq_dec : 
+Global Instance nat_eq_dec : 
   eq_dec nat.
 Proof.
   unfold dec. decide equality.
 Defined.
 
-Instance prod_eq_dec X Y :  
+Global Instance prod_eq_dec X Y :  
   eq_dec X -> eq_dec Y -> eq_dec (X * Y).
 Proof.
   unfold dec. decide equality. 
 Defined.
 
-Instance list_eq_dec X :  
+Global Instance list_eq_dec X :  
   eq_dec X -> eq_dec (list X).
 Proof.
   unfold dec. decide equality. 
 Defined.
 
-Instance sum_eq_dec X Y :  
+Global Instance sum_eq_dec X Y :  
   eq_dec X -> eq_dec Y -> eq_dec (X + Y).
 Proof.
   unfold dec. decide equality. 
 Defined.
 
-Instance option_eq_dec X :
+Global Instance option_eq_dec X :
   eq_dec X -> eq_dec (option X).
 Proof.
   unfold dec. decide equality.
 Defined.
 
-Instance Empty_set_eq_dec:
+Global Instance Empty_set_eq_dec:
   eq_dec Empty_set.
 Proof.
   unfold dec. decide equality.
 Qed.
 
-Instance True_eq_dec:
+Global Instance True_eq_dec:
   eq_dec True.
 Proof.
   intros x y. destruct x,y. now left.
 Qed.
 
-Instance False_eq_dec:
+Global Instance False_eq_dec:
   eq_dec False.
 Proof.
   intros [].
