@@ -263,7 +263,7 @@ End Cantor_Bernstein.
 Lemma Cantor_Bernstein  (X Y : Type) (dX: forall x0 y : X, {x0 = y} + {x0 <> y})
       (dY : forall x0 y : Y, {x0 = y} + {x0 <> y})
       (eX : nat -> option X) (eY : nat -> option Y)
-      (eXs : forall x, exists n, eX n = Some x) (eYs : forall y, exists n, eY n = Some y)
+      (eX_spec : forall x, exists n, eX n = Some x) (eY_spec : forall y, exists n, eY n = Some y)
       (f : X -> Y) (f_spec : injective f)
       (g : Y -> X) (g_spec : injective g) :
   exists (F : X -> Y) (G : Y -> X), (forall x, G (F x) = x) /\ (forall y, F (G y) = y).
