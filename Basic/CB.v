@@ -1,4 +1,4 @@
-Require Import List Lia PeanoNat Nat.
+Require Import List ListDec Lia PeanoNat Nat ConstructiveEpsilon.
 Import ListNotations.
 
 Set Default Goal Selector "!".
@@ -51,6 +51,54 @@ Class dupfree_list_enumerator X :=
     occ : X -> nat ;                                         (* an occurrence function *)
     occ_spec : forall x, In x (e (occ x)) ;                    (* which indicates where elements occur in the list enumerator *)
   }.
+
+Section get_dupfree_list_enumerator.
+
+  Variable X : Type.
+  Variable e : nat -> option X.
+
+  Variable e_spec : forall x, exists n, e n = Some x.
+
+  Variable e_dec : forall x1 x2 : X, {x1 = x2} + {x1 <> x2}.
+
+  Fixpoint L (n : nat) :=
+    match n with
+    | 0 => []
+    | S n => L n ++ match e n with Some x => if ListDec.In_dec e_dec x (L n) then [] else [x] | _ => [] end
+    end.
+
+  Lemma NoDup_app (l1 l2 : list X) :
+    (forall x, In x l1 -> In x l2 -> False) -> NoDup l1 -> NoDup l2 -> NoDup (l1 ++ l2).
+  Proof.
+    induction l1.
+    - eauto.
+    - intros H H1 H2. inversion H1; subst.
+      cbn. econstructor.
+      + rewrite in_app_iff; firstorder.
+      + eapply IHl1; eauto. firstorder.
+  Qed.
+
+  Lemma get_dupfree_list_enumerator : dupfree_list_enumerator X.
+  Proof.
+    unshelve eexists.
+    - exact L.
+    - intros x. specialize (e_spec x). eapply constructive_indefinite_ground_description_nat in e_spec as [n Hn].
+      + exact (S n).
+      + intros. destruct (e n) as [x' | ]. 2: firstorder congruence.
+        destruct (e_dec x' x); firstorder congruence.
+    - intros. induction H.
+      + exists []. now rewrite app_nil_r.
+      + cbn. destruct IHle as (? & ->). rewrite <- app_assoc. eauto.
+    - induction n; cbn.
+      + econstructor.
+      + eapply NoDup_app; eauto.
+        * destruct e. 1: destruct In_dec. all: now firstorder subst. 
+        * destruct e. 1: destruct In_dec. all: repeat econstructor. firstorder.
+    - cbn. intros x. destruct constructive_indefinite_ground_description_nat.
+      cbn. rewrite e0. destruct In_dec; rewrite in_app_iff; firstorder.
+  Qed.
+
+End get_dupfree_list_enumerator.
 
 Class with_index_gen X (g : dupfree_list_enumerator X) :=
   {
@@ -214,11 +262,14 @@ End Cantor_Bernstein.
 
 Lemma Cantor_Bernstein  (X Y : Type) (dX: forall x0 y : X, {x0 = y} + {x0 <> y})
       (dY : forall x0 y : Y, {x0 = y} + {x0 <> y})
-      (gX : dupfree_list_enumerator X) (gY : dupfree_list_enumerator Y)
+      (eX : nat -> option X) (eY : nat -> option Y)
+      (eXs : forall x, exists n, eX n = Some x) (eYs : forall y, exists n, eY n = Some y)
       (f : X -> Y) (f_spec : injective f)
       (g : Y -> X) (g_spec : injective g) :
   exists (F : X -> Y) (G : Y -> X), (forall x, G (F x) = x) /\ (forall y, F (G y) = y).
 Proof.
+  assert (dupfree_list_enumerator X * dupfree_list_enumerator Y) as [gX gY].
+  { split; eapply get_dupfree_list_enumerator; eauto. }
   assert (with_index_gen X gX * with_index_gen Y gY) as [].
   { split; econstructor; unshelve eauto using index_spec_, index_spec'_, gen_spec_; eauto. }
   do 2 eexists. split; unshelve eapply FG; eauto.
