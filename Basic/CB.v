@@ -43,7 +43,7 @@ Section pos.
 
 End pos.
 
-Class good X :=
+Class dupfree_list_enumerator X :=
   {
     e : nat -> list X ;                                      (* a list enumerator *)
     e_prefix : forall n1 n2, n1 <= n2 -> exists l, e n2 = e n1 ++ l ; (* which is cumulative *)
@@ -52,7 +52,7 @@ Class good X :=
     occ_spec : forall x, In x (e (occ x)) ;                    (* which indicates where elements occur in the list enumerator *)
   }.
 
-Class better X (g : good X) :=
+Class with_index_gen X (g : dupfree_list_enumerator X) :=
   {
     index : X -> nat ;             (* an index function *)
     index_spec : forall x n, In x (e n) \/ length (e n) > index x -> nth_error (e n) (index x) = Some x ;
@@ -62,7 +62,7 @@ Class better X (g : good X) :=
     gen_spec : forall l, NoDup l -> length (e (gen l)) >= length l
   }.
 
-Lemma index_spec' {X} (g : good X) (b : better X g)  :
+Lemma index_spec' {X} (g : dupfree_list_enumerator X) (b : with_index_gen X g)  :
   forall m n (x : X), nth_error (e m) n = Some x -> n = index x.
 Proof.
   intros m n x H.
@@ -89,10 +89,9 @@ Proof.
   all: firstorder congruence.
 Qed.
 
-(* Every good type can be made better *)
-Section get_better.
+Section get_with_index_gen.
 
-  Variables (X : Type) (gX : good X).
+  Variables (X : Type) (gX : dupfree_list_enumerator X).
 
   Definition gen_ (l : list X) :=
     list_max (map occ l).
@@ -142,7 +141,7 @@ Section get_better.
     - eapply nth_error_Some. rewrite H; congruence.
   Qed.
 
-End get_better.
+End get_with_index_gen.
 
 Local Hint Resolve occ_spec e_spec : core.
 
@@ -155,7 +154,7 @@ Notation injective f := (forall x1 x2, f x1 = f x2 -> x1 = x2).
 
 Section Def_F.
 
-  Variables (X Y : Type) (gX : good X) (gY : good Y) (bX : better X gX) (bY : better Y gY).
+  Variables (X Y : Type) (gX : dupfree_list_enumerator X) (gY : dupfree_list_enumerator Y) (bX : with_index_gen X gX) (bY : with_index_gen Y gY).
 
   Variable f : X -> Y.
   Variable f_spec : injective f.
@@ -189,7 +188,7 @@ End Def_F.
 
 Section Cantor_Bernstein.
 
-  Variables (X Y : Type) (gX : good X) (gY : good Y) (bX : better X gX) (bY : better Y gY).
+  Variables (X Y : Type) (gX : dupfree_list_enumerator X) (gY : dupfree_list_enumerator Y) (bX : with_index_gen X gX) (bY : with_index_gen Y gY).
 
   Variables (f : X -> Y) (f_spec : injective f).
   Variables (g : Y -> X) (g_spec : injective g).
@@ -215,12 +214,12 @@ End Cantor_Bernstein.
 
 Lemma Cantor_Bernstein  (X Y : Type) (dX: forall x0 y : X, {x0 = y} + {x0 <> y})
       (dY : forall x0 y : Y, {x0 = y} + {x0 <> y})
-      (gX : good X) (gY : good Y)
+      (gX : dupfree_list_enumerator X) (gY : dupfree_list_enumerator Y)
       (f : X -> Y) (f_spec : injective f)
       (g : Y -> X) (g_spec : injective g) :
   exists (F : X -> Y) (G : Y -> X), (forall x, G (F x) = x) /\ (forall y, F (G y) = y).
 Proof.
-  assert (better X gX * better Y gY) as [].
+  assert (with_index_gen X gX * with_index_gen Y gY) as [].
   { split; econstructor; unshelve eauto using index_spec_, index_spec'_, gen_spec_; eauto. }
   do 2 eexists. split; unshelve eapply FG; eauto.
 Qed.
