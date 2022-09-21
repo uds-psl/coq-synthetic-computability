@@ -50,3 +50,13 @@ Proof.
   - intros [D] % decidable_iff. econstructor. intros x y; destruct (D (x,y)); firstorder.
   - intros [d]. eapply decidable_iff. econstructor. intros (x,y). eapply d.
 Qed.
+
+Lemma decider_AC X (F : X -> nat -> bool) :
+  (forall x, exists y, F x y = true) ->
+  ∑ f : X -> nat, forall x, F x (f x) = true.
+Proof.
+  intros Htot.
+  eexists (fun x => proj1_sig (mu_nat _ (Htot x))).
+  intros x. destruct mu_nat as [n Hn]; cbn.
+  eapply Hn.
+Qed.
