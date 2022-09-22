@@ -15,6 +15,17 @@ Notation retraction I R X Y := (@retraction' X Y I R).
 Definition retract X Y := exists I R, retraction I R X Y.
 Definition datatype X := retract X nat.
 
+Definition injective {X Y} (f : X -> Y) :=
+  forall x1 x2, f x1 = f x2 -> x1 = x2.
+
+Lemma retraction_injective X Y I R :
+  retraction I R X Y ->
+  injective I.
+Proof.
+  intros HR x1 x2 H % (f_equal R).
+  rewrite !HR in H. congruence.
+Qed.
+
 Lemma retraction_discrete X Y I R :
   retraction I R X Y -> discrete Y -> discrete X.
 Proof.
