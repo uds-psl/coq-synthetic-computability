@@ -1,5 +1,7 @@
 # A Computational Cantor-Bernstein and Myhill's Isomorphism Theorem in Constructive Type Theory (Proof Pearl)
 
+Placing the paper at the root of this directory enables hyperlinks in the paper to the html code in `gh-pages`.
+
 ## Description
 
 The three files containing the theorems are:
