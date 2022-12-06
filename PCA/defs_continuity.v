@@ -153,12 +153,32 @@ Proof.
 
 Abort.
 
+(* Conjecture:  
+   (forall F, continuous_via_extensional_dialogues F ->   continuous_via_dialogues F) -> FAN theorem
+   Proof in paper by Herbelin, Brede at LICS 21
+*)
+
 Lemma extensional_dialogues_to_modulus F :
   continuous_via_extensional_dialogues F -> modulus_continuous F.
 Proof.
   intros (τ & τ_is_total_tree & τ_is_well_founded & τ_agrees_with_F).
   (* idea: similar to evalt, but return the list of Qs asked rather than O, which requires remembering all the Qs *)
 Abort.
+
+(* Conjecture:
+   Q has decidable equality and A is finite (exists l, forall a : A, In a l)
+   then we can prove
+  forall F, modulus_continuous F -> continuous_via_extensional_dialogues F
+
+let l = [a0 , ... an ]
+
+intuition: search for the finite prefix of f that matters, which can be found by trying M many times. something like
+
+τ [] := let L := M (fun _ => a0) in
+        if this is [], then return F (fun _ => a0)
+        if this is q :: L', then ask M (fun q' => if q = q' then f q else a0)
+
+*)
 
 Lemma eloquency_to_modulus F :
   continuous_via_dialogues F -> continuous_via_modulus F.
