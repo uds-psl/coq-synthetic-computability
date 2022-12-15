@@ -124,32 +124,74 @@ Proof.
     now rewrite Hd.
 Qed.
 
+Fixpoint extension (d : dialogue) (l : list A) : option (Q + O) :=
+  match d, l with
+  | eta o, [] => Some (inr o)
+  | eta o, _ => None
+  | beta q k, [] => Some (inl q)
+  | beta q k, a :: l => extension (k a) l
+  end.
+
+Lemma extension_is_total_tree d :
+  is_total_tree (extension d).
+Proof.
+  induction d.
+  - cbn. split.
+    + intros. destruct l; cbn in *; congruence. 
+    + intros l. destruct l; cbn in *; congruence.
+  - cbn. split.
+    + intros. destruct l; cbn in *. congruence.
+      now eapply H in H0.
+    + intros l. destruct l.
+      * cbn. intros a. destruct (H a) as [_ Hn].
+        specialize (Hn []). destruct extension as [ [] | ]; congruence.
+      * cbn.  destruct (H a) as [_ Hn].  specialize (Hn l).
+        destruct extension; eauto. congruence.
+Qed.
+
+Lemma extension_well_founded d :
+  well_founded (extension d).
+Proof.
+  induction d.
+  - cbn. intros f. now exists 0, o.
+  - cbn. intros f. destruct (H (f 0) (fun n => f (S n))) as [n [o Hn]].
+    exists (S n), o. cbn.
+    now rewrite <- map_map, seq_shift in Hn.
+Qed.
+
 Lemma dialogues_to_extensional_dialogues F :
   continuous_via_dialogues F -> continuous_via_extensional_dialogues F.
 Proof.
 
-  Fixpoint extension (d : dialogue) (l : list A) : option (Q + O) :=
-    match d, l with
-    | eta o, [] => Some (inr o)
-    | eta o, _ => None
-    | beta q k, [] => Some (inl q)
-    | beta q k, a :: l => extension (k a) l
-    end.
-  intros [d Hd].
-  exists (fun i => extension (d i)).
-
   (*
-    Yannick got stuck here with a different definition of
+    intitially, Yannick got stuck here with a different definition of
        continuous_via_extensional_dialogues
     where first the tree was turned into a total function (Q -> A) -> O and then this function had to agree with F.
 
     With the new definition of just asking exists n, evalt ...
     the proof might be easier.
-    
-    The intuition is still that the dialogue has to be turned into its extension:
 
-   For the first two parts of the proof, see lemmas below.
+    The intuition is still that the dialogue has to be turned into its extension.
    *)
+  intros [d Hd].
+  exists (fun i => extension (d i)).
+  repeat eapply conj.
+  - intros i. eapply extension_is_total_tree.
+  - intros i. eapply extension_well_founded.
+  - revert Hd. enough
+      (forall F d, 
+          (forall (f : Q -> A), F f = eval f d) ->
+          forall (f : Q -> A),
+          exists n : nat, evalt (extension d) f n = Some (inr (F f))) as H.
+    { intros. now eapply (H (fun f => F f i) (d i)). }
+    clear F d. intros F d H f.
+    rewrite H. clear H F.
+    induction d.
+    + exists 0. cbn. reflexivity.
+    + edestruct H as [n Hn].
+      exists (S n). cbn [eval].
+      cbn [evalt].
+(*  Edit: Stuck again, more or less at the same point as before. With the new definition, I just arrived at the problematic point with less book keeping  *)
 
 Abort.
 
@@ -348,50 +390,6 @@ Definition tofun (τ : tree) (H : is_total_tree τ) (wf : well_founded τ) (f : 
   - exfalso. abstract (clear - Hn; firstorder congruence).
 Defined.
 About tofun.
-
-Lemma extension_is_total_tree d :
-  is_total_tree (extension d).
-Proof.
-  induction d.
-  - cbn. split.
-    + intros. destruct l; cbn in *; congruence. 
-    + intros l. destruct l; cbn in *; congruence.
-  - cbn. split.
-    + intros. destruct l; cbn in *. congruence.
-      now eapply H in H0.
-    + intros l. destruct l.
-      * cbn. intros a. destruct (H a) as [_ Hn].
-        specialize (Hn []). destruct extension as [ [] | ]; congruence.
-      * cbn.  destruct (H a) as [_ Hn].  specialize (Hn l).
-        destruct extension; eauto. congruence.
-Qed.
-
-Lemma extension_well_founded d :
-  well_founded (extension d).
-Proof.
-  induction d.
-  - cbn. intros f. now exists 0, o.
-  - cbn. intros f. destruct (H (f 0) (fun n => f (S n))) as [n [o Hn]].
-    exists (S n), o. cbn.
-    now rewrite <- map_map, seq_shift in Hn.
-Qed.
-
-Lemma evalt_subtree (τ : tree) f n l1 :
-  interrogation f l1 τ ->
-  evalt (fun l2 => τ (l1 ++ l2)) f (n - length l1) = 
-  match evalt τ f n with
-    None => None
-  | Some (inl (l, q)) => Some (inl (l1 ++ l, q))
-  | Some (inr o) => Some (inr o)
-  end.
-Proof.
-  induction l1 using rev_ind in n, τ |- *.
-  - cbn. inversion 1. subst.
-    rewrite Nat.sub_0_r. admit. admit.
-  - cbn. inversion 1. destruct l1; cbn in *; congruence.
-    assert (l1 = l) by admit. assert (a = x) by admit. subst.
-    specialize (IHl1 (fun l2 => τ (l2 ++ [f q])) n).
-    cbn in IHl1.
 
 (*   assert (n = 5) as -> by admit. *)
 (*   assert (q : Q) by admit. *)
