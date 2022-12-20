@@ -90,11 +90,11 @@ Definition continuous_via_extensional_dialogues F :=
 
 (* Definition 4: modulus definition *)
 
-Definition modulus_on (F : (Q -> A) -> I -> O) (f : Q -> A) (L : list Q) :=
-  forall g, Forall (fun q => f q = g q) L -> forall i, F f i = F g i.
+Definition modulus_on (F : (Q -> A) -> I -> O) (f : Q -> A) i (L : list Q) :=
+  forall g, Forall (fun q => f q = g q) L -> F f i = F g i.
 
 Definition modulus_continuous (F : (Q -> A) -> I -> O) :=
-  forall f, exists L, modulus_on F f L.
+  forall f i, exists L, modulus_on F f i L.
 
 Definition modulus (F : (Q -> A) -> I -> O) (M : (Q -> A) -> I -> list Q) :=
   forall f i g, Forall (fun q => f q = g q) (M f i) -> F f i = F g i.
@@ -102,17 +102,20 @@ Definition modulus (F : (Q -> A) -> I -> O) (M : (Q -> A) -> I -> list Q) :=
 Definition continuous_via_modulus F :=
   exists M, modulus F M.
 
+Fixpoint δ (F' : (Q -> A) -> O) (d : C F') :=
+  match d with
+  | etaC o => eta o
+  | betaC q k d => beta q (fun a => δ (k a) (d a))
+  end.
+
 Lemma C_to_dialogues:  forall F,
     C F -> { d | forall f, eval f d = F f }.
 Proof.
-  intros. induction X.
-  - unshelve eexists. eapply eta. exact o.
-    cbn. reflexivity.
-  - unshelve eexists. eapply beta. exact q.
-    intros a. destruct (X a) as [d ?]. exact d.
-    intros; cbn. destruct X as [d Hd].
-    eapply Hd.
+  intros F d. exists (δ F d). induction d; cbn; intros; eauto.
 Qed.
+
+Definition functional_extensionality_on A B :=
+  forall f g : A -> B, (forall x, f x = g x) -> f = g.
 
 Corollary continous_via_C_to_via_dialogue F :
   continuous_via_C F -> continuous_via_dialogues F.
@@ -159,56 +162,224 @@ Proof.
     now rewrite <- map_map, seq_shift in Hn.
 Qed.
 
+Lemma evalt_plus' τ f n1 n2 l q :
+  evalt τ f n1 = Some (inl (l, q)) ->
+  match evalt (fun l' => τ (l ++ [f q] ++ l')) f n2 with
+  | Some (inr o) => evalt τ f (S n1 + n2) = Some (inr o)
+  | Some (inl (l', q')) => evalt τ f (S n1 + n2) = Some (inl (l ++ [f q] ++ l', q'))
+  | None => evalt τ f (S n1 + n2) = None
+  end.
+Proof.
+  induction n2 in n1, l, q |- *.
+  - rewrite <- plus_n_O. cbn. intros ->. destruct τ as [ [] | ]; congruence.
+  - intros. cbn.
+    eapply IHn2 in H. cbn [app] in *. destruct evalt as [ [ [] | ] | ] eqn:E; try congruence.
+    + replace (n1 + S n2) with (S n1 + n2) by lia. rewrite H.
+      rewrite <- app_assoc. cbn.
+      destruct τ as [ [] | ]; eauto.
+    + replace (n1 + S n2) with (S n1 + n2) by lia. now rewrite H.
+    + replace (n1 + S n2) with (S n1 + n2) by lia. now rewrite H.
+Qed.
+
+Lemma evalt_plus τ f n1 n2 l q o :
+  evalt τ f n1 = Some (inl (l, q)) ->
+  evalt (fun l' => τ (l ++ [f q] ++ l')) f n2 = Some (inr o) ->
+  evalt τ f (S n1 + n2) = Some (inr o).
+Proof.
+  intros.
+  eapply evalt_plus' in H.
+  now rewrite H0 in H.
+Qed.
+
 Lemma dialogues_to_extensional_dialogues F :
   continuous_via_dialogues F -> continuous_via_extensional_dialogues F.
 Proof.
-
-  (*
-    intitially, Yannick got stuck here with a different definition of
-       continuous_via_extensional_dialogues
-    where first the tree was turned into a total function (Q -> A) -> O and then this function had to agree with F.
-
-    With the new definition of just asking exists n, evalt ...
-    the proof might be easier.
-
-    The intuition is still that the dialogue has to be turned into its extension.
-   *)
   intros [d Hd].
   exists (fun i => extension (d i)).
   repeat eapply conj.
   - intros i. eapply extension_is_total_tree.
   - intros i. eapply extension_well_founded.
-  - revert Hd. enough
-      (forall F d, 
-          (forall (f : Q -> A), F f = eval f d) ->
-          forall (f : Q -> A),
-          exists n : nat, evalt (extension d) f n = Some (inr (F f))) as H.
-    { intros. now eapply (H (fun f => F f i) (d i)). }
-    clear F d. intros F d H f.
-    rewrite H. clear H F.
+  - setoid_rewrite Hd. clear F Hd. intros f i. generalize (d i).
+    clear i d. intros d.
     induction d.
-    + exists 0. cbn. reflexivity.
-    + edestruct H as [n Hn].
-      exists (S n). cbn [eval].
-      cbn [evalt].
-(*  Edit: Stuck again, more or less at the same point as before. With the new definition, I just arrived at the problematic point with less book keeping  *)
-
-Abort.
+    + cbn. exists 0. reflexivity.
+    + destruct (H (f q)) as [n Hn].
+      cbn [eval]. specialize (H (f q)) as [m IH].
+      exists (S m).
+      erewrite evalt_plus with (n1 := 0); cbn; [ reflexivity .. | ].
+      now rewrite <- IH. 
+Qed.
 
 (* Conjecture:  
    (forall F, continuous_via_extensional_dialogues F ->   continuous_via_dialogues F) -> FAN theorem
    Proof in paper by Herbelin, Brede at LICS 21
 *)
 
+Fixpoint evalt' (τ : tree) (f : Q -> A) (n : nat) : option ((list Q * Q) + (list Q * O)) :=
+  match n with
+  | 0 =>  match τ [] with
+         | None => None
+         | Some (inr o) => Some (inr ([], o))
+         | Some (inl q) => Some (inl ([], q))
+         end
+  | S n => match evalt' τ f n with
+          | None => None
+          | Some (inr o) => Some (inr o)
+          | Some (inl (l, q)) =>
+              match τ (map f l ++ [f q]) with
+              | None => None
+              | Some (inr o) => Some (inr (l ++ [q], o))
+              | Some (inl q') => Some (inl (l ++ [q], q'))
+              end
+          end
+  end.
+
+Lemma evalt'_spec τ f n :
+  evalt τ f n = match evalt' τ f n with
+                | None => None
+                | Some (inr (l, o)) => Some (inr o)
+                | Some (inl (l, q)) => Some (inl (map f l, q))
+                end.
+Proof.
+  induction n; cbn.
+  - destruct τ as [ [] | ]; reflexivity.
+  - rewrite IHn. destruct evalt' as [ [ [] | [] ] | ]; eauto.
+    destruct τ as [ [] | ]; eauto.
+    now rewrite map_app.
+Qed.
+
+Lemma evalt_det' τ f n1 n2 o :
+  n2 >= n1 ->
+  evalt' τ f n1 = Some (inr o) ->
+  evalt' τ f n2 = Some (inr o).
+Proof.
+  induction 1; intros H1; cbn in *.
+  - congruence.
+  - destruct (evalt' τ f m)  as [ [[] | ] | ] eqn:E1.
+    all: try now firstorder congruence.
+Qed.
+
+Lemma evalt_det τ f n1 n2 o1 o2 :
+  evalt' τ f n1 = Some (inr o1) ->
+  evalt' τ f n2 = Some (inr o2) ->
+  o1 = o2.
+Proof.
+  intros H1 H2.
+  assert (n1 <= n2 \/ n2 <= n1) as [H | H] by lia.
+  all: eapply evalt_det' in H; eauto; congruence.
+Qed.
+
+Lemma evalt'_Forall (τ : tree) (f : Q -> A) (n : nat) g :
+  match evalt' τ f n with
+  | Some (inr (l, o)) => Forall (fun q : Q => f q = g q) l -> evalt' τ g n = Some (inr (l, o))
+  | Some (inl (l, q)) => Forall (fun q : Q => f q = g q) l -> evalt' τ g n = Some (inl (l, q)) 
+  | None => True
+  end.
+Proof.
+  induction n; cbn.
+  - destruct τ as [ [] | ] eqn:E; eauto.
+  - destruct (evalt' τ f n) as [ [ [] | [] ] | ]; eauto.
+    + destruct τ as [ [] | ] eqn:E.
+      * intros [H1 H2] % Forall_app. inversion H2; subst; clear H2. clear H4.
+        rewrite IHn; eauto.
+        erewrite <- map_ext_Forall; eauto.
+        now rewrite <- H3, E.
+      * intros [H1 H2] % Forall_app. inversion H2; subst; clear H2. clear H4.
+        rewrite IHn; eauto. rewrite <- H3.
+        erewrite <- map_ext_Forall; eauto.
+        now rewrite E.
+      * eauto.
+    + intros Hl. now rewrite IHn.
+Qed.
+
 Lemma extensional_dialogues_to_modulus F :
   continuous_via_extensional_dialogues F -> modulus_continuous F.
 Proof.
   intros (τ & τ_is_total_tree & τ_is_well_founded & τ_agrees_with_F).
-  (* idea: similar to evalt, but return the list of Qs asked rather than O, which requires remembering all the Qs *)
-Abort.
+  intros f i.
+
+  destruct (τ_agrees_with_F f i) as [n H].
+  rewrite evalt'_spec in H.
+  destruct evalt' as [ [ [] | [] ] | ] eqn:E; inversion H; subst; clear H.
+
+  exists l. intros g.
+
+  destruct (τ_agrees_with_F g i) as [n2 H].
+  rewrite evalt'_spec in H.
+  destruct (evalt' (τ i) g n2) as [ [ [] | [] ] | ] eqn:E2; inversion H; subst; clear H.
+
+  intros H.
+  enough (evalt' (τ i) g n = Some (inr (l, F f i))).
+  { eapply evalt_det in E2; eauto. congruence. }
+
+  epose proof (evalt'_Forall _ _ _ _) as H0. rewrite E in H0.
+  now eapply H0 in H.
+Qed.
+
+(* From Equations Require Import Equations. *)
+
+Lemma extensional_dialogues_to_modulus' F :
+  (forall (x y : A), {x = y} + {x <> y}) ->
+  (forall (x y : O), {x = y} + {x <> y}) ->
+  (forall (x y : Q), {x = y} + {x <> y}) -> 
+  continuous_via_extensional_dialogues F -> continuous_via_modulus F.
+Proof.
+  intros EA EO EQ (τ & τ_is_total_tree & τ_is_well_founded & τ_agrees_with_F).
+
+  unshelve eexists.
+
+  {
+    intros f i.
+
+    pose proof (τ_agrees_with_F f i).
+    eapply constructive_indefinite_ground_description_nat in H as [n H].
+    rewrite evalt'_spec in H.
+    destruct evalt' as [ [ [] | [] ] | ] eqn:E; inversion H; subst; clear H.
+
+    exact l.
+    { intros n. repeat decide equality. }
+
+
+  }
+
+  intros f i g.
+
+  destruct (τ_agrees_with_F f i) as [n_ H_].
+  cbn in *.
+  destruct constructive_indefinite_ground_description_nat as [n H]; cbn in *.
+  pose proof (H' := H). 
+  rewrite evalt'_spec in H'. cbn in *.
+  generalize ((eq_ind (evalt (τ i) f n)
+               (fun o : option (list A * Q + O) => o = Some (inr (F f i))) H
+               match evalt' (τ i) f n with
+               | Some (inl (l, q)) => Some (inl (map f l, q))
+               | Some (inr (_, o)) => Some (inr o)
+               | None => None
+               end (evalt'_spec (τ i) f n))).
+  destruct (evalt' (τ i) f n) as [ [ [] | [] ] | ] eqn:E; inversion H; subst; clear H.
+  { intros. clear H. inversion e. }
+
+  destruct (τ_agrees_with_F g i) as [n2 H].
+  rewrite evalt'_spec in H.
+  destruct (evalt' (τ i) g n2) as [ [ [] | [] ] | ] eqn:E2; inversion H; subst; clear H.
+
+  intros Heq Hl.
+  enough (evalt' (τ i) g n = Some (inr (l, F f i))).
+  { eapply evalt_det in E2; eauto. congruence. }
+
+  epose proof (evalt'_Forall _ _ _ _) as H0. rewrite E in H0.
+  inversion Heq. subst.
+  eapply H0. revert Hl.
+
+  unshelve erewrite (Eqdep_dec.UIP_dec _ Heq eq_refl).
+  1: repeat decide equality.
+
+  cbn. eauto.
+  intros. exfalso. congruence.
+Qed.
 
 (* Conjecture:
-   Q has decidable equality and A is finite (exists l, forall a : A, In a l)
+   If Q has decidable equality and A is finite (exists l, forall a : A, In a l)
    then we can prove
   forall F, modulus_continuous F -> continuous_via_extensional_dialogues F
 
@@ -240,29 +411,6 @@ Proof.
   - inversion H as [|? ? Heq]; subst.
     rewrite Heq. rewrite IH; eauto.
     now rewrite <- Heq.
-Qed.
-
-(* from here on lemmas that might become helpful, but probably are irrelevant *)
-
-Lemma evalt_det' τ f n1 n2 o :
-  n2 >= n1 ->
-  evalt τ f n1 = Some (inr o) ->
-  evalt τ f n2 = Some (inr o).
-Proof.
-  induction 1; intros H1; cbn in *.
-  - congruence. 
-  - destruct (evalt τ f m)  as [ [[] | ] | ] eqn:E1.
-    all: try now firstorder congruence.
-Qed.
-
-Lemma evalt_det τ f n1 n2 o1 o2 :
-  evalt τ f n1 = Some (inr o1) ->
-  evalt τ f n2 = Some (inr o2) ->
-  o1 = o2.
-Proof.
-  intros H1 H2.
-  assert (n1 <= n2 \/ n2 <= n1) as [H | H] by lia.
-  all: eapply evalt_det' in H; eauto; congruence.
 Qed.
 
 Lemma evalt_inv_inl_length τ f n l q :
@@ -354,7 +502,7 @@ Proof.
     destruct n.
     * cbn in *. rewrite Hno. reflexivity.
     * rewrite seq_S, map_app in Hno.
-      cbn in Hno. 
+      cbn in Hno.
       set (l := (map
              (fun n : nat =>
               nth n
@@ -366,17 +514,17 @@ Proof.
       destruct (τ l) as [ [] | ] eqn:Et; try congruence.
       2:{ destruct n. cbn in *. congruence.
           exfalso. eapply Hprf, Et. rewrite Hno. congruence. }
-      cbn. 
+      cbn.
       eapply hammer in Et as H.
       2: split; eauto.
       destruct H as (H1 & H2 & H3).
       subst l.
       rewrite H1. rewrite <- H3 in *.
       rewrite Et in Hno.
-      eapply evalt_inv_inl_length in H1 as H. 
+      eapply evalt_inv_inl_length in H1 as H.
       rewrite app_nth2 in Hno; rewrite H in *.
       rewrite Nat.sub_diag in Hno.
-      cbn in *. now rewrite Hno. lia. econstructor; eauto. 
+      cbn in *. now rewrite Hno. lia. econstructor; eauto.
 Qed.
 
 Definition tofun (τ : tree) (H : is_total_tree τ) (wf : well_founded τ) (f : Q -> A) : O.
@@ -389,94 +537,15 @@ Definition tofun (τ : tree) (H : is_total_tree τ) (wf : well_founded τ) (f : 
   - exact o.
   - exfalso. abstract (clear - Hn; firstorder congruence).
 Defined.
-About tofun.
 
-(*   assert (n = 5) as -> by admit. *)
-(*   assert (q : Q) by admit. *)
-(*   assert (l1 = [f q]) as -> by admit. *)
-(*   cbn. *)
-(*   destruct (τ [f q]) as [ [] | ], (τ []). *)
-(*   cbn. *)
+Lemma tofun_continuous (τ : I -> tree) (H : forall i, is_total_tree (τ i)) (wf : forall i, well_founded (τ i)) :
+  continuous_via_extensional_dialogues (fun f i => tofun (τ i) (H i) (wf i) f).
+Proof.
+  exists τ. repeat eapply conj; [ eauto.. | ].
+  intros f i.
+  unfold tofun.
+  destruct epsilon_smallest as [n [[o H1] H2]].
+  exists n. now rewrite H1.
+Qed.
 
-
-(*   induction n in l1 |- *. *)
-(*   - cbn. rewrite app_nil_r. induction 1. *)
-(*     + now destruct τ as [ [] | ]. *)
-(*     + subst. *)
-(*       destruct (τ l) as [ [] | ] eqn:E, (τ []) as [ [] | ] eqn:E'; inversion IHinterrogation; cbn in *; repeat rewrite app_nil_r in *; subst; cbn in *. *)
-(*       * inversion H1; subst. admit. *)
-(*       *(* induction n in l1 |- *; cbn. *) *)
-(*   (* - rewrite app_nil_r. *) *)
-(*   (*   intros H. now rewrite H. *) *)
-(*   (* - intros H. eapply IHn in H as H'. rewrite H'. cbn. clear H' IHn. *) *)
-(*   (*   destruct evalt as [ [ [] | ] | ] eqn:E. *) *)
-(*   (*   + destruct l; cbn. *) *)
-(*   (*     * destruct n; cbn in E. *) *)
-(*   (*       -- rewrite H in E. inversion E; subst. *) *)
-(*   (*   + reflexivity. *) *)
-(*   (*   + reflexivity. *) *)
-(* Admitted. *)
-
-(* Lemma evalt_subtree (τ : tree) q f n : *)
-(*   τ [] = Some (inl q) -> *)
-(*   evalt (fun l => τ ([] ++ f q :: l)) f n =  *)
-(*   match evalt τ f n with *)
-(*     None => None *)
-(*   | Some (inl (a :: l, r)) => Some (inl (l, r)) *)
-(*   | Some (inl ([], r)) => match τ [f q] with *)
-(*   | Some (inl q0) => Some (inl ([], q0)) *)
-(*   | Some (inr o) => Some (inr o) *)
-(*   | None => None *)
-(*   end *)
-(*   | Some (inr o) => Some (inr o) *)
-(*   end. *)
-(* Proof. *)
-(*   generalize (@nil A). *)
-(*   induction n; cbn. *)
-(*   - intros H. now rewrite H.  *)
-(*   - intros H. eapply IHn in H as H'. rewrite H'. cbn. clear H' IHn. *)
-(*     destruct evalt as [ [ [] | ] | ] eqn:E. *)
-(*     + destruct l; cbn. *)
-(*       * destruct n; cbn in E. *)
-(*         -- rewrite H in E. inversion E; subst.  *)
-(*     + reflexivity. *)
-(*     + reflexivity. *)
-(* Admitted. *)
-
-(* Lemma evalt_subtree (τ : tree) q f n : *)
-(*   evalt (fun l => τ (f q :: l)) f n =  *)
-(*   match evalt τ f n with *)
-(*     None => None *)
-(*   | Some (inl (l, r)) => Some (inl (f q :: l, r)) *)
-(*   | Some (inr o) => Some (inr o) *)
-(*   end. *)
-(* Proof. *)
-(*   induction n; cbn. *)
-  
-(* Admitted. *)
-
-(* Lemma diag_seq (d : dialogue) (f : Q -> A) : *)
-(*   eval f d = tofun (extension d) (extension_is_total_tree d) (extension_well_founded d) f. *)
-(* Proof. *)
-(*   unfold tofun. destruct epsilon_smallest as [n [Hn _]]. *)
-(*     destruct evalt as [ [ [] | ] | ] eqn:E. *)
-(*     1: destruct tofun_subproof2. *)
-(*     2: destruct tofun_subproof3. clear Hn. *)
-(*     induction d in f, n, E |- *. *)
-(*     - cbn in *. induction n; cbn in *; try congruence. *)
-(*       destruct evalt as [ [ [] | ] | ] eqn:E'. *)
-(*       + destruct l; cbn in *; try congruence. *)
-(*       + eauto. *)
-(*       + eauto. *)
-(*     - cbn in *. *)
-(*       pose proof (evalt_subtree ( (fun l : list A => *)
-(*          match l with *)
-(*          | [] => Some (inl q) *)
-(*          | a :: l0 => extension (k a) l0 *)
-(*          end)) f n). *)
-(*       specialize (H0 [f q]). *)
-(*       rewrite E in H0. *)
-(*       eapply H. eapply H0. *)
-(*       eapply Ask with (l := []); eauto. *)
-(*       econstructor. *)
-(* Qed. *)
+End fix_types.

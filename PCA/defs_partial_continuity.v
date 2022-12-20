@@ -73,4 +73,40 @@ Section Continuity.
           cbn. eapply ret_hasvalue.
     Qed.
 
-End Continuity.
+(* End Continuity. *)
+
+From SyntheticComputability Require defs_continuity.
+
+Definition factors (F : ((Q -> A) -> I -> O)) (F' : ((Q ↛ A) -> (I ↛ O))) :=
+  forall f : Q -> A, forall i : I,
+    F' (fun q => ret (f q)) i =! F f i.
+
+Lemma bla F F' (a0 : A) (o0 : O) :
+  factors F F' ->
+  continuous_via_extensional_dialogues F' ->
+  defs_continuity.continuous_via_extensional_dialogues Q A I O F.
+Proof.
+  intros Hfac (τ & H).
+  red.
+  assert (forall (f : Q -> A) (i : I) (o : O),
+             (exists n : nat, evalt (τ i) (fun q => ret (f q)) n =! inr (F f i))).
+  { intros. setoid_rewrite H. eapply Hfac. }
+
+  unshelve epose (fix τ (i : I) (l : list A) n :=
+       match n, l with
+       | 0, nil => _
+       | S n, _ => match τ i (firstn n l) n with
+                  | Some (inl (qs, q)) => _
+                  | Some (inr o) => Some (inr o)
+                  | None => None
+                  end
+       | _, _ => None
+       end).
+
+  1:{ specialize (H0 (fun _ => a0) i o0).
+      eapply mu_nat.mu_nat_dep in H0 as [k Hk].
+      destruct k; cbn in Hk.
+      - eapply bid
+
+
+  (* compute the index in H0, then use it in the def of τ *)
