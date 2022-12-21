@@ -20,7 +20,7 @@ Section Continuity.
                                 | (inl q) => ret (inl ([], q))
                                 end)
       | S n => bind (evalt τ f n) (fun x => match x with
-                                        | (inr o) => ret (inr o)
+                                        | (inr o) => undef
                                         | (inl (l, q)) =>
                                             bind (f q) (fun v => 
                                             bind (τ (l ++ [v])) (fun x => match x with
@@ -29,6 +29,15 @@ Section Continuity.
                                                                        end))
                                         end)
       end.
+
+    Definition beta (q : part Q) (k : A -> tree) : tree :=
+      fun l => match l with
+            | [] => bind q (fun q => ret (inl q))
+            | a :: l => k a l
+            end.
+
+    Definition eta (o : part O) : tree :=
+      fun l => bind o (fun x => ret (inr x)).
 
     (* Definition 1, à la sequential continuity, i.e. extensional dialogue trees *)
     Definition continuous_via_extensional_dialogues F :=
@@ -67,46 +76,85 @@ Section Continuity.
             eapply H0. 1: firstorder. 1: eauto.
             eapply bind_hasvalue. eexists. split. eauto.
             eapply H7.
-        + eapply ret_hasvalue_inv in H3. subst.
-          eapply IHn in H2 as (L & HL & H). exists L. firstorder.
-          eapply bind_hasvalue. eexists. split. eapply H. eauto.
-          cbn. eapply ret_hasvalue.
+        + eapply undef_hasvalue in H3. tauto. 
     Qed.
 
-(* End Continuity. *)
+End Continuity.
 
-From SyntheticComputability Require defs_continuity.
+Arguments beta {_ _ _ _}.
+Arguments eta {_ _ _ _}.
 
-Definition factors (F : ((Q -> A) -> I -> O)) (F' : ((Q ↛ A) -> (I ↛ O))) :=
-  forall f : Q -> A, forall i : I,
-    F' (fun q => ret (f q)) i =! F f i.
+Ltac decomp x :=
+  let x1 := fresh "x" in
+  let x2 := fresh "x" in
+  try match type of x with
+    | sum ?A ?B => destruct x as [x1 | x2]; decomp x1; decomp x2
+    | prod ?A ?B => destruct x as [x1 x2]; decomp x1; decomp x2
+    end.
 
-Lemma bla F F' (a0 : A) (o0 : O) :
-  factors F F' ->
-  continuous_via_extensional_dialogues F' ->
-  defs_continuity.continuous_via_extensional_dialogues Q A I O F.
+Ltac next :=
+  unfold beta, eta in *;
+  (try now eauto);
+  match goal with
+  | [ H : exists n, evalt _ _ _ _ _ _ =! _ |- _ ] => destruct H
+  | [ H : bind ?x ?f =! ?v |- _ ] =>
+      let x := fresh "x" in
+      eapply bind_hasvalue in H as (x & ? & ?);
+      decomp x
+  | [ H : ret ?x =! ?v |- _ ] =>
+      eapply ret_hasvalue_inv in H;
+      inversion H;
+      subst;
+      clear H
+  | [ H : context [ match ?l ++ [_] with nil => _ | _ :: _ => _  end ] |- _ ] => destruct l; cbn in *
+  | [ H : ?l ++ [_] = nil |- _] => destruct l; cbn in *; congruence
+  | [ H : undef =! _ |- _ ] => eapply undef_hasvalue in H; tauto
+  | [ H : evalt _ _ _ _ _ ?n =! _ |- _ ] => destruct n; cbn in *
+  end.
+
+Goal forall P : partiality, continuous_via_extensional_dialogues nat nat nat nat (fun I => I).
 Proof.
-  intros Hfac (τ & H).
-  red.
-  assert (forall (f : Q -> A) (i : I) (o : O),
-             (exists n : nat, evalt (τ i) (fun q => ret (f q)) n =! inr (F f i))).
-  { intros. setoid_rewrite H. eapply Hfac. }
+  intros P.
+  exists (fun i => beta (ret i) (fun a => eta (ret a))).
+  intros f i o.
+  split.
+  - intros H. repeat next.
+  - intros H. exists 1. cbn.
+    now repeat (setoid_rewrite bind_hasvalue + eexists + eapply ret_hasvalue).
+Qed.
 
-  unshelve epose (fix τ (i : I) (l : list A) n :=
-       match n, l with
-       | 0, nil => _
-       | S n, _ => match τ i (firstn n l) n with
-                  | Some (inl (qs, q)) => _
-                  | Some (inr o) => Some (inr o)
-                  | None => None
-                  end
-       | _, _ => None
-       end).
+(* From SyntheticComputability Require defs_continuity. *)
 
-  1:{ specialize (H0 (fun _ => a0) i o0).
-      eapply mu_nat.mu_nat_dep in H0 as [k Hk].
-      destruct k; cbn in Hk.
-      - eapply bid
+(* Definition factors (F : ((Q -> A) -> I -> O)) (F' : ((Q ↛ A) -> (I ↛ O))) := *)
+(*   forall f : Q -> A, forall i : I, *)
+(*     F' (fun q => ret (f q)) i =! F f i. *)
+
+(* Lemma bla F F' (a0 : A) (o0 : O) : *)
+(*   factors F F' -> *)
+(*   continuous_via_extensional_dialogues F' -> *)
+(*   defs_continuity.continuous_via_extensional_dialogues Q A I O F. *)
+(* Proof. *)
+(*   intros Hfac (τ & H). *)
+(*   red. *)
+(*   assert (forall (f : Q -> A) (i : I) (o : O), *)
+(*              (exists n : nat, evalt (τ i) (fun q => ret (f q)) n =! inr (F f i))). *)
+(*   { intros. setoid_rewrite H. eapply Hfac. } *)
+
+(*   unshelve epose (fix τ (i : I) (l : list A) n := *)
+(*        match n, l with *)
+(*        | 0, nil => _ *)
+(*        | S n, _ => match τ i (firstn n l) n with *)
+(*                   | Some (inl (qs, q)) => _ *)
+(*                   | Some (inr o) => Some (inr o) *)
+(*                   | None => None *)
+(*                   end *)
+(*        | _, _ => None *)
+(*        end). *)
+
+(*   1:{ specialize (H0 (fun _ => a0) i o0). *)
+(*       eapply mu_nat.mu_nat_dep in H0 as [k Hk]. *)
+(*       destruct k; cbn in Hk. *)
+(*       - eapply bid *)
 
 
-  (* compute the index in H0, then use it in the def of τ *)
+(*   (* compute the index in H0, then use it in the def of τ *) *)

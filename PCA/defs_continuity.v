@@ -35,58 +35,60 @@ Definition continuous_via_dialogues F :=
 
 (* Definition 3: extensional dialogues *)
 
-Record is_total_tree (τ : list A -> option (Q + O)) :=
+Notation result Q O := (option (Q + O))%type.
+Definition ext_tree := list A -> result Q O.
+Notation ask q := (Some (inl q)).
+Notation reject := None.
+Notation output o := (Some (inr o)).
+
+Record is_total_tree (τ : ext_tree) :=
   {
-    is_prefix_closed : forall l l', τ (l ++ l') <> None -> τ l <> None ;
+    is_prefix_closed : forall l l', τ (l ++ l') <> reject -> τ l <> reject ;
     is_valid_nodes : forall l,
       match τ l with
-      | None => l <> nil
-      | Some (inl q) => forall a, τ (l ++ [a]) <> None
-      | Some (inr o) => forall a, τ (l ++ [a]) = None
+      | reject => l <> nil
+      | ask q => forall a, τ (l ++ [a]) <> reject
+      | output o => forall a, τ (l ++ [a]) = reject
       end
   }.
 
-Record is_total_tree' (τ : list A -> option (Q + O)) :=
+Record is_total_tree' (τ : ext_tree) :=
   {
-    is_not_empty : τ [] <> None ;
+    is_not_empty : τ [] <> reject ;
     is_valid_nodes' : forall l a,
-      τ (l ++ [a]) <> None <-> exists q, τ l = Some (inl q) ;
+      τ (l ++ [a]) <> reject <-> exists q, τ l = ask q ;
   }.
 
-(* TODO: prove they agree *)
-
-Definition is_total_tree_with_input (τ : I -> list A -> option (Q + O)) :=
+Definition is_total_tree_with_input (τ : I -> ext_tree) :=
   forall i : I, is_total_tree (τ i).
 
-Definition well_founded (τ : list A -> option (Q + O)) :=
+Definition well_founded (τ : ext_tree) :=
   forall f : nat -> A, exists n o,
-    τ (map f (seq 0 n)) = Some (inr o).
+    τ (map f (seq 0 n)) = output o.
 
-Notation tree := (list A -> option (Q + O)).
-
-Fixpoint evalt (τ : tree) (f : Q -> A) (n : nat) : option ((list A * Q) + O) :=
+Fixpoint evalt (τ : ext_tree) (f : Q -> A) (n : nat) : result (list A * Q) O :=
   match n with
   | 0 =>  match τ [] with
-         | None => None
-         | Some (inr o) => Some (inr o)
-         | Some (inl q) => Some (inl ([], q))
+         | ask q => ask ([], q)
+         | output o => output o
+         | reject => reject
          end
   | S n => match evalt τ f n with
-          | None => None
-          | Some (inr o) => Some (inr o)
-          | Some (inl (l, q)) =>
+          | reject => reject
+          | output o => output o
+          | ask (l, q) =>
               match τ (l ++ [f q]) with
-              | None => None
-              | Some (inr o) => Some (inr o)
-              | Some (inl q') => Some (inl (l ++ [f q], q'))
+              | reject => reject
+              | output o => output o
+              | ask q' => ask (l ++ [f q], q')
               end
           end
   end.
 
 Definition continuous_via_extensional_dialogues F :=
-  exists τ : I -> tree, is_total_tree_with_input τ
+  exists τ : I -> ext_tree, is_total_tree_with_input τ
                   /\ (forall i, well_founded (τ i))
-                  /\ forall f i, exists n, evalt (τ i) f n = Some (inr (F f i)).
+                  /\ forall f i, exists n, evalt (τ i) f n = output (F f i).
 
 (* Definition 4: modulus definition *)
 
@@ -127,11 +129,11 @@ Proof.
     now rewrite Hd.
 Qed.
 
-Fixpoint extension (d : dialogue) (l : list A) : option (Q + O) :=
+Fixpoint extension (d : dialogue) (l : list A) : result Q O :=
   match d, l with
-  | eta o, [] => Some (inr o)
-  | eta o, _ => None
-  | beta q k, [] => Some (inl q)
+  | eta o, [] => output o
+  | eta o, _ => reject
+  | beta q k, [] => ask q
   | beta q k, a :: l => extension (k a) l
   end.
 
@@ -147,7 +149,7 @@ Proof.
       now eapply H in H0.
     + intros l. destruct l.
       * cbn. intros a. destruct (H a) as [_ Hn].
-        specialize (Hn []). destruct extension as [ [] | ]; congruence.
+        specialize (Hn []). destruct extension; congruence.
       * cbn.  destruct (H a) as [_ Hn].  specialize (Hn l).
         destruct extension; eauto. congruence.
 Qed.
@@ -163,11 +165,11 @@ Proof.
 Qed.
 
 Lemma evalt_plus' τ f n1 n2 l q :
-  evalt τ f n1 = Some (inl (l, q)) ->
+  evalt τ f n1 = ask (l, q) ->
   match evalt (fun l' => τ (l ++ [f q] ++ l')) f n2 with
-  | Some (inr o) => evalt τ f (S n1 + n2) = Some (inr o)
-  | Some (inl (l', q')) => evalt τ f (S n1 + n2) = Some (inl (l ++ [f q] ++ l', q'))
-  | None => evalt τ f (S n1 + n2) = None
+  | output o => evalt τ f (S n1 + n2) = output o
+  | ask (l', q') => evalt τ f (S n1 + n2) = ask (l ++ [f q] ++ l', q')
+  | reject => evalt τ f (S n1 + n2) = reject
   end.
 Proof.
   induction n2 in n1, l, q |- *.
@@ -182,9 +184,9 @@ Proof.
 Qed.
 
 Lemma evalt_plus τ f n1 n2 l q o :
-  evalt τ f n1 = Some (inl (l, q)) ->
-  evalt (fun l' => τ (l ++ [f q] ++ l')) f n2 = Some (inr o) ->
-  evalt τ f (S n1 + n2) = Some (inr o).
+  evalt τ f n1 = ask (l, q) ->
+  evalt (fun l' => τ (l ++ [f q] ++ l')) f n2 = output o ->
+  evalt τ f (S n1 + n2) = output o.
 Proof.
   intros.
   eapply evalt_plus' in H.
@@ -215,21 +217,21 @@ Qed.
    Proof in paper by Herbelin, Brede at LICS 21
 *)
 
-Fixpoint evalt' (τ : tree) (f : Q -> A) (n : nat) : option ((list Q * Q) + (list Q * O)) :=
+Fixpoint evalt' (τ : ext_tree) (f : Q -> A) (n : nat) : result (list Q * Q) (list Q * O) :=
   match n with
   | 0 =>  match τ [] with
-         | None => None
-         | Some (inr o) => Some (inr ([], o))
-         | Some (inl q) => Some (inl ([], q))
+         | reject => reject
+         | output o => output ([], o)
+         | ask q => ask ([], q)
          end
   | S n => match evalt' τ f n with
-          | None => None
-          | Some (inr o) => Some (inr o)
-          | Some (inl (l, q)) =>
+          | reject => reject
+          | output o => output o
+          | ask (l, q) =>
               match τ (map f l ++ [f q]) with
-              | None => None
-              | Some (inr o) => Some (inr (l ++ [q], o))
-              | Some (inl q') => Some (inl (l ++ [q], q'))
+              | reject => reject
+              | output o => output (l ++ [q], o)
+              | ask q' => ask (l ++ [q], q')
               end
           end
   end.
@@ -269,11 +271,11 @@ Proof.
   all: eapply evalt_det' in H; eauto; congruence.
 Qed.
 
-Lemma evalt'_Forall (τ : tree) (f : Q -> A) (n : nat) g :
+Lemma evalt'_Forall (τ : ext_tree) (f : Q -> A) (n : nat) g :
   match evalt' τ f n with
-  | Some (inr (l, o)) => Forall (fun q : Q => f q = g q) l -> evalt' τ g n = Some (inr (l, o))
-  | Some (inl (l, q)) => Forall (fun q : Q => f q = g q) l -> evalt' τ g n = Some (inl (l, q)) 
-  | None => True
+  | output (l, o) => Forall (fun q : Q => f q = g q) l -> evalt' τ g n = output (l, o)
+  | ask (l, q) => Forall (fun q : Q => f q = g q) l -> evalt' τ g n = ask (l, q)
+  | reject => True
   end.
 Proof.
   induction n; cbn.
@@ -315,8 +317,6 @@ Proof.
   epose proof (evalt'_Forall _ _ _ _) as H0. rewrite E in H0.
   now eapply H0 in H.
 Qed.
-
-(* From Equations Require Import Equations. *)
 
 Lemma extensional_dialogues_to_modulus' F :
   (forall (x y : A), {x = y} + {x <> y}) ->
@@ -378,20 +378,85 @@ Proof.
   intros. exfalso. congruence.
 Qed.
 
-(* Conjecture:
-   If Q has decidable equality and A is finite (exists l, forall a : A, In a l)
-   then we can prove
-  forall F, modulus_continuous F -> continuous_via_extensional_dialogues F
+Section fixM.
 
-let l = [a0 , ... an ]
+  Lemma rev_list_rect : forall P:list A-> Type,
+    P [] ->
+    (forall (a:A) (l:list A), P (rev l) -> P (rev (a :: l))) ->
+    forall l:list A, P (rev l).
+  Proof.
+    intros P ? ? l; induction l; auto.
+  Qed.
 
-intuition: search for the finite prefix of f that matters, which can be found by trying M many times. something like
+  Theorem rev_rect : forall P:list A -> Type,
+    P [] ->
+    (forall (x:A) (l:list A), P l -> P (l ++ [x])) -> forall l:list A, P l.
+  Proof.
+    intros P ? ? l. rewrite <- (rev_involutive l).
+    apply (rev_list_rect P); cbn; auto.
+  Qed.
 
-τ [] := let L := M (fun _ => a0) in
-        if this is [], then return F (fun _ => a0)
-        if this is q :: L', then ask M (fun q' => if q = q' then f q else a0)
+  Definition to_ext_tree' (τ : list (Q * A) -> result Q O)
+    : list A -> result (list (Q * A) * Q) O :=
+    rev_rect (fun _ => result (list (Q * A) * Q) O)
+      (match τ [] with
+       | reject => reject
+       | ask q => ask ([], q)
+       | output o => output o
+       end)
+      (fun a l rec => match rec with
+                   | reject => reject
+                   | output _ => reject
+                   | ask (l, q) => match τ (l ++ [(q,a)]) with
+                                  | reject => reject
+                                  | ask q => ask (l ++ [(q,a)], q)
+                                  | output o => output o
+                                  end
+                   end
+      ).
 
-*)
+  Definition to_ext_tree τ :=
+    fun l => match to_ext_tree' τ l with
+          | reject => reject
+          | ask (l, q) => ask q
+          | output o => output o
+          end.
+
+  Variable a0 : A.
+  Variable M : (Q -> A) -> list Q.
+  Variable F : (Q -> A) -> O.
+
+  Definition fin_to_fun (l : list (Q * A)) (q : Q) : A.
+  Admitted.
+
+  Definition dec_subset {X} (l1 : list X) (l2 : list X) :
+    (incl l1 l2) + {x | In x l1 /\ ~ In x l2}.
+  Admitted.
+
+  Definition try (l : list (Q * A)) : result Q O :=
+    match
+      dec_subset (map fst l) (M (fin_to_fun l))
+    with
+    | inl _ => output (F (fin_to_fun l))
+    | inr (exist _ q _) => ask q
+    end.
+
+End fixM.
+
+(* Conjecture: we can prove the converse as well, at least for finite A.
+   Dome something like the following, but possibly 
+ *)
+Lemma bla : forall F (a0 : A), continuous_via_modulus F -> continuous_via_extensional_dialogues F.
+Proof.
+  intros F a0 [M HM]. red in HM.
+  exists (fun i => to_ext_tree (try a0  (fun f => M f i) (fun f => F f i))).
+  repeat eapply conj.
+  - intros i. econstructor.
+    + admit.
+    + admit.
+  - intros i. admit.
+  - intros f i. admit.
+Admitted.
 
 Lemma eloquency_to_modulus F :
   continuous_via_dialogues F -> continuous_via_modulus F.
@@ -434,7 +499,7 @@ Inductive interrogation (f : Q -> A) : list A -> (list A -> option (Q + O)) -> P
                 τ l = Some (inl q) ->
                 interrogation f (l ++ [a]) τ.
 
-Fixpoint get (τ : tree) (f : Q -> A) n :=
+Fixpoint get (τ : ext_tree) (f : Q -> A) n :=
   match n with
   | 0 => []
   | S n => let l := (get τ f n) in
@@ -527,7 +592,7 @@ Proof.
       cbn in *. now rewrite Hno. lia. econstructor; eauto.
 Qed.
 
-Definition tofun (τ : tree) (H : is_total_tree τ) (wf : well_founded τ) (f : Q -> A) : O.
+Definition tofun (τ : ext_tree) (H : is_total_tree τ) (wf : well_founded τ) (f : Q -> A) : O.
   edestruct epsilon_smallest as [n [Hn _]].
   2: eapply evalt_wellfounded_ex with (f := f); eauto.
   intros n. cbn. destruct evalt as [ [ [] | ] | ]; clear; try abstract firstorder (congruence || eauto).
@@ -538,7 +603,7 @@ Definition tofun (τ : tree) (H : is_total_tree τ) (wf : well_founded τ) (f : 
   - exfalso. abstract (clear - Hn; firstorder congruence).
 Defined.
 
-Lemma tofun_continuous (τ : I -> tree) (H : forall i, is_total_tree (τ i)) (wf : forall i, well_founded (τ i)) :
+Lemma tofun_continuous (τ : I -> ext_tree) (H : forall i, is_total_tree (τ i)) (wf : forall i, well_founded (τ i)) :
   continuous_via_extensional_dialogues (fun f i => tofun (τ i) (H i) (wf i) f).
 Proof.
   exists τ. repeat eapply conj; [ eauto.. | ].
