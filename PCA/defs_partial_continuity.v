@@ -4,7 +4,7 @@ From SyntheticComputability Require Import partial.
 Require Import Setoid.
 
 Require Import List.
-Import ListNotations.
+Import ListNotations EmbedNatNotations.
 
 Section Continuity.
 
@@ -78,6 +78,23 @@ Section Continuity.
             eapply H7.
         + eapply undef_hasvalue in H3. tauto. 
     Qed.
+
+    Definition modulus_function_continuous (F : (Q ↛ A) -> (I ↛ O)) :=
+      exists M, 
+      forall f i o, F f i =! o ->
+               exists L, M f i =! L /\
+               (forall i', In i' L -> exists o', f i' =! o') /\ (forall f', (forall y b, In y L -> f y =! b -> f' y =! b) -> F f' i =! o).
+
+    Notation "f ≺ g" := (forall x o, f x =! o -> g x =! o) (at level 30).
+
+    Definition directed {X Y} (P : nat -> (X ↛ Y)) :=
+      forall i1 i2, exists j, P i1 ≺ P j /\ P i2 ≺ P j.
+
+    Definition union {X Y} (P : nat -> (X ↛ Y)) :=
+      fun x => bind (mu_tot (fun! ⟨n, m⟩ => match seval (P n x) m with None => false | Some _ => true end)) (fun! ⟨n, m⟩ => match seval (P n x) m with Some o => ret o | _ => undef end).
+
+    Definition cpo_continuous (F : (Q ↛ A) -> (I ↛ O)) :=
+      forall P (H : directed P) i o, (exists n, F (P n) i =! o) <-> F (union P) i =! o.
 
 End Continuity.
 
