@@ -108,9 +108,35 @@ Ltac next :=
       clear H
   | [ H : context [ match ?l ++ [_] with nil => _ | _ :: _ => _  end ] |- _ ] => destruct l; cbn in *
   | [ H : ?l ++ [_] = nil |- _] => destruct l; cbn in *; congruence
+  | [ H : _ :: _ = _ :: _ |- _ ] => inversion H; subst; clear H
   | [ H : undef =! _ |- _ ] => eapply undef_hasvalue in H; tauto
   | [ H : evalt _ _ _ _ _ ?n =! _ |- _ ] => destruct n; cbn in *
   end.
+
+(* Notation "'beta'" := (@beta _ nat nat nat) (at level 10). *)
+
+
+Ltac simpl_assms :=
+  repeat next.
+
+Ltac simpl_goal :=
+  repeat (setoid_rewrite bind_hasvalue + eexists + eapply ret_hasvalue); eauto.
+
+Ltac simpl_cont := simpl_assms; simpl_goal.
+
+Ltac prove_cont n :=
+  split; intros H; [ exists n | simpl_cont ].
+
+Goal forall P : partiality, continuous_via_extensional_dialogues nat nat nat nat
+                         (fun f i => bind (f i) (fun x => f x)).
+Proof.
+  intros P.
+  exists (fun i : nat => beta (ret i) (fun a => beta (ret a) (fun o => eta (ret o)))).
+  intros f i o.
+  split.
+  - intros H. simpl_cont.
+  - intros H. exists 2. simpl_cont.
+Qed.
 
 Goal forall P : partiality, continuous_via_extensional_dialogues nat nat nat nat (fun I => I).
 Proof.
@@ -118,9 +144,8 @@ Proof.
   exists (fun i => beta (ret i) (fun a => eta (ret a))).
   intros f i o.
   split.
-  - intros H. repeat next.
-  - intros H. exists 1. cbn.
-    now repeat (setoid_rewrite bind_hasvalue + eexists + eapply ret_hasvalue).
+  - intros H. simpl_cont.
+  - intros H. exists 1. simpl_cont.
 Qed.
 
 (* From SyntheticComputability Require defs_continuity. *)
