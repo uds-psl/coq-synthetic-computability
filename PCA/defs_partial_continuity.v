@@ -124,28 +124,21 @@ Ltac simpl_goal :=
 
 Ltac simpl_cont := simpl_assms; simpl_goal.
 
-Ltac prove_cont n :=
-  split; intros H; [ exists n | simpl_cont ].
+Ltac prove_cont f n :=
+  exists f;
+  split; intros H; [ | exists n ] ; simpl_cont.
 
 Goal forall P : partiality, continuous_via_extensional_dialogues nat nat nat nat
                          (fun f i => bind (f i) (fun x => f x)).
 Proof.
   intros P.
-  exists (fun i : nat => beta (ret i) (fun a => beta (ret a) (fun o => eta (ret o)))).
-  intros f i o.
-  split.
-  - intros H. simpl_cont.
-  - intros H. exists 2. simpl_cont.
+  prove_cont (fun i : nat => beta (ret i) (fun a => beta (ret a) (fun o => eta (ret o)))) 2.
 Qed.
 
 Goal forall P : partiality, continuous_via_extensional_dialogues nat nat nat nat (fun I => I).
 Proof.
   intros P.
-  exists (fun i => beta (ret i) (fun a => eta (ret a))).
-  intros f i o.
-  split.
-  - intros H. simpl_cont.
-  - intros H. exists 1. simpl_cont.
+  prove_cont (fun i : nat => beta (ret i) (fun a : nat => eta (ret a))) 1.
 Qed.
 
 (* From SyntheticComputability Require defs_continuity. *)
