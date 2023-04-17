@@ -77,10 +77,39 @@ Section PostsTheorem.
     - apply red_m_impl_red_T, jumpNKspec.
   Qed.
 
+  Lemma ΣΠ_disj :
+     (forall n k (p1: vec nat k -> Prop), isΣsem n p1 -> forall p2, isΣsem n p2 -> isΣsem n (fun v => p1 v \/ p2 v) /\ isΣsem n (fun v => p1 v /\ p2 v))
+  /\ (forall n k (p1: vec nat k -> Prop), isΠsem n p1 -> forall p2, isΠsem n p2 -> isΠsem n (fun v => p1 v \/ p2 v) /\ isΠsem n (fun v => p1 v /\ p2 v)).
+  Proof.
+    apply isΣsem_isΠsem_mutind.
+    - intros. depelim H. split; admit.
+    - intros. depelim H0. split.
+      + erewrite PredExt.
+        econstructor. edestruct H. exact H0. eapply H1.
+        firstorder.
+      + edestruct H. exact H0.
+        unshelve eapply isΣsem_m_red_closed.
+        exact k. 
+        intros v.
+        exact (exists h, p (fst (unembed h) :: v) /\ p0 (snd (unembed h) :: v)).
+        2:{ exists (fun v => v); red.
+            firstorder. exists (embed (x1, x0)). rewrite embedP; cbn. firstorder.
+        }
+        erewrite PredExt. econstructor.
+        Unshelve.
+        3:{ intros v. depelim v. exact (p (fst (unembed h) :: v) /\ p0 (snd (unembed h) :: v)). }
+        2: cbn; firstorder.
+        cbn.
+        unshelve eapply isΣsem_m_red_closed.
+        admit.
+  Admitted.
+
   Lemma Π_disj {k} (p1 p2 : (vec nat k) -> Prop) n : 
     isΠsem n p1 -> isΠsem n p2 -> isΠsem n (fun v => p1 v \/ p2 v).
   Proof.
-  Admitted.
+    intros.
+    eapply ΣΠ_disj; eauto.
+  Qed.
 
   Lemma mu_ter f :
     (exists n, f n =! true /\ forall x, x < n -> ter (f n)) ->
