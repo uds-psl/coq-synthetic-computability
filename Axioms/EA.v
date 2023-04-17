@@ -292,7 +292,7 @@ Require Import List.
 Lemma generative_W :   generative (fun! ⟨ n, m ⟩ => W n m).
 Proof.
   eapply unbounded_generative. 
-  intros x y; destruct (numbers.nat_eq_dec x y); eauto.
+  intros x y; destruct (Dec.nat_eq_dec x y); eauto.
   destruct (do_EA (fun _ => True)) as [c_top H_top]. {
     eapply decidable_enumerable. 2:eauto. exists (fun _ => true). firstorder.
   }

@@ -77,42 +77,63 @@ Section PostsTheorem.
     - apply red_m_impl_red_T, jumpNKspec.
   Qed.
 
-  Axiom lem : LEM.
+  Lemma Π_disj {k} (p1 p2 : (vec nat k) -> Prop) n : 
+    isΠsem n p1 -> isΠsem n p2 -> isΠsem n (fun v => p1 v \/ p2 v).
+  Proof.
+  Admitted.
 
-  Lemma Σ_semi_decidable_in_Π1 {k} (p: (vec nat k) -> Prop) n : 
+  Lemma mu_ter f :
+    (exists n, f n =! true /\ forall x, x < n -> ter (f n)) ->
+    ter (mu f).
+  Proof.
+    intros (n & H1 & H2).
+  Admitted.
+
+  Lemma Σ_semi_decidable_in_Π1 {k} (p: (vec nat k) -> Prop) n : DNE_Σ n ->
       isΣsem (S n) p -> exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p.
   Proof.
-    intros H. depelim H.  rename p0 into p'. rename H into Hp'.
+    intros dne H. depelim H.  rename p0 into p'. rename H into Hp'.
     exists p'. split;[easy|].
     unshelve eapply mk_semi_dec with
-    (r := fun R v => exists n, R (n::v) true /\ forall n', n' < n -> R (n' :: v) false).
+    (r := fun R v => exists n, R (n::v) true /\ forall n', n' < n -> exists b, R (n' :: v) b).
     intros f v. refine (bind (mu (fun x => f (x :: v))) (fun _ => ret I)).
     3:{ cbn. intros. split.
         2: firstorder.
-        intros H.
-        eapply Wf_nat.dec_inh_nat_subset_has_unique_least_element in H.
-        2: intros; eapply lem.
-        destruct H as (? & [] & ?).
-        exists x0. split. firstorder. intros ? ? ?.
-        eapply H0 in H3. lia.
+        intros (? & H).
+        exists x0. split. eauto.
+        intros. clear H H0.
+        enough ((p' (n' :: x) \/ ~ p' (n' :: x))) as [|].
+        { exists true; firstorder. }
+        { exists false; firstorder. }
+        rewrite DNE_equiv_S in dne.
+        pattern (n' :: x).
+        eapply dne. eapply Π_disj.
+        2:{ eapply negΣinΠsem.
+           eapply isΣΠn_In_ΠΣSn; eauto.
+           eauto.
+        }
+        eapply isΣΠn_In_ΣΠSn with (l := 1). eauto.
+        tauto.
     }
     - intros f R Hf v. cbn. split.
       + intros (? & ? % mu_hasvalue & _) % bind_hasvalue.
         destruct H.
-        exists x. split. eapply Hf. eauto. intros.
-        eapply Hf. eauto.
+        exists x. split. eapply Hf. eauto.
+        exists false. eapply Hf. eauto.
       + intros (x & ? & ?).
-        eapply bind_hasvalue. exists x. split. 2: eapply ret_hasvalue.
-        eapply mu_hasvalue. firstorder.
+        eapply bind_hasvalue. red in Hf. setoid_rewrite <- Hf in H. setoid_rewrite <- Hf in H0.
+        enough (exists a : nat, mu (fun x0 : nat => f (x0 :: v)) =! a) as []. { exists x0. firstorder. eapply ret_hasvalue. }
+        eapply mu_ter. firstorder.
     - intros R v [x Hx]. exists (List.map (fun x => (x::v)) (seq 0 (S x))). split.
       + intros. eapply in_map_iff in H as (? & ? & ?). subst.
         eapply in_seq in H0 as [_ ?]. cbn in H.
         assert (x0 < x \/ x0 = x) as [Hl | ->] by lia.
-        * exists false; firstorder.
+        * eapply Hx. lia.
         * exists true; firstorder.
       + intros. exists x. firstorder.
         * eapply H. eapply in_map_iff. eexists. split. eauto. eapply in_seq. lia. eauto.
-        * eapply H. eapply in_map_iff. eexists. split. eauto. eapply in_seq. lia. now eapply H1. 
+        * edestruct H1. eapply H2.
+          exists x0. eapply H. eapply in_map_iff. eexists. split. eauto. eapply in_seq. lia. eauto.
   Qed.
 
   Lemma Σ_semi_decidable_in_Π2 {k} (p: (vec nat k) -> Prop) n (DN : DNE_Σ n):
@@ -168,7 +189,7 @@ Section PostsTheorem.
   Lemma Σ_semi_decidable_in_Π {k} (p: (vec nat k) -> Prop) n (DN : DNE_Σ n) :
     isΣsem (S n) p <-> exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p.
   Proof.
-    split; apply Σ_semi_decidable_in_Π1 + apply Σ_semi_decidable_in_Π2. eauto.
+    split; apply Σ_semi_decidable_in_Π1 + apply Σ_semi_decidable_in_Π2. all: eauto. 
   Qed.
 
   Hint Resolve DNEimpl.
