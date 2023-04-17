@@ -77,30 +77,42 @@ Section PostsTheorem.
     - apply red_m_impl_red_T, jumpNKspec.
   Qed.
 
-  Lemma Σ_semi_decidable_in_Π1 {k} (p: (vec nat k) -> Prop) n:
+  Axiom lem : LEM.
+
+  Lemma Σ_semi_decidable_in_Π1 {k} (p: (vec nat k) -> Prop) n : 
       isΣsem (S n) p -> exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p.
   Proof.
-    intros H. inversion H as [| n' k' p' Hp' eqN eqk eqp]; subst.
+    intros H. depelim H.  rename p0 into p'. rename H into Hp'.
     exists p'. split;[easy|].
     unshelve eapply mk_semi_dec with
-    (r := fun R v => exists n, R (n::v) true)
-    (r' := fun f v => mkpart (fun! ⟨x,m⟩ => match seval (f (x::v)) m with
-      | Some true => Some I 
-      | _ => None
-    end)).
-    + intros f R Hf v. rewrite mkpart_hasvalue;[|intros ? ? [] []; reflexivity].
-      split.
-      * intros [em H']. destruct unembed as [x m]. exists x.
-        destruct seval as [[]|] eqn:eq; try congruence.
-        apply Hf. apply seval_hasvalue. eauto.
-      * intros [x H'%Hf].
-        apply seval_hasvalue in H' as [m Hf'].
-        exists (embed (x, m)).
-        rewrite embedP.
-        destruct seval as [[]|] eqn:eq; congruence.
-    + intros R v [x Hx]. exists (List.cons (x::v) List.nil).
-      split; [exists true|]; firstorder congruence.
-    + now apply Eqdep.EqdepTheory.inj_pair2 in eqp as <-.
+    (r := fun R v => exists n, R (n::v) true /\ forall n', n' < n -> R (n' :: v) false).
+    intros f v. refine (bind (mu (fun x => f (x :: v))) (fun _ => ret I)).
+    3:{ cbn. intros. split.
+        2: firstorder.
+        intros H.
+        eapply Wf_nat.dec_inh_nat_subset_has_unique_least_element in H.
+        2: intros; eapply lem.
+        destruct H as (? & [] & ?).
+        exists x0. split. firstorder. intros ? ? ?.
+        eapply H0 in H3. lia.
+    }
+    - intros f R Hf v. cbn. split.
+      + intros (? & ? % mu_hasvalue & _) % bind_hasvalue.
+        destruct H.
+        exists x. split. eapply Hf. eauto. intros.
+        eapply Hf. eauto.
+      + intros (x & ? & ?).
+        eapply bind_hasvalue. exists x. split. 2: eapply ret_hasvalue.
+        eapply mu_hasvalue. firstorder.
+    - intros R v [x Hx]. exists (List.map (fun x => (x::v)) (seq 0 (S x))). split.
+      + intros. eapply in_map_iff in H as (? & ? & ?). subst.
+        eapply in_seq in H0 as [_ ?]. cbn in H.
+        assert (x0 < x \/ x0 = x) as [Hl | ->] by lia.
+        * exists false; firstorder.
+        * exists true; firstorder.
+      + intros. exists x. firstorder.
+        * eapply H. eapply in_map_iff. eexists. split. eauto. eapply in_seq. lia. eauto.
+        * eapply H. eapply in_map_iff. eexists. split. eauto. eapply in_seq. lia. now eapply H1. 
   Qed.
 
   Lemma Σ_semi_decidable_in_Π2 {k} (p: (vec nat k) -> Prop) n (DN : DNE_Σ n):

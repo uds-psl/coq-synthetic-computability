@@ -387,6 +387,7 @@ Proof.
     assert (l1 = l) by admit. assert (a = x) by admit. subst.
     specialize (IHl1 (fun l2 => τ (l2 ++ [f q])) n).
     cbn in IHl1.
+Admitted.
 
 (*   assert (n = 5) as -> by admit. *)
 (*   assert (q : Q) by admit. *)
@@ -477,3 +478,5 @@ Proof.
       eapply Ask with (l := []); eauto.
       econstructor.
 Qed.
+
+End fix_types.

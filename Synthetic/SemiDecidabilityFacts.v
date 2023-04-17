@@ -225,7 +225,7 @@ Proof.
   destruct (unembed (f' x)). eapply (Hg (_, _)). eauto.
 Qed.
 
-(* Lemma sdec_compute_lor {X} {p q : X -> Prop} :
+(* Lemma sdec_commpute_lor {X} {p q : X -> Prop} :
   semi_decidable p -> semi_decidable q -> (forall x, p x \/ q x) -> exists f : X -> bool, forall x, if f x then p x else q x.
 Proof.
   intros [f_p Hp] [f_q Hq] Ho.

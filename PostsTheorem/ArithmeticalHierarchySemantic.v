@@ -3,7 +3,7 @@
 From SyntheticComputability.Shared Require Import embed_nat.
 Require Import Lia Vector Fin List.
 Import Vector.VectorNotations.
-From Undecidability.FOL Require Import Syntax.
+(* From Undecidability.FOL Require Import Syntax. *)
 From SyntheticComputability.Synthetic Require Import Definitions.
 
 Require Import PeanoNat (* Nat.eqb *) Bool.
@@ -590,7 +590,7 @@ Section ArithmeticalHierarchySemantic.
 
   Definition stable {X} (p : X -> Prop) := forall x, ~~ p x -> p x.
   Definition DNE_Π n := forall k (p: vec nat k -> Prop), isΠsem n p -> stable p.
-  Definition DNE_Σ n := forall k (p: vec nat k -> Prop), isΣsem n p -> stable p.
+  Definition DNE_Σ n := forall k (p: vec nat k -> Prop), isΣsem n p -> stable p.    
 
   Lemma DNE_equiv_S n :
     DNE_Σ n <-> DNE_Π (S n).

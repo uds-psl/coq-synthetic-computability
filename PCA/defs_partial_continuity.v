@@ -20,7 +20,7 @@ Section Continuity.
                                 | (inl q) => ret (inl ([], q))
                                 end)
       | S n => bind (evalt τ f n) (fun x => match x with
-                                        | (inr o) => undef
+                                        | (inr o) => ret (inr o)
                                         | (inl (l, q)) =>
                                             bind (f q) (fun v => 
                                             bind (τ (l ++ [v])) (fun x => match x with
@@ -41,7 +41,13 @@ Section Continuity.
 
     (* Definition 1, à la sequential continuity, i.e. extensional dialogue trees *)
     Definition continuous_via_extensional_dialogues F :=
-      exists τ : I -> tree, forall f i o, (exists n, evalt (τ i) f n =! inr o) <-> F f i =! o.
+      exists τ : I -> tree,
+      forall f i o, (exists n, evalt (τ i) f n =! inr o) <-> F f i =! o.
+
+    Definition continuous_via_extensional_dialogues' F :=
+      exists τ : I -> tree,
+        (forall i l o, τ i l =! inr o -> forall l', τ i (l ++ l') =! inr o) ->
+        forall f i o, (exists n, evalt (τ i) f n =! inr o) <-> F f i =! o.
 
     (* Definition 2, as in Niklas Mück's BSc thesis *)
     Definition continuous_f (F : (Q ↛ A) -> (I ↛ O)) :=
@@ -76,7 +82,15 @@ Section Continuity.
             eapply H0. 1: firstorder. 1: eauto.
             eapply bind_hasvalue. eexists. split. eauto.
             eapply H7.
-        + eapply undef_hasvalue in H3. tauto. 
+        + eapply ret_hasvalue_iff in H3; subst.
+          eapply IHn in H2 as (L & HL & H).
+          exists L. split.
+          * auto.
+          * intros. eapply bind_hasvalue.
+            eexists.
+            split. 1: firstorder.
+            cbn.
+            eapply ret_hasvalue. 
     Qed.
 
     Definition modulus_function_continuous (F : (Q ↛ A) -> (I ↛ O)) :=
@@ -95,6 +109,41 @@ Section Continuity.
 
     Definition cpo_continuous (F : (Q ↛ A) -> (I ↛ O)) :=
       forall P (H : directed P) i o, (exists n, F (P n) i =! o) <-> F (union P) i =! o.
+
+    Definition lprefixes {X Y} (d : (forall x y : X, {x = y} + {x <> y})) (e : nat -> list X) (f : X ↛ Y) : nat -> (X ↛ Y) :=
+      fun n x => if in_dec d x (e n) then f x else undef.
+
+    Lemma lprefixes_directed {X Y} d e (f : X ↛ Y) :
+      (forall x : X, exists n, In x (e n)) ->
+      (forall n, exists l, e (S n) = e n ++ l) ->
+      directed (lprefixes d e f).
+    Proof.
+      intros Henum Hcumul i1 i2.
+    Admitted.
+
+    Lemma lprefixes_union {X Y} d e (f : X ↛ Y) :
+      (forall x : X, exists n, In x (e n)) ->
+      (forall n, exists l, e (S n) = e n ++ l) -> 
+      forall x, partial.equiv (f x) (union (lprefixes d e f) x).
+    Proof.
+    Admitted.
+
+    Lemma bla F (d : (forall x y : A, {x = y} + {x <> y})) e :
+      (forall x : A, exists n, In x (e n)) ->
+      (forall n, exists l, e (S n) = e n ++ l) ->
+      continuous_f F -> cpo_continuous F.
+    Proof.
+      intros Henum Hcumul H f Hf i o. split.
+      - intros [n [L (H1 & H2)] % H].
+        eapply H2. intros.
+        eapply bind_hasvalue.
+        admit.
+      - intros [L (H1 & H2)] % H. 
+    Admitted.        
+
+
+
+
 
 End Continuity.
 
@@ -145,18 +194,37 @@ Ltac prove_cont f n :=
   exists f;
   split; intros H; [ | exists n ] ; simpl_cont.
 
-Goal forall P : partiality, continuous_via_extensional_dialogues nat nat nat nat
-                         (fun f i => bind (f i) (fun x => f x)).
-Proof.
-  intros P.
-  prove_cont (fun i : nat => beta (ret i) (fun a => beta (ret a) (fun o => eta (ret o)))) 2.
-Qed.
+(* Goal forall P : partiality, continuous_via_extensional_dialogues nat nat nat nat *)
+(*                          (fun f i => bind (f i) (fun x => f x)). *)
+(* Proof. *)
+(*   intros P. *)
+(*   prove_cont (fun i : nat => beta (ret i) (fun a => beta (ret a) (fun o => eta (ret o)))) 2. *)
+(* Qed. *)
 
-Goal forall P : partiality, continuous_via_extensional_dialogues nat nat nat nat (fun I => I).
-Proof.
-  intros P.
-  prove_cont (fun i : nat => beta (ret i) (fun a : nat => eta (ret a))) 1.
-Qed.
+(* Goal forall P : partiality, continuous_via_extensional_dialogues nat nat nat nat (fun I => I). *)
+(* Proof. *)
+(*   intros P. *)
+(*   prove_cont (fun i : nat => beta (ret i) (fun a : nat => eta (ret a))) 1. *)
+(* Qed. *)
+
+(* Goal forall P : partiality, forall O, *)
+(*     forall F G, continuous_via_extensional_dialogues' bool nat nat O F -> *)
+(*            continuous_via_extensional_dialogues' bool nat nat O G -> *)
+(*            continuous_via_extensional_dialogues bool nat nat (O + O) (fun f x => par (F f x) (G f x)). *)
+(* Proof. *)
+(*   intros P O F G [T1 HT1] [T2 HT2]. *)
+(*   exists (fun i l => bind (par (T1 i l) (T2 i l)) (fun x => match x with inl (inl n) => ret (inl n) *)
+(*                                                          | inl (inr n) => ret (inr (inl n)) *)
+(*                                                          | inr (inr n) => ret (inr (inr n)) *)
+(*                                                          | inr (inl n) => ret (inl n) *)
+(*                                                  end)). *)
+(*   intros f i o. split. *)
+(*   - admit. *)
+(*   - destruct o. intros [n Hn] % par_hasvalue1 % HT1. *)
+    
+
+(*   prove_cont (fun i : nat => beta (ret i) (fun a : nat => eta (ret a))) 1. *)
+(* Qed. *)
 
 (* From SyntheticComputability Require defs_continuity. *)
 
@@ -193,3 +261,4 @@ Qed.
 
 
 (*   (* compute the index in H0, then use it in the def of τ *) *)
+

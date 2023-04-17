@@ -13,7 +13,7 @@ clean: Makefile.coq
 
 mkCoqProject: _CoqProject.in
 	yes | cp _CoqProject.in _CoqProject
-	git ls-files "*.v" | grep -v "Models/" | grep -v "PostsTheorem/" >> _CoqProject
+	git ls-files "*.v" | grep -v "Models/" | grep -v "ArithmeticHierarchy/" >> _CoqProject
 
 models: _CoqProject.in
 	yes | cp _CoqProject.in _CoqProject
@@ -37,6 +37,3 @@ force Makefile _CoqProject.in: ;
 	@+$(MAKE) -f Makefile.coq $@
 
 .PHONY: all html clean force mkCoqProject deploy
-
-deploy: html
-	rsync -r website/ forster@alfred.ps.uni-saarland.de:~/public_html/thesis/synthetic-coq/
