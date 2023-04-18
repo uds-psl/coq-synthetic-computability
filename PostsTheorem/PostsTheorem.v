@@ -77,51 +77,10 @@ Section PostsTheorem.
     - apply red_m_impl_red_T, jumpNKspec.
   Qed.
 
-  Lemma ΣΠ_disj :
-     (forall n k (p1: vec nat k -> Prop), isΣsem n p1 -> forall p2, isΣsem n p2 -> isΣsem n (fun v => p1 v \/ p2 v) /\ isΣsem n (fun v => p1 v /\ p2 v))
-  /\ (forall n k (p1: vec nat k -> Prop), isΠsem n p1 -> forall p2, isΠsem n p2 -> isΠsem n (fun v => p1 v \/ p2 v) /\ isΠsem n (fun v => p1 v /\ p2 v)).
-  Proof.
-    apply isΣsem_isΠsem_mutind.
-    - intros. depelim H. split; admit.
-    - intros. depelim H0. split.
-      + erewrite PredExt.
-        econstructor. edestruct H. exact H0. eapply H1.
-        firstorder.
-      + edestruct H. exact H0.
-        unshelve eapply isΣsem_m_red_closed.
-        exact k. 
-        intros v.
-        exact (exists h, p (fst (unembed h) :: v) /\ p0 (snd (unembed h) :: v)).
-        2:{ exists (fun v => v); red.
-            firstorder. exists (embed (x1, x0)). rewrite embedP; cbn. firstorder.
-        }
-        erewrite PredExt. econstructor.
-        Unshelve.
-        3:{ intros v. depelim v. exact (p (fst (unembed h) :: v) /\ p0 (snd (unembed h) :: v)). }
-        2: cbn; firstorder.
-        cbn.
-        unshelve eapply isΣsem_m_red_closed.
-        admit.
-  Admitted.
-
-  Lemma Π_disj {k} (p1 p2 : (vec nat k) -> Prop) n : 
-    isΠsem n p1 -> isΠsem n p2 -> isΠsem n (fun v => p1 v \/ p2 v).
-  Proof.
-    intros.
-    eapply ΣΠ_disj; eauto.
-  Qed.
-
-  Lemma mu_ter f :
-    (exists n, f n =! true /\ forall x, x < n -> ter (f n)) ->
-    ter (mu f).
-  Proof.
-    intros (n & H1 & H2).
-  Admitted.
-
-  Lemma Σ_semi_decidable_in_Π1 {k} (p: (vec nat k) -> Prop) n : DNE_Σ n ->
+  Lemma Σ_semi_decidable_in_Π1 {k} (p: (vec nat k) -> Prop) n : LEM_Π n ->
       isΣsem (S n) p -> exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p.
   Proof.
-    intros dne H. depelim H.  rename p0 into p'. rename H into Hp'.
+    intros lem H. depelim H.  rename p0 into p'. rename H into Hp'.
     exists p'. split;[easy|].
     unshelve eapply mk_semi_dec with
     (r := fun R v => exists n, R (n::v) true /\ forall n', n' < n -> exists b, R (n' :: v) b).
@@ -131,18 +90,9 @@ Section PostsTheorem.
         intros (? & H).
         exists x0. split. eauto.
         intros. clear H H0.
-        enough ((p' (n' :: x) \/ ~ p' (n' :: x))) as [|].
+        destruct (lem _ _ Hp' (n' :: x)).
         { exists true; firstorder. }
         { exists false; firstorder. }
-        rewrite DNE_equiv_S in dne.
-        pattern (n' :: x).
-        eapply dne. eapply Π_disj.
-        2:{ eapply negΣinΠsem.
-           eapply isΣΠn_In_ΠΣSn; eauto.
-           eauto.
-        }
-        eapply isΣΠn_In_ΣΠSn with (l := 1). eauto.
-        tauto.
     }
     - intros f R Hf v. cbn. split.
       + intros (? & ? % mu_hasvalue & _) % bind_hasvalue.
@@ -215,31 +165,36 @@ Section PostsTheorem.
           destruct unembed. destruct unembed. destruct seval; split; now destruct t + intros [=].
   Qed.
 
-  Lemma Σ_semi_decidable_in_Π {k} (p: (vec nat k) -> Prop) n (DN : DNE_Σ n) :
+  Lemma Σ_semi_decidable_in_Π {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :
     isΣsem (S n) p <-> exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p.
   Proof.
-    split; apply Σ_semi_decidable_in_Π1 + apply Σ_semi_decidable_in_Π2. all: eauto. 
+    split; apply Σ_semi_decidable_in_Π1 + apply Σ_semi_decidable_in_Π2.
+    now eapply LEM_Σ_to_LEM_Π.
+    now eapply LEM_Σ_to_DNE_Σ.
   Qed.
 
   Hint Resolve DNEimpl.
 
-  Lemma Σ_semi_decidable_in_Σ {k} (p: (vec nat k) -> Prop) n (DN : DNE_Σ n) :
+  Lemma Σ_semi_decidable_in_Σ {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :
       isΣsem (S n) p <-> exists (p': vec nat (S k) -> Prop), isΣsem n p' /\ oracle_semi_decidable p' p.
   Proof.
     rewrite Σ_semi_decidable_in_Π; eauto.
     split.
     - intros [p' [H S]]. eapply negΣinΠsem in H as H'.
-      2:assumption.
+      2: now eapply LEM_Σ_to_DNE_Σ.
       eexists. split;[apply H'|].
       rewrite <- oracle_semi_decidable_complement_iff. eauto.
       eapply DNEimpl; eauto.
+      now eapply LEM_Σ_to_DNE_Σ.
     - intros [p' [H S]]. eapply negΣinΠsem in H as H'; eauto.
       eexists. split;[apply H'|].
       rewrite <- oracle_semi_decidable_complement_iff; eauto.
+      eapply LEM_Σ_to_DNE_Σ in DN.
       eapply DN; eauto.
+      now eapply DNEimpl, LEM_Σ_to_DNE_Σ.
   Qed.
 
-  Lemma jump_in_Σn n {k} (DN : DNE_Σ n) :
+  Lemma jump_in_Σn n {k} (DN : LEM_Σ n) :
     @isΣsem n (S k) (∅^[n]).
   Proof.
     induction n as [|n IH] in k, DN |-*.
@@ -251,7 +206,7 @@ Section PostsTheorem.
       apply jumpNKSemiDec.
   Qed.
 
-  Lemma jump_Σn_complete n (DN : DNE_Σ n) :
+  Lemma jump_Σn_complete n (DN : LEM_Σ n) :
     forall k (p : vec nat k -> Prop), isΣsem (S n) p -> p ⪯ₘ (­∅^(S n)).
   Proof.
     induction n as [|n IH].
@@ -267,7 +222,7 @@ Section PostsTheorem.
       { intros n' q Hq. eapply DN. now eapply isΣΠn_In_ΣΠSn with (l := 1). }
   Qed.
 
-  Lemma jump_Σn_complete_redT n (DN : DNE_Σ n) :
+  Lemma jump_Σn_complete_redT n (DN : LEM_Σ n) :
     forall k (p : vec nat k -> Prop), isΣsem n p -> p ⪯ᴛ (­∅^(n)).
   Proof.
     intros k p H. destruct n.
@@ -283,7 +238,7 @@ Section PostsTheorem.
       { intros n' q Hq. eapply DN. now eapply isΣΠn_In_ΣΠSn with (l := 1). }
   Qed.
 
-  Lemma Σ_semi_decidable_jump {k} (p: (vec nat k) -> Prop) n (DN : DNE_Σ n) :
+  Lemma Σ_semi_decidable_jump {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :
       isΣsem (S n) p <-> oracle_semi_decidable (­∅^(n)) p.
   Proof.
     split.
@@ -297,7 +252,7 @@ Section PostsTheorem.
       + apply (semi_dec_turing_red_trans H), red_m_impl_red_T, jumpNKspec.
   Qed.
 
-  Theorem PostsTheorem {k} (p: (vec nat k) -> Prop) n (DN : DNE_Σ n) :
+  Theorem PostsTheorem {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :
     (isΣsem (S n) p <-> exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p)
  /\ (isΣsem (S n) p <-> exists (p': vec nat (S k) -> Prop), isΣsem n p' /\ oracle_semi_decidable p' p)
  /\ (@isΣsem n (S k) (∅^[n]))
@@ -314,6 +269,5 @@ Section PostsTheorem.
     - apply Σ_semi_decidable_jump...
   Qed.
   Print Assumptions PostsTheorem.
-
 
 End PostsTheorem.

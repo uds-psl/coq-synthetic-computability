@@ -152,7 +152,7 @@ Section ArithmeticalHierarchySemantic.
         intros x. split; intros H; apply H.
       + reflexivity.
   Qed.
-
+  
   Lemma isΣsemTwoEx k n (p : vec nat (S (S k)) -> Prop):
     isΠsem n p -> isΣsem (S n) (fun v => exists y x : nat, p (x :: y :: v)).
   Proof.
@@ -215,7 +215,7 @@ Section ArithmeticalHierarchySemantic.
       2: { exists (fun v => Vector.tl v). intros v. split; intros pv; apply pv. }
       apply isΣsemS in H. erewrite PredExt. 1: apply H. firstorder.
   Qed.
-
+  
   Lemma isΣsem_and_closed n :
     (forall k (p: vec nat k -> Prop), isΣsem n p -> forall (q : vec nat k -> Prop), isΣsem n q -> isΣsem n (fun v => p v /\ q v))
 /\  (forall k (p: vec nat k -> Prop), isΠsem n p -> forall (q : vec nat k -> Prop), isΠsem n q -> isΠsem n (fun v => p v /\ q v)).
@@ -589,8 +589,33 @@ Section ArithmeticalHierarchySemantic.
   Proof. rewrite equiv_sdec_functions. apply equiv_DN_sdec. Qed.
 
   Definition stable {X} (p : X -> Prop) := forall x, ~~ p x -> p x.
+  Definition definite {X} (p : X -> Prop) := forall x, p x \/ ~ p x.
   Definition DNE_Π n := forall k (p: vec nat k -> Prop), isΠsem n p -> stable p.
-  Definition DNE_Σ n := forall k (p: vec nat k -> Prop), isΣsem n p -> stable p.    
+  Definition DNE_Σ n := forall k (p: vec nat k -> Prop), isΣsem n p -> stable p.
+
+  Definition DNE_ΠorΠ n :=
+    forall (k : nat) (p1 p2 : vec nat k -> Prop), isΠsem n p1 -> isΠsem n p2 -> stable (fun v => p1 v \/ p2 v).
+
+  Definition LEM_Π n := forall k (p: vec nat k -> Prop), isΠsem n p -> definite p.
+  Definition LEM_Σ n := forall k (p: vec nat k -> Prop), isΣsem n p -> definite p.
+  Definition LEM_Δ n := forall k (p: vec nat k -> Prop), isΣsem n p -> isΠsem n p -> definite p.
+
+  Lemma LEM_Δ_to_LEM_Σ n :
+    LEM_Δ (S n) ->
+    LEM_Σ n.
+  Proof.
+    intros H k p Hp.
+    eapply H.
+    - eapply isΣΠn_In_ΣΠSn with (l := 1); assumption.
+    - now eapply isΣΠn_In_ΠΣSn.
+  Qed.
+
+  Lemma LEM_Σ_to_DNE_Σ n :
+    LEM_Σ n ->
+    DNE_Σ n.
+  Proof.
+    firstorder.
+  Qed.
 
   Lemma DNE_equiv_S n :
     DNE_Σ n <-> DNE_Π (S n).
@@ -639,5 +664,22 @@ Section ArithmeticalHierarchySemantic.
         * intros [x nP] A. now apply nP.
   Qed.
 
+  Lemma LEM_Σ_to_LEM_Π n :
+    LEM_Σ n ->
+    LEM_Π n.
+  Proof.
+    intros lem k p Hp v.
+    eapply negΣinΠsem in Hp as H.
+    2:{ eapply LEM_Σ_to_DNE_Σ. assumption. }
+    eapply lem in H. red in H.
+    destruct (H v).
+    - tauto.
+    - left.
+      eapply DNEimpl. 2: exact Hp.
+      eapply LEM_Σ_to_DNE_Σ. assumption. 
+      assumption.
+  Qed.
+
 End ArithmeticalHierarchySemantic.
 
+ 

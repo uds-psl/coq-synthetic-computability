@@ -4,7 +4,7 @@
 From Undecidability.FOL Require Import Syntax FullTarski.
 Require Import Lia Vector Fin List.
 Import Vector.VectorNotations.
-Require Import SyntheticComputability.PostsTheorem.PrenexNormalForm.
+From SyntheticComputability Require Import PrenexNormalForm.
 Require Import Eqdep_dec.
 
 From Equations Require Import Equations.

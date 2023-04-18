@@ -97,6 +97,32 @@ Section assume_part.
     - apply ret_hasvalue_inv.
   Qed.
 
+  Lemma mu_ter f :
+    (exists n, f n =! true /\ forall x, x < n -> ter (f x)) ->
+    ter (mu f).
+  Proof.
+    intros (n & H1 & H2).
+    enough (exists n, f n =! true /\ forall x, x < n -> f x =! false) as [m Hm].
+    { exists m. eapply mu_hasvalue. eapply Hm. }
+    edestruct Wf_nat.dec_inh_nat_subset_has_unique_least_element with (P := fun m => m <= n /\ f m =! true) as (m & [Hm1 Hm2] & HHH).
+    - intros n0.
+      destruct (Compare_dec.le_dec n0 n); try firstorder congruence.
+      assert (n0 = n \/ n0 < n) as [-> | Hl] by lia.
+      firstorder.
+      eapply H2 in Hl as []. destruct x.
+      firstorder congruence.
+      right. intros [].
+      enough (false = true) by congruence.
+      eapply hasvalue_det; eauto.
+    - exists n; firstorder.
+    - exists m. split. firstorder.
+      intros.
+      destruct (H2 x). lia.
+      destruct x0; eauto.
+      enough (m <= x) by lia.
+      eapply Hm2. split; eauto. lia.
+  Qed.
+
   Definition mu_tot (f : nat -> bool) := mu (fun n => ret (f n)).
 
   Lemma mu_tot_hasvalue (f : nat -> bool) n :

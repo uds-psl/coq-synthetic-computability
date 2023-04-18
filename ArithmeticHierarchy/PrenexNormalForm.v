@@ -1,5 +1,5 @@
 (** * Prenex Normal Form *)
-From SyntheticComputability.PostsTheorem Require Import Arithmetics.
+From SyntheticComputability  Require Import Arithmetics.
 Require Import Lia Vector List.
 Import Vector.VectorNotations.
 Import List.ListNotations.

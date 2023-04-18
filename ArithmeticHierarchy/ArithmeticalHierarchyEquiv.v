@@ -4,8 +4,8 @@ From Undecidability.FOL Require Import Syntax.
 From Undecidability.FOL Require Import FullTarski.
 Require Import Lia Vector Fin List.
 Import Vector.VectorNotations.
-Require Import SyntheticComputability.PostsTheorem.PrenexNormalForm.
-Require Import SyntheticComputability.PostsTheorem.ArithmeticalHierarchySyntactic SyntheticComputability.PostsTheorem.ArithmeticalHierarchySemantic.
+From SyntheticComputability Require Import PrenexNormalForm.
+From SyntheticComputability Require Import ArithmeticalHierarchySyntactic ArithmeticalHierarchySemantic.
 
 Require Import PeanoNat (* Nat.eqb *) Bool.
 
