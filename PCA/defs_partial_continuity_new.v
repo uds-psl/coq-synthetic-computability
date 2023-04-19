@@ -138,6 +138,19 @@ Section Continuity.
     firstorder.
   Qed.
 
+  Lemma interrogation_extf τ f f' q a :
+    (forall l v, f l =! v <-> f' l =! v) ->
+    interrogation τ f q a <-> interrogation τ f' q a.
+  Proof.
+    enough (forall τ f f' q a,
+               (forall l v, f l =! v <-> f' l =! v) ->
+               interrogation τ f q a -> interrogation τ f' q a).
+    { split; eapply H; firstorder. }
+    clear. intros ? ? ? ? ? Heq.
+    induction 1; econstructor; eauto.
+    firstorder.
+  Qed.
+
   Lemma sinterrogation_ext {E} τ τ' f q a (e1 e2 : E) :
     (forall e l v, τ e l =! v <-> τ' e l =! v) ->
     sinterrogation τ f q a e1 e2 <-> sinterrogation τ' f q a e1 e2 .
@@ -187,6 +200,13 @@ Section Continuity.
     exists τ : I -> tree,
     forall f i o, (exists qs ans, interrogation (τ i) f qs ans /\ τ i ans =! inr o) <-> F f i =! o.
 
+  Lemma continuous_via_interrogations_ext F F' :    
+    continuous_via_interrogations F -> (forall f x v, F f x =! v <-> F' f x =! v) -> continuous_via_interrogations F'.
+  Proof.
+    intros [tau H] Hext. exists tau.
+    intros. now rewrite <- Hext, <- H.
+  Qed.
+  
   Definition continuous_via_qinterrogations F :=
     exists τ : I -> qtree, 
     forall f i o, (exists qs ans, qinterrogation (τ i) f qs ans /\ τ i (zip_with pair qs ans) =! inr o) <-> F f i =! o.
@@ -216,6 +236,13 @@ Section Continuity.
     qinterrogation tau f qs ans -> length qs = length ans.
   Proof.
     induction 1; try reflexivity. now rewrite !app_length, IHqinterrogation. 
+  Qed.
+
+  Lemma sinterrogation_length {E} {tau f qs ans} {e e' : E} :
+    sinterrogation tau f qs ans e e' -> length qs = length ans.
+  Proof.
+    induction 1; try reflexivity. eauto.
+    now rewrite !app_length, IHsinterrogation. 
   Qed.
 
   Fixpoint allqs (τ : (list (Q * A)) ↛ (Q + O)) (acc : list (Q * A)) (l : list A) : part (Q + O) :=
@@ -842,27 +869,25 @@ Section Niklas.
 
   Context {Part : partiality}.
 
-  Variable A X : Type.
-
-  Lemma niklas_4_5 (f : X -> A) :
+  Lemma niklas_4_5 A X (f : X -> A) :
     continuous_via_extensional_dialogues bool A X bool (fun r x => r (f x)).
   Proof.
     exists (fun i => beta (ret (f i)) (fun a => eta (ret a))). prove_cont' 1.
   Qed.
 
-  Lemma niklas_4_6 :
+  Lemma niklas_4_6 A :
     continuous_via_extensional_dialogues bool A A bool (fun r x => bind (r x) (fun b => ret (negb b))).
   Proof.
     exists (fun i => beta (ret i) (fun a => eta (ret (negb a)))). prove_cont' 1.
   Qed.
 
-  Lemma niklas_4_8 (f : X ↛ unit) :
+  Lemma niklas_4_8 A X (f : X ↛ unit) :
     continuous_via_extensional_dialogues bool A X unit (fun r x => f x).
   Proof.
     exists (fun x => eta (f x)). prove_cont' 0.
   Qed.
 
-  Lemma niklas_4_9 Y (f : A -> X) (F : (Y ↛ bool) -> X ↛ bool) :
+  Lemma niklas_4_9 A X Y (f : A -> X) (F : (Y ↛ bool) -> X ↛ bool) :
     continuous_via_extensional_dialogues _ _ _ _ F
     -> continuous_via_extensional_dialogues _ _ _ _ (fun r x => F r (f x)).
   Proof.
@@ -881,7 +906,7 @@ Section Niklas.
     rewrite drop_app_le; eauto. lia.
   Qed.
 
-  Lemma niklas_4_10_interrogations Q Y I O (F1 : (Q ↛ A) -> X ↛ Y) (F2 : (X ↛ Y) -> I ↛ O) :
+  Lemma niklas_4_10_interrogations A X  Q Y I O (F1 : (Q ↛ A) -> X ↛ Y) (F2 : (X ↛ Y) -> I ↛ O) :
     continuous_via_interrogations _ _ _ _ F1
     -> continuous_via_interrogations _ _ _ _ F2
     -> continuous_via_interrogations _ _ _ _ (fun r x => F2 (F1 r) x).
@@ -986,6 +1011,64 @@ Section Niklas.
     - intros. destruct (decide (P x)); try tauto. now rewrite IHn.
   Qed.
 
+  Lemma cont_mu' I :
+    continuous_via_interrogations bool (I * nat) I nat (fun f i => (mu (fun n => f (i, n)))).
+  Proof.
+    exists (fun i l => ret (match list_find (fun b => b = true) l with Some (i, _) => inr i | _ => inl (i, length l) end)).
+    intros f i v. split.
+    - intros (qs & ans & H1 & H2).
+      eapply mu_hasvalue.
+      destruct list_find as [ [] | ] eqn:E; next.
+      inversion H1; subst.
+      + cbn in E. congruence.
+      + destruct (list_find (λ b : bool, b = true) ans0) as [ [] | ] eqn:E_; next.
+        rewrite list_find_app_r in E; eauto.
+        cbn in E. destruct (decide (a = true)); cbn in *; inversion E; subst; clear E.
+        split; eauto.
+        clear H1 H2.
+        set (n := length ans0).
+        assert (qs0 = map (pair i) (seq 0 n) /\ ans0 = repeat false n).
+        { induction H.
+          - split; reflexivity.
+          - subst n. rewrite !app_length, repeat_app, seq_app, map_app.
+            cbn. eapply list_find_app_None in E_ as [E1 E2].
+            rewrite E1 in H0. next. cbn in E2. destruct (decide (a = true)); inversion E2.
+            destruct a; try congruence.
+            destruct IHinterrogation as [IH1 IH2]; eauto.
+            split; congruence.
+        }
+        subst n.
+        destruct H0 as [-> ->].
+        induction H.
+        * cbn. intros. lia.
+        * rewrite app_length. cbn.
+          rewrite repeat_length.
+          intros.
+          assert (m = length ans \/ m < length ans) as [-> | HH] by lia.
+          -- eapply list_find_app_None in E_ as [E1 E2].
+             rewrite E1 in H0. next. cbn in E2. destruct a; cbv in E2; inversion E2.
+             eauto.
+          -- eapply IHinterrogation. eapply list_find_app_None in E_. firstorder.
+             now rewrite repeat_length.
+    - intros (Hv & Hl) % mu_hasvalue.
+      exists (map (pair i) (seq 0 (v + 1))), (repeat false v ++ [true]).
+      split.
+      + rewrite seq_app, map_app. econstructor.
+        * clear Hv.
+          induction v.
+          -- econstructor.
+          -- replace (S v) with (v + 1) by lia. rewrite seq_app, repeat_app, map_app.
+             cbn. econstructor; eauto.
+             rewrite list_find_repeat_not; try congruence.
+             rewrite repeat_length. psimpl.
+        * rewrite list_find_repeat_not; try congruence.
+          rewrite repeat_length. psimpl.
+        * eauto.
+      + rewrite list_find_app_r.
+        2:{ rewrite list_find_repeat_not; try congruence. }
+        cbn. unfold decide, decide_rel. cbn. rewrite repeat_length. psimpl.
+  Qed.
+  
   Lemma cont_mu I :
     continuous_via_interrogations bool nat I nat (fun f _ => (mu f)).
   Proof.
@@ -1075,8 +1158,8 @@ Section Niklas.
         * firstorder. inversion H1; subst; replace m with (m + 0) by lia; eauto.
         * intros; cbn. rewrite <- !ret_hasvalue_iff.
           destruct list_find as [ [] | ] eqn:E.
-          -- cbn. firstorder subst; f_equal; lia.
-          -- cbn. firstorder subst; f_equal; lia.
+          -- cbn. clear. firstorder subst; f_equal; lia.
+          -- cbn. clear. firstorder subst; f_equal; lia.
   Qed.
 
   Lemma cont_mu_dialogues :
@@ -1200,57 +1283,154 @@ Section Niklas.
         psimpl.
   Qed.
 
+  Lemma continuous_precompose A Q I O I' F g :
+    continuous_via_interrogations A Q I O F ->
+    continuous_via_interrogations A Q I' O (fun r x => F r (g x)).
+  Proof using.
+    intros [tau H].
+    exists (fun i l => tau (g i) l). intros. eapply H.
+  Qed.
+
+  Lemma continuous_if A Q I O (F1: (Q ↛ A)  -> _ ↛ _) F2 test :
+    continuous_via_interrogations A Q I O F1 ->
+    continuous_via_interrogations A Q I O F2 ->
+    continuous_via_interrogations _ _ _ _ (fun f (x : I) => if test x : bool then F1 f x else F2 f x).
+  Proof using.
+    intros [tau1 H1] [tau2 H2].
+    unshelve eexists. intros i.
+    destruct (test i). exact (tau1 i).
+    exact (tau2 i). intros. cbn. destruct test; cbn; eauto.
+  Qed.
+
+  Lemma continuous_ret A Q I O v :
+    continuous_via_interrogations A Q I O (fun f x => ret v).
+  Proof using.
+    exists (fun _ _ => ret (inr v)). intros.
+    firstorder. psimpl.
+    exists [], []. psimpl. econstructor.
+  Qed.
+
+  Lemma continuous_id A Q I :
+    continuous_via_interrogations A Q I I (fun f x => ret x).
+  Proof using.
+    exists (fun v _ => ret (inr v)). intros.
+    firstorder. psimpl.
+    exists [], []. psimpl. econstructor.
+  Qed.
+
+  Lemma continuous_bind A Q Y Z R (F1: (Q ↛ A) -> _ ↛ _) F2 :
+    continuous_via_interrogations _ _ R _ F1 ->
+    continuous_via_interrogations _ _ _ _ F2 ->
+    continuous_via_interrogations _ _ _ _ (fun f x => @bind _ Y Z (F1 f x) (fun y => F2 f (x, y))).
+  Proof using.
+    intros [tau1 H1] [tau2 H2].
+    eapply continuous_via_einterrogations_equiv.
+    eapply continuous_via_sinterrogations_equiv.
+    exists (option (Y * nat)), None.
+    unshelve eexists.
+    { intros r b l.
+      refine (match b with Some (y, n) => bind (tau2 (r, y) (drop n l)) (fun res => match res with inl q => ret (inl (Some (y, n), Some q)) | inr o => ret (inr o) end)
+                      | None => bind (tau1 r l) (fun res => match res with inl q => ret (inl (None, Some q)) | inr y => ret (inl (Some (y, length l), None)) end) end).
+    } cbn.
+    intros. rewrite bind_hasvalue.
+    setoid_rewrite <- H1.
+    setoid_rewrite <- H2. clear. split.
+    - intros (qs & ans & info & H1 & H2).
+      destruct info as [ [y n] |  ]; simpl_assms. exists y.
+      enough (n <= length ans /\ interrogation A Q Y (tau1 i) f (take n qs) (take n ans) ∧ tau1 i (take n ans) =! inr y /\  interrogation A Q Z (tau2 (i, y)) f (drop n qs) (drop n ans))
+        by firstorder. clear H.
+      generalize (eq_refl (@None (prod Y nat))).
+      revert H1. generalize (@None (prod Y nat)) at 2 3. intros none H1 Heqnone.
+      change (match Some (y,n) with Some (y, n) =>
+                                      n ≤ length ans ∧ 
+                                        interrogation A Q Y (tau1 i) f (take n qs) (take n ans) ∧ tau1 i (take n ans) =! inr y /\  interrogation A Q Z (tau2 (i, y)) f (drop n qs) (drop n ans)
+                               | None =>
+                                   interrogation A Q Y (tau1 i) f qs ans 
+              end).
+
+      revert H1. (generalize (Some (y, n))). intros.
+      induction H1 in Heqnone |- *.
+      + subst. econstructor.
+      + destruct e1' as [ [] | ]. psimpl.
+        psimpl.
+        all: assert (length qs = length ans) as Hlen by (eapply sinterrogation_length; eauto).
+        * rewrite firstn_all. rewrite <- Hlen. rewrite firstn_all. eauto.
+        * rewrite firstn_all. eauto.
+        * rewrite !drop_all. rewrite <- Hlen. rewrite drop_all. econstructor.
+      + destruct e1' as [ [] | ].
+        * simpl_assms. destruct IHsinterrogation as (IH1 & IH2 & IH3 & IH4). reflexivity.
+          assert (length qs = length ans) as Hlen by (eapply sinterrogation_length; eauto).
+          repeat split.
+          -- rewrite app_length; cbn. lia.
+          -- rewrite !take_app_le; try lia. eauto.
+          -- rewrite !take_app_le; try lia. eauto.
+          -- rewrite !drop_app_le; try lia. econstructor; eauto.
+        * simpl_assms. 
+          assert (length qs = length ans) as Hlen by (eapply sinterrogation_length; eauto).
+          econstructor; eauto.
+    - intros (y & (qs1 & ans1 & H1 & H1') & (qs2 & ans2 & H2 & H2')).
+      exists (qs1 ++ qs2).
+      exists (ans1 ++ ans2).
+      exists (Some (y, length qs1)). split.
+      2:{ assert (length qs1 = length ans1) as Hlen by (eapply interrogation_length; eauto).
+          psimpl. rewrite Hlen. rewrite drop_app. eauto. cbn. psimpl. }
+      eapply sinterrogation_app. instantiate (1 := None).
+      + clear - H1.
+        induction H1.
+        * econstructor.
+        * econstructor 3; eauto. cbn. psimpl.
+      + eapply sinterrogation_scons. psimpl. rewrite app_nil_r. eauto. cbn.
+        rewrite app_nil_r. cbn. psimpl.
+        assert (length qs1 = length ans1) as -> by (eapply interrogation_length; eauto).
+        clear - H2.
+        induction H2.
+        * econstructor.
+        * econstructor 3; eauto.
+          cbn. psimpl. rewrite drop_app. eauto. cbn. psimpl.
+  Qed.
+
+  Lemma continuous_mu A Q Y (F1: (Q ↛ A)  -> _ ↛ _) :
+    continuous_via_interrogations A Q (Y * nat) bool F1 ->
+    continuous_via_interrogations _ _ _ _ (fun f x => mu (fun n => F1 f (x, n))).
+  Proof using.
+    intros.
+    eapply continuous_via_interrogations_ext.
+    eapply niklas_4_10_interrogations.
+    2: eapply cont_mu'. all: cbn. exact H. reflexivity.
+  Qed.
+
+  Lemma PT_cont Q X A (F1 : (Q ↛ A) -> (X * nat) ↛ bool) (F2 : (Q ↛ A) -> (X * nat) ↛ bool) :
+    continuous_via_interrogations _ _ _ _ F1
+    -> continuous_via_interrogations _ _ _ _ F2
+    -> continuous_via_interrogations _ _ _ _ (fun r x => bind (mu (fun n => bind (F1 r (x, n)) (fun b => if b then ret true else
+                                                                                            bind (F2 r (x, n)) (fun b => ret b))))
+                                                          (fun n => bind (F1 r (x,n)) (fun b => if b then ret true else ret false))).
+   Proof.
+     intros.
+     eapply continuous_via_interrogations_ext.
+     eapply continuous_bind. all: cbn. 
+     eapply continuous_mu.
+     eapply continuous_bind. all: cbn.
+     eapply H.
+     eapply continuous_if. all:cbn.
+     eapply continuous_ret with (v := true). all: cbn.
+     eapply continuous_bind. all: cbn.
+     eapply continuous_precompose.
+     eapply H0.
+     eapply continuous_precompose.
+     eapply continuous_id. all: cbn.
+     eapply continuous_bind. all: cbn.
+     exact H.
+     eapply continuous_if. all: cbn.
+     eapply continuous_ret with (v := true).
+     eapply continuous_ret with (v := false).
+     cbn. intros.
+     Unshelve.
+     4:{ intros [ [ [ ]] ]. exact b0. }
+     all: try tauto.
+     cbn. reflexivity.
+   Qed.
+
+   Print Assumptions PT_cont.
+
 End Niklas.
-
-(* Goal forall P : partiality, forall O, *)
-(*     forall F G, continuous_via_extensional_dialogues' bool nat nat O F -> *)
-(*            continuous_via_extensional_dialogues' bool nat nat O G -> *)
-(*            continuous_via_extensional_dialogues bool nat nat (O + O) (fun f x => par (F f x) (G f x)). *)
-(* Proof. *)
-(*   intros P O F G [T1 HT1] [T2 HT2]. *)
-(*   exists (fun i l => bind (par (T1 i l) (T2 i l)) (fun x => match x with inl (inl n) => ret (inl n) *)
-(*                                                          | inl (inr n) => ret (inr (inl n)) *)
-(*                                                          | inr (inr n) => ret (inr (inr n)) *)
-(*                                                          | inr (inl n) => ret (inl n) *)
-(*                                                  end)). *)
-(*   intros f i o. split. *)
-(*   - admit. *)
-(*   - destruct o. intros [n Hn] % par_hasvalue1 % HT1. *)
-(* Qed. *)
-
-
-(* From SyntheticComputability Require defs_continuity. *)
-
-(* Definition factors (F : ((Q -> A) -> I -> O)) (F' : ((Q ↛ A) -> (I ↛ O))) := *)
-(*   forall f : Q -> A, forall i : I, *)
-(*     F' (fun q => ret (f q)) i =! F f i. *)
-
-(* Lemma bla F F' (a0 : A) (o0 : O) : *)
-(*   factors F F' -> *)
-(*   continuous_via_extensional_dialogues F' -> *)
-(*   defs_continuity.continuous_via_extensional_dialogues Q A I O F. *)
-(* Proof. *)
-(*   intros Hfac (τ & H). *)
-(*   red. *)
-(*   assert (forall (f : Q -> A) (i : I) (o : O), *)
-(*              (exists n : nat, evalt (τ i) (fun q => ret (f q)) n =! inr (F f i))). *)
-(*   { intros. setoid_rewrite H. eapply Hfac. } *)
-
-(*   unshelve epose (fix τ (i : I) (l : list A) n := *)
-(*        match n, l with *)
-(*        | 0, nil => _ *)
-(*        | S n, _ => match τ i (firstn n l) n with *)
-(*                   | Some (inl (qs, q)) => _ *)
-(*                   | Some (inr o) => Some (inr o) *)
-(*                   | None => None *)
-(*                   end *)
-(*        | _, _ => None *)
-(*        end). *)
-
-(*   1:{ specialize (H0 (fun _ => a0) i o0). *)
-(*       eapply mu_nat.mu_nat_dep in H0 as [k Hk]. *)
-(*       destruct k; cbn in Hk. *)
-(*       - eapply bid *)
-
-
-(*   (* compute the index in H0, then use it in the def of τ *) *)
