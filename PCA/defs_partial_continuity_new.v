@@ -206,7 +206,7 @@ Section Continuity.
     intros [tau H] Hext. exists tau.
     intros. now rewrite <- Hext, <- H.
   Qed.
-  
+
   Definition continuous_via_qinterrogations F :=
     exists τ : I -> qtree, 
     forall f i o, (exists qs ans, qinterrogation (τ i) f qs ans /\ τ i (zip_with pair qs ans) =! inr o) <-> F f i =! o.
@@ -844,6 +844,26 @@ Ltac simpl_goal :=
 Ltac simpl_cont := simpl_assms; simpl_goal.
 
 Ltac psimpl := repeat progress (cbn; simpl_assms; simpl_goal).
+
+Definition reduces {X Y} (F: (Y ↛ bool) -> (X ↛ bool)) (p : X -> Prop) (q : Y -> Prop) :=
+  forall x, p x <-> exists f : Y ↛ bool, (forall y b, f y =! b -> q y <-> b = true) /\ F f x =! true.
+
+Lemma redudes_trans {X Y Z} (p : X -> Prop) (q : Y -> Prop) (r : Z -> Prop) F G :
+  continuous_f _ _ _ _ F ->
+  continuous_f _ _ _ _ G ->
+  reduces F p q ->
+  reduces G q r ->
+  exists H, reduces H p r.
+Proof.
+  intros HF HG H1 H2.
+  exists (fun f x => F (G f) x). unfold reduces in *.
+  setoid_rewrite H1. 
+  setoid_rewrite H2.
+  clear - HF HG.
+  red in HF, HG.
+  intros x. split.
+  - intros (f & H1 & H2). eapply HF in H2 as (L & HL1 & HL2).
+Abort.
 
 Ltac prove_cont f n :=
   exists f;
