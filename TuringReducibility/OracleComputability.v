@@ -889,7 +889,7 @@ Proof.
     exists n. split. psimpl. admit.
 Admitted.
 
-From SyntheticComputability Require Import DecidabilityFacts principles Pigeonhole.
+From SyntheticComputability Require Import DecidabilityFacts principles Pigeonhole Dec.
 
 Definition char_rel_fun {X Y} (f : X -> Y) :=
   (@Build_FunRel _ _(fun x b => f x = b) ltac:(firstorder congruence)).
@@ -942,4 +942,108 @@ Proof.
     ccase (p x) as [Hp | Hp].
     -- eapply Hx. exists true. eapply hF'. now eapply (H _ true).
     -- eapply Hx. exists false. eapply hF'. now eapply (H _ false).
+Qed.
+
+
+Record oracle (X : Type) : Type :=
+  {
+  S0 : X -> Prop;
+  S1 : X -> Prop;
+  H_oracle : forall x, S0 x -> S1 x -> False
+  }.
+Arguments S0 {_} _.
+Arguments S1 {_} _.
+
+Program Definition char_oracle {X} (p : X -> Prop) :=
+  {| S0 := p ; S1 := fun x => ~ p x ; H_oracle := ltac:(abstract firstorder) |}.
+
+Section equivalence.
+
+  Variable X : Type.
+  Variable eX : eq_dec X.
+  Implicit Type o : oracle X.
+  Implicit Type R : FunRel X bool.
+
+  Program Definition of_o (o : oracle X) :=
+    @Build_FunRel _ _ (fun x b => if (b : bool) then S0 o x else S1 o x) _.
+  Next Obligation.
+    destruct o; intros ? [] [] ? ?; cbn in *; firstorder. 
+  Qed.
+
+  Program Definition to_o (R : FunRel X bool) : oracle X :=
+    @Build_oracle _ (fun x => R x true) (fun x => R x false) _.
+  Next Obligation.
+    intros.
+    enough (true = false) by congruence; eapply R; cbn in *; eauto. 
+  Qed.
+
+  Lemma of_o_enumerator o f0 f1 :
+    enumerator f0 (S0 o) -> enumerator f1 (S1 o) ->
+    pcomputes (fun x => bind (mu_tot (fun n => Dec (f0 n = Some x) || Dec (f1 n = Some x)))
+                          (fun n => if Dec (f0 n = Some x) then ret true else ret false)) (of_o o).
+  Proof.
+    intros H0 H1 x b. split.
+    - intros (? & [] % mu_tot_hasvalue & ?) % bind_hasvalue.
+      unfold Dec in *.
+      do 2 destruct Dec.option_eq_dec; cbn in *; eapply ret_hasvalue_inv in H3 as <-.
+      + cbn. eapply H0. eauto.
+      + cbn. eapply H0. eauto.
+      + cbn. eapply H1. eauto.
+      + congruence.
+    - intros Ho. destruct b; cbn in *.
+      + eapply H0 in Ho as [n Ho].
+        assert ((λ n : nat, Dec (f0 n = Some x) || Dec (f1 n = Some x) : bool) n = true) as [n' Hn] % mu_tot_ter by (destruct Dec; firstorder).
+        pose proof Hn as [Hn' _] % mu_tot_hasvalue.
+        eapply bind_hasvalue.
+        eexists; split; eauto.
+        destruct (Dec (f0 n' = Some x)). eapply ret_hasvalue.
+        cbn in Hn'. destruct Dec; cbn in *; try congruence.
+        edestruct H_oracle.
+        eapply H0. eauto. eapply H1; eauto.
+      + eapply H1 in Ho as [n Ho].
+        assert ((λ n : nat, Dec (f0 n = Some x) || Dec (f1 n = Some x) : bool) n = true) as [n' Hn] % mu_tot_ter. {
+          do 2 destruct Dec; cbn; firstorder. }
+        pose proof Hn as [Hn' _] % mu_tot_hasvalue.
+        eapply bind_hasvalue.
+        eexists; split; eauto.
+        destruct (Dec (f0 n' = Some x)). 2:eapply ret_hasvalue.
+        cbn in Hn'.  edestruct H_oracle.
+        eapply H0. eauto. eapply H1; eauto.
+  Qed.
+
+  Lemma of_o_char (q : X -> Prop) :
+    forall x y, of_o (char_oracle q) x y <-> char_rel q x y.
+  Proof.
+    firstorder.
+  Qed.
+
+End equivalence.
+
+Lemma bienumerable_Turing {X Y} (p : X -> Prop) (q : Y -> Prop) :
+  eq_dec X ->
+  enumerable p -> enumerable (fun x => ~ p x) ->
+  p ⪯ᴛ q.
+Proof.
+  intros HX [f Hf] [g Hg].
+  exists (fun R => char_rel p). split. 2: reflexivity.
+  exists (fun x _ =>
+       bind (mu_tot (fun n => Dec (f n = Some x) || Dec (g n = Some x)))
+                          (fun n => if Dec (f n = Some x) then ret (inr true) else ret (inr false))).
+  - intros.
+    rewrite <- of_o_char; eauto.
+    pose proof (of_o_enumerator _ HX (char_oracle p) _ _ Hf Hg). unfold pcomputes in H.
+    rewrite <- H. split. intros.
+    + exists [], []. split. econstructor. psimpl. destruct Dec; psimpl.
+    + intros (_ & _ & _ & HH). psimpl. destruct Dec; psimpl.
+Qed.
+
+Lemma decidable_Turing_MP :
+  (forall  (p : nat -> Prop) (q : nat -> Prop), p ⪯ᴛ q -> decidable q -> decidable p) ->
+  MP.
+Proof.
+  intros H. eapply (Post_nempty_to_MP 0).
+  intros p ? % halting.semi_decidable_enumerable_iff_nat ? % halting.semi_decidable_enumerable_iff_nat. 
+  eapply H with (q := fun x => True).
+  eapply bienumerable_Turing; eauto.
+  exists (fun _ => true). cbv. firstorder.
 Qed.
