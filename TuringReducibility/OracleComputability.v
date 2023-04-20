@@ -848,6 +848,26 @@ Qed.
 
 Notation "P ⪯ᴛ Q" := (red_Turing P Q) (at level 50).
 
+Lemma Turing_reducible_without_rel X Y (p : X -> Prop) (q : Y -> Prop) :
+  p ⪯ᴛ q <-> exists τ, forall x b, char_rel p x b ↔ (∃ qs ans, interrogation (τ x) (char_rel q) qs ans ∧ τ x (zip qs ans) =! Output b).
+Proof.
+  split.
+  - intros [R [[τ Ht] HR]].
+    exists τ. intros. rewrite HR, Ht. reflexivity.
+  - intros [τ Ht].
+    unshelve eexists.
+    { intros R.
+      unshelve eexists. intros x o.
+      exact (∃ (qs : list Y) (ans : list bool), interrogation (τ x) R qs ans ∧ τ x (zip qs ans) =! Output o).
+      intros ?; intros. destruct H as (qs1 & qs2 & H1 & H2).
+      destruct H0 as (qs1' & qs2' & H1' & H2').
+      admit.
+    }
+    cbn. split.
+    + exists τ. reflexivity.
+    + eapply Ht.
+Admitted.
+
 Lemma Turing_refl {X} (p : X -> Prop) :
   p ⪯ᴛ p.
 Proof.
@@ -1047,3 +1067,185 @@ Proof.
   eapply bienumerable_Turing; eauto.
   exists (fun _ => true). cbv. firstorder.
 Qed.
+
+
+From SyntheticComputability Require Import hypersimple_construction.
+
+Lemma non_finite_to {p : nat -> Prop} (f : nat -> nat) :
+  Inj (=) (=) f ->
+  ~ exhaustible p ->
+  forall z, ~~ exists x, p x /\ f x >= z.
+Proof.
+  intros Hf Hp. intros z. 
+  assert (~~ exists L, forall x, In x L <-> f x < z). {
+    clear - Hf.
+    induction z.
+    - cprove exists []. firstorder lia.
+    - cunwrap. destruct IHz as (L & HL).
+      ccase (exists x, f x = z) as [[x H] | H].
+      + cprove exists (x :: L). cbn. intros y. rewrite HL.
+        firstorder subst. lia. lia. 
+        ccase (f y < f x) as [H | H].
+        eauto. left. eapply Hf. lia.
+      + cprove exists L. intros y. rewrite HL.
+        split. intros. lia.
+        intros. assert (f y = z \/ f y < z) as [ | ] by lia.
+        firstorder. lia.
+  }
+  cunwrap. destruct H as (L & HL).
+  intros H. apply Hp. exists L.
+  intros x Hx. eapply HL.
+  cstart. intros Hfx.
+  apply H. exists x. split. eauto. lia.
+Qed.
+
+Lemma size_ind {X : Type} (f : X -> nat) (P : X -> Prop) :
+  (forall x, (forall y, f y < f x -> P y) -> P x) -> forall x, P x.
+Proof.
+  intros H x. apply H.
+  induction (f x).
+  - intros y. lia.
+  - intros y. intros [] % le_lt_or_eq.
+    + apply IHn; lia.
+    + apply H. injection H0. now intros ->.
+Qed.
+
+Lemma neg_neg_least {X} p (f : X -> nat) :
+  (~~ exists x, p x (f x)) -> ~~ exists x, p x (f x) /\ forall y, p y (f y) -> f x <= f y.
+Proof.
+  intros H. cunwrap. destruct H as (x & Hx).
+  revert Hx. pattern x. eapply size_ind with (f := f). clear. intros x IH H.
+  destruct (f x) eqn:E.
+  - cprove exists x. split. congruence. intros. rewrite E. lia.
+  - ccase (exists y, f y <= n /\ p y (f y)) as [Hf | Hf].
+    + destruct Hf as (y & H1 & H2).
+      eapply IH in H2. 2: lia. cunwrap.
+      destruct H2 as (x' & Hx' & Hx'').
+      cprove exists x'. split. eauto. firstorder.
+    + cprove exists x. split. rewrite E. eauto. intros.
+      cstart. intros Hx. apply Hf. exists y. split; eauto. lia.
+      Unshelve. eapply nat_le_dec.
+Qed.
+
+Lemma non_finite_to_least {p : nat -> Prop} (f : nat -> nat) :
+  Inj (=) (=) f ->
+  ~ exhaustible p ->
+  forall z, ~~ exists x, p x /\ f x >= z /\ forall y, p y /\ f y >= z -> f x <= f y.
+Proof.
+  intros Hf Hp. intros z.
+  assert (~~ exists L, forall x, In x L <-> f x < z). {
+    clear - Hf.
+    induction z.
+    - cprove exists []. firstorder lia.
+    - cunwrap. destruct IHz as (L & HL).
+      ccase (exists x, f x = z) as [[x H] | H].
+      + cprove exists (x :: L). cbn. intros y. rewrite HL.
+        firstorder subst. lia. lia.
+        ccase (f y < f x) as [H | H].
+        eauto. left. eapply Hf. lia.
+      + cprove exists L. intros y. rewrite HL.
+        split. intros. lia.
+        intros. assert (f y = z \/ f y < z) as [ | ] by lia.
+        firstorder. lia.
+  }
+  cunwrap. destruct H as (L & HL).
+  intros H. apply Hp. exists L.
+  intros x Hx. eapply HL.
+  cstart. intros Hfx. eapply neg_neg_least with (p := fun x fx => p x /\ f x >= z). cprove exists x. split. eauto. lia.
+  intros (x' & [] & Hx''). apply H. exists x'. split. eauto. split. eauto.
+  intros ? []. eapply Hx''. firstorder.
+Qed.
+
+From SyntheticComputability Require Import reductions ReducibilityFacts EnumerabilityFacts.
+
+Section HS. 
+  Import  Coq.Init.Nat.
+
+  Variable I : nat -> Prop. 
+
+  Variable E_I: nat -> nat.
+
+  Variable E_I_injective: injective E_I.
+  
+  Variable E_I_enum: strong_enumerator E_I I.
+
+  Variable I_undec: ~ decidable I.
+
+  Lemma I_iff:
+    ∀ z x : nat, ¬ HS E_I x → E_I x > z → I z ↔ In z (map E_I (seq 0 (x + 1))).
+  Proof.
+    intros z x Hcx Hxz.
+    
+    split.
+    * intros [n Hn] % E_I_enum. eapply in_map_iff. eexists. split. eauto.
+      eapply in_seq. split. lia. cstart. intros HH. apply Hcx. exists n. split.
+      lia. lia.
+    * intros (? & ? & ?) % in_map_iff. subst. eapply E_I_enum. eauto.
+  Qed.
+
+  From SyntheticComputability Require Import ListAutomation.
+
+  Lemma reflects_iff (b : bool) P :
+    (if b then P else ~ P) <-> reflects b P.
+  Proof.
+    clear.
+    destruct b; firstorder.
+  Qed.
+
+  Lemma red : MP -> I ⪯ᴛ HS E_I.
+  Proof.
+    intros mp.
+    unshelve eexists.
+    { intros R. unshelve eexists.
+      + intros z b. exact (~~ exists x, R x false /\ E_I x > z /\ (forall x', x' < x -> ~~ (R x' true \/ R x' false /\ E_I x' <= z)) /\ reflects b (In z (map E_I (seq 0 (x + 1))))).
+      + intros z [] []; repeat setoid_rewrite <- reflects_iff; try congruence.
+        * intros H1 H2. cstart. cunwrap. decompose [ex and] H1. decompose [ex and] H2.
+          assert (~~ x = x0). {
+            assert (x < x0 \/ x = x0 \/ x0 < x) as [ | [ | ]] by lia.
+            -- eapply H7 in H8. cunwrap. destruct H8 as [| []]. enough (true = false) by congruence. eapply R; eauto. lia.
+            -- eauto.
+            -- eapply H3 in H8. cunwrap. destruct H8 as [| []]. enough (true = false) by congruence. eapply R; eauto. lia.
+          } cunwrap. subst.
+          firstorder congruence.
+        * intros H1 H2. cstart. cunwrap. decompose [ex and] H1. decompose [ex and] H2.
+          assert (~~ x = x0). {
+            assert (x < x0 \/ x = x0 \/ x0 < x) as [ | [ | ]] by lia.
+            -- eapply H7 in H8. cunwrap. destruct H8 as [| []]. enough (true = false) by congruence. eapply R; eauto. lia.
+            -- eauto.
+            -- eapply H3 in H8. cunwrap. destruct H8 as [| []]. enough (true = false) by congruence. eapply R; eauto. lia.
+          } cunwrap. subst.
+          firstorder congruence.
+    }
+    cbn. split.
+    2:{ intros z b. cbn.
+      split.
+      + intros Hz.
+        pose proof (non_finite_to_least E_I_injective (@HS_co_infinite I E_I I_undec) (z := S z)).
+        cunwrap. destruct H as (x & Hcx & Hzx & Hleast). cprove exists x.
+        split. eauto. split. lia. split. 
+        { intros. ccase (HS E_I x') as [Hx' | Hx']. eauto. cprove right.
+          split. eauto. assert (E_I x' >= S z \/ E_I x' <= z) as [] by lia; try lia.
+          exfalso. unshelve epose proof (Hleast x' _). eauto.
+          assert (E_I x < E_I x' \/ E_I x = E_I x') as [] by lia.
+          2: eapply E_I_injective in H2; lia. 
+          eapply Hx'. exists x. eauto.
+        }
+        rewrite reflects_iff in Hz. unfold reflects in *.
+        rewrite <- I_iff; eauto.
+      + intros. 
+        enough (~~ if b then I z else ¬ I z). {
+          destruct b; [ eapply (MP_to_MP_semidecidable mp) | ]; eauto.
+          eapply EA.enum_iff.
+          enough (strongly_enumerable I) as [? _] % enumerable_strongly_enumerable_iff; eauto.
+          now exists E_I.
+        }
+        cunwrap. destruct H as (x & Hcx & Hxz & Hle & Hb).
+        setoid_rewrite reflects_iff. unfold reflects in *.
+        cprove rewrite I_iff; eauto.
+    }
+      
+    admit.
+  Admitted.
+
+End HS.
+
