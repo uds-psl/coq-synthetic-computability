@@ -888,3 +888,58 @@ Proof.
     }
     exists n. split. psimpl. admit.
 Admitted.
+
+From SyntheticComputability Require Import DecidabilityFacts principles Pigeonhole.
+
+Definition char_rel_fun {X Y} (f : X -> Y) :=
+  (@Build_FunRel _ _(fun x b => f x = b) ltac:(firstorder congruence)).
+
+Lemma partial_total X Y (f : X ↛ Y) :
+  (forall x, (ter (f x))) -> ∑ g : X -> Y, forall x, f x =! g x.
+Proof.
+  intros H. unshelve eexists.
+  - intros x. specialize (H x). exact (eval H).
+  - intros x. cbn. eapply eval_hasvalue.
+Qed.
+
+Lemma partial_decidable {X} (p : X -> Prop) (f : X ↛ bool) :
+  (forall x, ter (f x)) -> (forall x, f x =! true <-> p x) -> decidable p.
+Proof.
+  intros Hter He.
+  destruct (partial_total _ _ _ Hter) as [g Hg].
+  exists g. intros x. red. rewrite <- He. specialize (Hg x).
+  destruct (g x); firstorder. eapply hasvalue_det; eauto.
+Qed.
+
+Lemma pcomputes_decider {X} f (R : FunRel X bool) :
+  pcomputes f R -> (forall x, ter (f x)) -> decidable (fun x => R x true).
+Proof.
+  intros Hf HR.
+  eapply partial_decidable with (f := f).
+  - intros x. eauto. 
+  - intros x. split.
+    + intros H. now eapply Hf.
+    + intros H. destruct (HR x) as [b Hb].
+      enough (b = true) by congruence.
+      eapply Hf in Hb. eapply R; eauto.
+Qed.
+
+Goal forall X Y (p : X -> Prop) (q : Y -> Prop),
+    MP ->
+    p ⪯ᴛ q -> decidable q -> decidable p.
+Proof.
+  intros X Y p q mp [F [Hc H]] [f Hf].
+  eapply Turing_transports_computable in Hc as [F' HF'].
+  specialize (HF' (fun x => ret (f x)) (char_rel q)).
+  cbn in *.
+  eapply (@Proper_decidable X) with (y := fun x => F (char_rel q) x true).
+  intros x. eapply (H x true).
+  unshelve epose proof (HF' _) as hF'.
+  + intros x b. rewrite <- ret_hasvalue_iff.
+    specialize (Hf x). clear - Hf. destruct b, (f x); firstorder.
+  + eapply pcomputes_decider. eapply hF'.
+    intros. eapply (MP_to_MP_partial mp). intros Hx.
+    ccase (p x) as [Hp | Hp].
+    -- eapply Hx. exists true. eapply hF'. now eapply (H _ true).
+    -- eapply Hx. exists false. eapply hF'. now eapply (H _ false).
+Qed.
