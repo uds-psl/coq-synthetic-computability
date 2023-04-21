@@ -650,6 +650,14 @@ Proof using.
   exists (fun i l => tau (g i) l). intros. eapply H.
 Qed.
 
+Lemma computable_ret A Q I O v :
+  @OracleComputable Q A I O (fun f i o => o = v).
+Proof using.
+  exists (fun _ _ => ret (inr v)). intros.
+  firstorder. psimpl.
+  exists [], []. split. econstructor. subst. psimpl. psimpl.
+Qed.
+
 Lemma computable_id {X Y} :
   OracleComputable (fun R : FunRel X Y => R).
 Proof.
@@ -856,23 +864,6 @@ Proof.
     cbn. intros. now rewrite <- app_assoc.
 Qed.
 
-Lemma interrogation_plus' {Q A O} τ f n m v2 :
-  (exists l lv, length l = m /\ @noqinterrogation Q A O τ (fun x y => f x =! y) l lv /\ evalt (fun l' => τ (lv ++ l')) f n =! v2) <->
-  evalt τ f (m + n) =! v2.
-Proof.
-(*   - cbn. split. intros (? & ? & ?) *)
-(*   intros H. induction H in n |- *. *)
-(*   - cbn. eauto. *)
-(*   - intros. cbn in H2. *)
-(*     cbn -[evalt]. rewrite app_length. cbn -[evalt]. *)
-(*     replace (length qs + 1 + n) with (length qs + (S n)) by lia. *)
-(*     eapply IHnoqinterrogation. *)
-(*     cbn. psimpl. rewrite app_nil_r. eassumption. *)
-(*     cbn. psimpl. eapply evalt_ext; eauto. *)
-(*     cbn. intros. now rewrite <- app_assoc. *)
-(* Qed. *)
-Admitted.
-
 Lemma noqinterrogation_cons {Q A O} q1 q2 a1 a2 τ (f : Q -> A -> Prop) :
   τ [] =! inl q1 ->
   f q1 a1 ->
@@ -1062,6 +1053,166 @@ Proof.
   assert (length qs1 <= length qs2 \/ length qs2 <= length qs1) as [Hlen | Hlen] by lia.
   - eapply interrogation_output_det_le. eauto. exact H0. eauto. exact H2. eauto. lia.
   - symmetry. eapply interrogation_output_det_le. eauto. exact H2. eauto. exact H0. eauto. lia.
+Qed.
+
+Lemma list_find_repeat_not {Y} P D x n :
+  ~ P x ->
+  @list_find Y P D (repeat x n) = None.
+Proof.
+  induction n; cbn.
+  - reflexivity.
+  - intros. destruct (decide (P x)); try tauto. now rewrite IHn.
+Qed.
+
+Lemma computable_search I :
+  OracleComputable (fun R (i : I) n => R (i, n) true /\ forall m, m < n -> R (i, m) false).
+Proof.
+  eapply noqOracleComputable_equiv.
+  exists (fun i l => ret (match list_find (fun b => b = true) l with Some (i, _) => inr i | _ => inl (i, length l) end)).
+  intros f i v. symmetry. split.
+  - intros (qs & ans & H1 & H2).
+    destruct list_find as [ [] | ] eqn:E; next.
+    inversion H1; subst.
+    + cbn in E. congruence.
+    + destruct (list_find (λ b : bool, b = true) ans0) as [ [] | ] eqn:E_; next.
+      rewrite list_find_app_r in E; eauto.
+      cbn in E. destruct (decide (a = true)); cbn in *; inversion E; subst; clear E.
+      split; eauto.
+      clear H1 H2.
+      set (n := length ans0).
+      assert (qs0 = map (pair i) (seq 0 n) /\ ans0 = repeat false n).
+      { induction H.
+        - split; reflexivity.
+        - subst n. rewrite !app_length, repeat_app, seq_app, map_app.
+          cbn. eapply list_find_app_None in E_ as [E1 E2].
+          rewrite E1 in H0. next. cbn in E2. destruct (decide (a = true)); inversion E2.
+          destruct a; try congruence.
+          destruct IHnoqinterrogation as [IH1 IH2]; eauto.
+          split; congruence.
+      }
+      subst n.
+      destruct H0 as [-> ->].
+      induction H.
+      * cbn. intros. lia.
+      * rewrite app_length. cbn.
+        rewrite repeat_length.
+        intros.
+        assert (m = length ans \/ m < length ans) as [-> | HH] by lia.
+        -- eapply list_find_app_None in E_ as [E1 E2].
+           rewrite E1 in H0. next. cbn in E2. destruct a; cbv in E2; inversion E2.
+           eauto.
+        -- eapply IHnoqinterrogation. eapply list_find_app_None in E_. firstorder.
+           now rewrite repeat_length.
+  - intros (Hv & Hl).
+    exists (map (pair i) (seq 0 (v + 1))), (repeat false v ++ [true]).
+    split.
+    + rewrite seq_app, map_app. econstructor.
+      * clear Hv.
+        induction v.
+        -- econstructor.
+        -- replace (S v) with (v + 1) by lia. rewrite seq_app, repeat_app, map_app.
+           cbn. econstructor; eauto.
+           rewrite list_find_repeat_not; try congruence.
+           rewrite repeat_length. psimpl.
+      * rewrite list_find_repeat_not; try congruence.
+        rewrite repeat_length. psimpl.
+      * eauto.
+    + rewrite list_find_app_r.
+      2:{ rewrite list_find_repeat_not; try congruence. }
+      cbn. unfold decide, decide_rel. cbn. rewrite repeat_length. psimpl.
+Qed.
+
+Lemma computable_bind A Q Y Z I (F1: FunRel Q A -> _ -> _ -> Prop) F2 :
+  OracleComputable (I := I) F1 ->
+  OracleComputable (O := Z) F2 ->
+  OracleComputable (fun f x z => exists y : Y, F1 f x y /\ F2 f (x, y) z).
+Proof using.
+  intros [tau1 H1] % noqOracleComputable_equiv [tau2 H2] % noqOracleComputable_equiv.
+  eapply eOracleComputable_equiv.
+  eapply sOracleComputable_equiv.
+  exists (option (Y * nat)), None.
+  unshelve eexists.
+  { intros r b l.
+    refine (match b with Some (y, n) => bind (tau2 (r, y) (drop n l)) (fun res => match res with inl q => ret (inl (Some (y, n), Some q)) | inr o => ret (inr o) end)
+                    | None => bind (tau1 r l) (fun res => match res with inl q => ret (inl (None, Some q)) | inr y => ret (inl (Some (y, length l), None)) end) end).
+  } cbn.
+  intros. 
+  setoid_rewrite H1. setoid_rewrite H2. clear. symmetry. split.
+  - intros (qs & ans & info & H1 & H2).
+    destruct info as [ [y n] |  ]; simpl_assms.
+    all: destruct x0; simpl_assms.
+    exists y. rename R into f. rename x into i.
+    enough (n <= length ans /\ noqinterrogation (tau1 i) f (take n qs) (take n ans) ∧ tau1 i (take n ans) =! inr y /\  noqinterrogation (tau2 (i, y)) f (drop n qs) (drop n ans))
+      by firstorder. clear H.
+    generalize (eq_refl (@None (prod Y nat))).
+    revert H1. generalize (@None (prod Y nat)) at 2 3. intros none H1 Heqnone.
+    change (match Some (y,n) with Some (y, n) =>
+                                    n ≤ length ans ∧ 
+                                      noqinterrogation (tau1 i) f (take n qs) (take n ans) ∧ tau1 i (take n ans) =! inr y /\  noqinterrogation (tau2 (i, y)) f (drop n qs) (drop n ans)
+                             | None =>
+                                 noqinterrogation (tau1 i) f qs ans 
+            end).
+
+    revert H1. (generalize (Some (y, n))). intros.
+    induction H1 in Heqnone |- *.
+    + subst. econstructor.
+    + destruct e1' as [ [] | ]. psimpl. destruct x; psimpl.
+      psimpl. destruct x; psimpl. repeat split.
+      all: assert (length qs = length ans) as Hlen by (eapply sinterrogation_length; eauto).
+      * eauto.
+      * rewrite firstn_all. rewrite <- Hlen. rewrite firstn_all. eauto.
+      * rewrite firstn_all. eauto.
+      * rewrite !drop_all. rewrite <- Hlen. rewrite drop_all. econstructor.
+    + destruct e1' as [ [] | ].
+      * simpl_assms. destruct x; simpl_assms. destruct IHsinterrogation as (IH1 & IH2 & IH3 & IH4). reflexivity.
+        assert (length qs = length ans) as Hlen by (eapply sinterrogation_length; eauto).
+        repeat split.
+        -- rewrite app_length; cbn. lia.
+        -- rewrite !take_app_le; try lia. eauto.
+        -- rewrite !take_app_le; try lia. eauto.
+        -- rewrite !drop_app_le; try lia. econstructor; eauto.
+      * simpl_assms.  destruct x; simpl_assms.
+        assert (length qs = length ans) as Hlen by (eapply sinterrogation_length; eauto).
+        econstructor; eauto.
+  - intros (y & (qs1 & ans1 & H1 & H1') & (qs2 & ans2 & H2 & H2')).
+    exists (qs1 ++ qs2).
+    exists (ans1 ++ ans2).
+    exists (Some (y, length qs1)). split.
+    2:{ assert (length qs1 = length ans1) as Hlen by (eapply noqinterrogation_length; eauto).
+        psimpl. rewrite Hlen. rewrite drop_app. eauto. cbn. psimpl. }
+    eapply sinterrogation_app. instantiate (1 := None).
+    + clear - H1.
+      induction H1.
+      * econstructor.
+      * econstructor 3; eauto. cbn. psimpl.
+    + eapply sinterrogation_scons. psimpl. rewrite app_nil_r. eauto. cbn.
+      rewrite app_nil_r. cbn. psimpl.
+      assert (length qs1 = length ans1) as -> by (eapply noqinterrogation_length; eauto).
+      clear - H2.
+      induction H2.
+      * econstructor.
+      * econstructor 3; eauto.
+        cbn. psimpl. rewrite drop_app. eauto. cbn. psimpl.
+Qed.
+
+Lemma computable_if A Q I O (F1: (FunRel Q A)  -> _ -> _ -> Prop) F2 test :
+  @OracleComputable Q A I O F1 ->
+  @OracleComputable Q A I O F2 ->
+  @OracleComputable _ _ _ _ (fun f (x : I) => if test x : bool then F1 f x else F2 f x).
+Proof using.
+  intros [tau1 H1] [tau2 H2].
+  unshelve eexists. intros i.
+  destruct (test i). exact (tau1 i).
+  exact (tau2 i). intros. cbn. destruct test; cbn; eauto.
+Qed.
+ 
+Lemma computable_ident Q A O :
+  @OracleComputable Q A O O (fun R x o => x = o).
+Proof.
+  exists (fun x _ => ret (inr x)).
+  intros. firstorder; subst.
+  exists [], []. split. econstructor. psimpl.
+  psimpl.
 Qed.
 
 (** ** Central results regarding Turing reducibility *)
@@ -1552,6 +1703,15 @@ Qed.
 From SyntheticComputability Require Import reductions ReducibilityFacts EnumerabilityFacts.
 From SyntheticComputability Require Import ListAutomation.
 
+Lemma computable_Dec Q A I (P : I -> Prop) :
+        (forall i, dec (P i)) -> OracleComputable (fun (R : FunRel Q A) i o => reflects o (P i)).
+Proof.
+  intros D.
+  eapply OracleComputable_ext. eapply computable_if with (test := fun i => D i).
+  eapply computable_ret with (v := true). eapply computable_ret with (v := false). cbn.
+  intros. destruct (D i), o; cbn; firstorder congruence.
+Qed.
+
 Section HS. 
   Import  Coq.Init.Nat.
 
@@ -1577,6 +1737,19 @@ Section HS.
     * intros (? & ? & ?) % in_map_iff. subst. eapply E_I_enum. eauto.
   Qed.
 
+  Lemma reflects_true P :
+    reflects true P <-> P.
+  Proof.
+    firstorder congruence.
+  Qed.
+
+
+  Lemma reflects_false P :
+    reflects false P <-> ~ P.
+  Proof. clear.
+    firstorder congruence.
+  Qed.
+  
   Lemma red : DNE -> I ⪯ᴛ HS E_I.
   Proof.
     intros dne.
@@ -1584,7 +1757,7 @@ Section HS.
     { intros R. unshelve eexists.
       + intros z b. exact (exists x, R x false /\ E_I x > z /\ (forall x', x' < x -> (R x' true \/ R x' false /\ E_I x' <= z)) /\ reflects b (In z (map E_I (seq 0 (x + 1))))).
       + intros z [] []; repeat setoid_rewrite <- reflects_iff; try congruence.
-        * intros H1 H2. cstart. cunwrap. decompose [ex and] H1. decompose [ex and] H2.
+        * intros H1 H2. eapply dne. cunwrap. decompose [ex and] H1. decompose [ex and] H2.
           assert (~~ x = x0). {
             assert (x < x0 \/ x = x0 \/ x0 < x) as [ | [ | ]] by lia.
             -- eapply H7 in H8. cunwrap. destruct H8 as [| []]. enough (true = false) by congruence. eapply R; eauto. lia.
@@ -1592,7 +1765,7 @@ Section HS.
             -- eapply H3 in H8. cunwrap. destruct H8 as [| []]. enough (true = false) by congruence. eapply R; eauto. lia.
           } cunwrap. subst.
           firstorder congruence.
-        * intros H1 H2. cstart. cunwrap. decompose [ex and] H1. decompose [ex and] H2.
+        * intros H1 H2. eapply dne. cunwrap. decompose [ex and] H1. decompose [ex and] H2.
           assert (~~ x = x0). {
             assert (x < x0 \/ x = x0 \/ x0 < x) as [ | [ | ]] by lia.
             -- eapply H7 in H8. cunwrap. destruct H8 as [| []]. enough (true = false) by congruence. eapply R; eauto. lia.
@@ -1608,7 +1781,7 @@ Section HS.
         pose proof (non_finite_to_least E_I_injective (@HS_co_infinite I E_I I_undec) (z := S z)).
         cunwrap. destruct H as (x & Hcx & Hzx & Hleast). cprove exists x.
         split. eauto. split. lia. split. 
-        { intros. ccase (HS E_I x') as [Hx' | Hx']. eauto. right.
+        { intros. eapply dne. ccase (HS E_I x') as [Hx' | Hx']. eauto. cprove right.
           split. eauto. assert (E_I x' >= S z \/ E_I x' <= z) as [] by lia; try lia.
           exfalso. unshelve epose proof (Hleast x' _). eauto.
           assert (E_I x < E_I x' \/ E_I x = E_I x') as [] by lia.
@@ -1622,9 +1795,46 @@ Section HS.
         setoid_rewrite reflects_iff. unfold reflects in *.
         rewrite I_iff; eauto.
     }
-    
-    admit.
-  Admitted.
+
+    eapply OracleComputable_ext.
+    eapply computable_bind with (Y := nat).
+    refine (computable_comp _ (nat * nat) _ _ _ _ _ _ _ _).
+    Unshelve.
+    7,8: intros; econstructor; shelve. all: cbn.
+    2: eapply computable_search. 3: cbn.
+    eapply computable_bind.
+    eapply computable_precompose with (g := snd).
+    eapply computable_id. 4: cbn. 3: cbn.
+    eapply computable_Dec with (P := fun '(i, b) => (b = false /\ E_I (snd i) > ((fst i)))).
+    intros []. exact _.
+    eapply computable_Dec with (P := fun i => (@In nat (fst i) (@map nat nat E_I (seq 0 (snd i + 1))))).
+    intros. exact _. cbn. intros.
+    split.
+    - intros H. decompose [ex and] H. subst.
+      eapply reflects_iff in H4 as []. subst.
+      eexists. split. 2: split. 3: split.
+      all: eauto. intros ? ? % H3.
+      decompose [ex and] H1. eapply reflects_iff in H7. destruct x0; eauto.
+      right. split. eauto. lia.
+    - intros. decompose [ex and] H. eexists. split. split. eexists. split. 2: eapply reflects_iff. 2: split.
+      all: eauto.
+      intros. eapply H2 in H3. destruct H3 as [ | []].
+      + exists true. split. eauto. eapply reflects_false. clear. firstorder congruence.
+      + exists false. split; eauto. eapply reflects_false. lia.
+      Unshelve.
+      {
+        rename X into R.
+        intros ? * ? ?. decompose [ex and] H. decompose [ex and] H0.
+        eapply R in H2. eapply H2 in H4. subst. clear - H3 H5. destruct y1, y2; firstorder congruence.
+      }
+      {
+        rename X into R.
+        intros ? * ? ?. decompose [ex and] H. decompose [ex and] H0.
+        assert (y1 < y2 \/ y1 = y2 \/ y1 > y2) as [? | []] by lia; eauto.
+        enough (true = false) by congruence. eapply R. exact H1. eapply H4. eauto.
+        enough (true = false) by congruence. eapply R. exact H3. eapply H2. eauto.
+      }
+  Qed.
 
 End HS.
 
