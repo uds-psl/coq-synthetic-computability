@@ -1,6 +1,51 @@
 From SyntheticComputability Require Import TuringReducibility.OracleComputability.
 From SyntheticComputability Require Import partial Definitions reductions Dec.
-Require Import Lia.
+Require Import Lia List.
+From stdpp Require Import list.
+
+Definition OracleSemiDecidable_N {Part : partiality} {X Y} (q : Y -> Prop) (p : X -> Prop) :=
+  exists R : Functional Y bool X unit,
+    OracleComputable R /\
+      forall x, p x <-> R (char_rel q) x tt.
+
+Lemma PT_N {Part : partiality} {X Y} (q : Y -> Prop) (p : X -> Prop) :
+  OracleSemiDecidable_N q p ->
+  OracleSemiDecidable_N q (fun x => ~ p x) ->
+  red_Turing p q.
+Proof.
+  intros [F1 [[tau1 HF1] % noqOracleComputable_equiv H1]] [F2 [[tau2 HF2] H2]].
+  eapply Turing_reducible_without_rel.
+  enough
+    (  ∃ τ : X → stree (nat * (list (bool * Y))) Y bool bool,
+    ∀ (x : X) (b : bool), char_rel p x b ↔ (∃ (qs : list Y) (ans : list bool) e, sinterrogation (τ x) (char_rel q) qs ans (0, nil) e ∧ τ x e ans =! inr b)) by admit.
+  eexists (fun x '(n, qs) ans =>
+             match seval (tau1 x (map snd (filter (fun '((b, q), a) => b = true) (zip_with pair qs ans)))) n with
+             | Some (inr o) => ret (inr true)
+             | Some (inl q) => ret (inl ( (n, ((true, q) :: qs)), Some q))
+             | None => match seval (tau1 x (map snd (filter (fun '((b, q), a) => b = false) (zip_with pair qs ans)))) n with
+                      | Some (inr o) => ret (inr false)
+                      | Some (inl q) => ret (inl ( (n, ((false, q) :: qs)), Some q))
+                      | None => ret (inl ((S n, qs), None))
+                      end
+  end).
+  intros. split; destruct b; cbn.
+  - intros (qs & ans & Hint & Hend) % H1 % HF1.
+    admit.
+  - intros (qs & ans & Hint & Hend) % H2 % HF2.
+    admit.
+  - intros (qs & ans & [n all_qs] & Hint & Hend).
+    eapply H1, HF1. destruct seval as [ [] | ] eqn:E.
+    + psimpl.
+    + psimpl. 
+      exists (map snd (filter (fun '(b, _) => b = true) all_qs)), ans.
+      split.
+      2:{ destruct u. eapply seval_hasvalue. exists n. admit. }
+      clear E. admit.
+    + match type of Hend with
+        context [seval ?t ?n] => destruct (seval t n) as [ [] | ] eqn:E'
+        end; psimpl.
+  - 
+Admitted.
 
 Definition OracleSemiDecidable {Part : partiality} {X Y} (q : Y -> Prop) (p : X -> Prop) :=
   exists R : Functional Y bool (X * nat) bool,
