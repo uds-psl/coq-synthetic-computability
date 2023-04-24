@@ -13,7 +13,7 @@ Lemma PT_N {Part : partiality} {X Y} (q : Y -> Prop) (p : X -> Prop) :
   OracleSemiDecidable_N q (fun x => ~ p x) ->
   red_Turing p q.
 Proof.
-  intros [F1 [[tau1 HF1] % noqOracleComputable_equiv H1]] [F2 [[tau2 HF2] H2]].
+  intros [F1 [[tau1 HF1] % noqOracleComputable_equiv H1]] [F2 [[tau2 HF2] % noqOracleComputable_equiv H2]].
   eapply Turing_reducible_without_rel.
   enough
     (  ∃ τ : X → stree (nat * (list (bool * Y))) Y bool bool,
@@ -21,30 +21,143 @@ Proof.
   eexists (fun x '(n, qs) ans =>
              match seval (tau1 x (map snd (filter (fun '((b, q), a) => b = true) (zip_with pair qs ans)))) n with
              | Some (inr o) => ret (inr true)
-             | Some (inl q) => ret (inl ( (n, ((true, q) :: qs)), Some q))
-             | None => match seval (tau1 x (map snd (filter (fun '((b, q), a) => b = false) (zip_with pair qs ans)))) n with
+             | Some (inl q) => ret (inl ( (n, (qs ++ [(true, q)])), Some q))
+             | None => match seval (tau2 x (map snd (filter (fun '((b, q), a) => b = false) (zip_with pair qs ans)))) n with
                       | Some (inr o) => ret (inr false)
-                      | Some (inl q) => ret (inl ( (n, ((false, q) :: qs)), Some q))
+                      | Some (inl q) => ret (inl ( (n, (qs ++ [(false, q)])), Some q))
                       | None => ret (inl ((S n, qs), None))
                       end
   end).
   intros. split; destruct b; cbn.
   - intros (qs & ans & Hint & Hend) % H1 % HF1.
-    admit.
+    eapply seval_hasvalue in Hend as [n Hn].
+    enough (∃ (ans0 : list bool) (e : nat * list (bool * Y)),
+               let qs_ans := map (fun '((b,q), a) => (q,a)) ((filter (fun '((b, q), a) => b = true) (zip_with pair (snd e) ans0))) in
+               fst e >= n /\
+               qs = map fst qs_ans /\
+               ans = map snd qs_ans /\
+    sinterrogation
+      (λ '(n0, qs1) (ans1 : list bool),
+         match seval (tau1 x (map snd (filter (λ '(b, _, _), b = true) (zip qs1 ans1)))) n0 with
+         | Some (inl q0) => ret (inl (n0, qs1 ++ [(true, q0)], Some q0))
+         | Some (inr _) => ret (inr true)
+         | None =>
+             match seval (tau2 x (map snd (filter (λ '(b, _, _), b = false) (zip qs1 ans1)))) n0 with
+             | Some (inl q0) => ret (inl (n0, qs1 ++ [(false, q0) ], Some q0))
+             | Some (inr _) => ret (inr false)
+             | None => ret (inl (S n0, qs1, None))
+             end
+         end) (λ (x0 : Y) (b : bool), if b then q x0 else ¬ q x0) (map snd (snd e)) ans0 (0, []) e).
+    { cbn in *. decompose [ex and] H. subst. repeat eexists.
+      eauto. destruct x1. cbn in *.
+      assert (map snd (map (λ '(_, q, a), (q, a)) (filter (λ '(b, _, _), b = true) (zip l x0))) =
+                map snd (filter (λ '(b, _, _), b = true) (zip l x0))) as Eqn.
+      { rewrite map_map. eapply map_ext. now intros [[]]. }
+      rewrite Eqn in *. clear Eqn.
+      rewrite seval_mono. 3: eauto.
+      2: eauto. cbn. psimpl.
+    }
+    (* make sure n is the least such n here *)
+    revert Hn.
+    generalize (@inr Y unit ()). revert n.
+    induction Hint.
+    + cbn. exists []. exists (n, []). cbn. split. lia. split. split. split. econstructor.
+      assert (0 <= n) as Hl by lia. revert Hl.
+      generalize 0. intros.
+      (* eapply sinterrogation_scons. for n times by induction on n, with 0 generalized to something less than or equal n *)
+      admit.
+    + eapply seval_hasvalue in H as HH. destruct HH as [n Hn].
+      eapply IHHint in Hn as Hnn. destruct Hnn as (ans0 & [e1 e2] & IH1 & IH2 & IH3 & IH4). subst. intros.
+      eexists (ans0 ++ [a]). eexists (n0 `max` e1, e2 ++ [(true, q0)]). cbn. repeat split.
+      lia. admit. admit.
+      rewrite map_app. cbn.
+      eapply sinterrogation_app.
+      eassumption. eapply (sinterrogation_cons _ [] _ []). 
+      cbn in *.
+      rewrite seval_mono. 3: eauto.
+      2:{ rewrite map_map in Hn. erewrite map_ext. rewrite app_nil_r. eapply Hn.  now intros [[]]. }
+      cbn. psimpl. eapply H0.
+      (* eapply sinterrogation_scons for enough times, again needs that n0 is least n0 *)
+      admit.
   - intros (qs & ans & Hint & Hend) % H2 % HF2.
-    admit.
+     eapply seval_hasvalue in Hend as [n Hn].
+    enough (∃ (ans0 : list bool) (e : nat * list (bool * Y)),
+               let qs_ans := map (fun '((b,q), a) => (q,a)) ((filter (fun '((b, q), a) => b = false) (zip_with pair (snd e) ans0))) in
+               fst e >= n /\
+               qs = map fst qs_ans /\
+               ans = map snd qs_ans /\
+    sinterrogation
+      (λ '(n0, qs1) (ans1 : list bool),
+         match seval (tau1 x (map snd (filter (λ '(b, _, _), b = true) (zip qs1 ans1)))) n0 with
+         | Some (inl q0) => ret (inl (n0, qs1 ++ [(true, q0)], Some q0))
+         | Some (inr _) => ret (inr true)
+         | None =>
+             match seval (tau2 x (map snd (filter (λ '(b, _, _), b = false) (zip qs1 ans1)))) n0 with
+             | Some (inl q0) => ret (inl (n0, qs1 ++ [(false, q0) ], Some q0))
+             | Some (inr _) => ret (inr false)
+             | None => ret (inl (S n0, qs1, None))
+             end
+         end) (λ (x0 : Y) (b : bool), if b then q x0 else ¬ q x0) (map snd (snd e)) ans0 (0, []) e).
+    { cbn in *. decompose [ex and] H. subst. repeat eexists.
+      eauto. destruct x1. cbn in *.
+      assert (map snd (map (λ '(_, q, a), (q, a)) (filter (λ '(b, _, _), b = false) (zip l x0))) =
+                map snd (filter (λ '(b, _, _), b = false) (zip l x0))) as Eqn.
+      { rewrite map_map. eapply map_ext. now intros [[]]. }
+      rewrite Eqn in *. clear Eqn.
+      (* to exclude that tau1 yields a result here, strengthen the goal to say that also there is an interrogation for tau1 and remember that ~ p x holds.
+         then H1, H2, HF1, HF2 will yield a contradiction *)
+      admit.
+    }
+    (* make sure n is the least such n here *)
+    revert Hn.
+    generalize (@inr Y unit ()). revert n.
+    induction Hint.
+    + cbn. exists []. exists (n, []). cbn. split. lia. split. split. split. econstructor.
+      assert (0 <= n) as Hl by lia. revert Hl.
+      generalize 0. intros.
+      (* obvious that tau1 cannot yield result here *)
+      (* eapply sinterrogation_scons. for n times by induction on n, with 0 generalized to something less than or equal n *)
+      admit.
+    + eapply seval_hasvalue in H as HH. destruct HH as [n Hn].
+      eapply IHHint in Hn as Hnn. destruct Hnn as (ans0 & [e1 e2] & IH1 & IH2 & IH3 & IH4). subst. intros.
+      eexists (ans0 ++ [a]). eexists (n0 `max` e1, e2 ++ [(false, q0)]). cbn. repeat split.
+      lia. admit. admit.
+      rewrite map_app. cbn.
+      eapply sinterrogation_app.
+      eassumption. eapply (sinterrogation_cons _ [] _ []). 
+      (* again, by IH we cannot have that tau1 yields a result, because ~ p x holds *)
+      (* cbn in *. *)
+      (* rewrite seval_mono. 3: eauto. *)
+      (* 2:{ rewrite map_map in Hn. erewrite map_ext. rewrite app_nil_r. eapply Hn.  now intros [[]]. } *)
+      (* cbn. psimpl. *)
+      admit. eapply H0.
+      (* eapply sinterrogation_scons for enough times, again needs that n0 is least n0 *)
+      admit.
   - intros (qs & ans & [n all_qs] & Hint & Hend).
     eapply H1, HF1. destruct seval as [ [] | ] eqn:E.
     + psimpl.
-    + psimpl. 
-      exists (map snd (filter (fun '(b, _) => b = true) all_qs)), ans.
+    + psimpl.
+      exists (map snd (filter (fun '(b, _) => b = true) all_qs)),  (map snd (filter (λ '(b, _, _), b = true) (zip all_qs ans))).
       split.
-      2:{ destruct u. eapply seval_hasvalue. exists n. admit. }
-      clear E. admit.
+      2:{ destruct u. eapply seval_hasvalue. exists n. eassumption. }
+      (* some kind of induction on Hint *)
+      admit.
     + match type of Hend with
         context [seval ?t ?n] => destruct (seval t n) as [ [] | ] eqn:E'
         end; psimpl.
-  - 
+  - intros (qs & ans & [n all_qs] & Hint & Hend).
+    eapply H2, HF2. destruct seval as [ [] | ] eqn:E.
+    + psimpl.
+    + psimpl.
+    + revert E. destruct seval as [ [] | ] eqn:E'; intros E.
+      * psimpl.
+      * psimpl.
+        exists (map snd (filter (fun '(b, _) => b = false) all_qs)),  (map snd (filter (λ '(b, _, _), b = false) (zip all_qs ans))).
+        split.
+        2:{ destruct u. eapply seval_hasvalue. exists n. eassumption. }
+        (* some kind of induction on Hint *)
+        admit.
+      * psimpl. 
 Admitted.
 
 Definition OracleSemiDecidable {Part : partiality} {X Y} (q : Y -> Prop) (p : X -> Prop) :=
