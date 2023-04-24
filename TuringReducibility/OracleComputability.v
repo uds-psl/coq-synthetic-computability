@@ -1,10 +1,6 @@
 From SyntheticComputability Require Import partial.
 From stdpp Require Import list.
 
-Section part.
-
-Context {Part : partiality}.
-
 (** ** Tactics to deal with partial functions *)
 
 Ltac decomp x :=
@@ -41,6 +37,10 @@ Ltac simpl_goal :=
   eauto.
 
 Ltac psimpl := repeat progress (cbn; simpl_assms; simpl_goal).
+
+Section part.
+
+Context {Part : partiality}.
 
 (** ** Extensional dialogue trees *)
 
@@ -685,7 +685,7 @@ Proof.
   rewrite drop_app_le; eauto. lia.
 Qed.
 
-Lemma computable_comp A X  Q Y I O (F1 : FunRel Q A -> FunRel X Y) (F2 : FunRel X Y -> FunRel I O) :
+Lemma computable_comp A X  Q Y I O (F1 : FunRel Q A -> FunRel X Y) (F2 : FunRel X Y -> I -> O -> Prop) :
   OracleComputable F1
   -> OracleComputable F2
   -> OracleComputable (fun r x => F2 (F1 r) x).
@@ -1251,7 +1251,7 @@ Lemma Turing_transitive {X Y Z} {p : X -> Prop} (q : Y -> Prop) (r : Z -> Prop) 
 Proof.
   intros (r1 & Hr1 & H1) (r2 & Hr2 & H2).
   exists (fun R => r1 (r2 R)). split.
-  - eapply computable_comp; eauto.
+  - eapply computable_comp with (F2 := r1). eapply Hr2. eapply Hr1.
   - intros. rewrite H1.
     eapply (OracleComputable_extensional Hr1).
     firstorder.
@@ -1740,6 +1740,7 @@ Section HS.
   Lemma reflects_true P :
     reflects true P <-> P.
   Proof.
+    clear.
     firstorder congruence.
   Qed.
 
@@ -1800,7 +1801,7 @@ Section HS.
     eapply computable_bind with (Y := nat).
     refine (computable_comp _ (nat * nat) _ _ _ _ _ _ _ _).
     Unshelve.
-    7,8: intros; econstructor; shelve. all: cbn.
+    7: intros; econstructor; shelve. all: cbn.
     2: eapply computable_search. 3: cbn.
     eapply computable_bind.
     eapply computable_precompose with (g := snd).
@@ -1826,13 +1827,6 @@ Section HS.
         rename X into R.
         intros ? * ? ?. decompose [ex and] H. decompose [ex and] H0.
         eapply R in H2. eapply H2 in H4. subst. clear - H3 H5. destruct y1, y2; firstorder congruence.
-      }
-      {
-        rename X into R.
-        intros ? * ? ?. decompose [ex and] H. decompose [ex and] H0.
-        assert (y1 < y2 \/ y1 = y2 \/ y1 > y2) as [? | []] by lia; eauto.
-        enough (true = false) by congruence. eapply R. exact H1. eapply H4. eauto.
-        enough (true = false) by congruence. eapply R. exact H3. eapply H2. eauto.
       }
   Qed.
 
