@@ -295,46 +295,72 @@ Proof.
   + rewrite snd_zip; trivial. now rewrite (noqinterrogation_length H1).
 Qed.
 
+Lemma noqinterogation_equiv':
+  ∀ (Q A I O : Type) (tau : I → tree Q A O),
+  ∃ τ : I → (list A) ↛ (Q + O),
+  ∀ (R : FunRel Q A) (x : I) (o : O),
+    (∃ (qs : list Q) (ans : list A), interrogation (tau x) R qs ans ∧ tau x (zip qs ans) =! Output o)
+      ↔ (∃ (qs : list Q) (ans : list A), noqinterrogation (τ x) R qs ans ∧ τ x ans =! Output o).
+Proof.
+  intros Q A I O tau.
+  
+  exists (fun i l => allqs (tau i) [] l). intros f i o.
+  apply helper. intros qs. apply helper. intros ans. split; intros [H1 H2]; split.
+  + clear H2. induction H1; constructor; trivial. eapply unzip_nil; eassumption. 
+  + cbn in H2. eapply unzip_nil; eauto.       
+  + clear H2. induction H1; constructor; trivial. eapply unzip_nil in H; eauto.
+  + eapply unzip_nil in H2; eauto.
+    instantiate (1 := f).
+    clear - H1. induction H1.
+    * econstructor.
+    * econstructor; eauto. eapply unzip_nil; eauto.
+Qed.
+
 Lemma noqOracleComputable_equiv {Q A I O} F :
   OracleComputable F <-> @noqOracleComputable Q A I O F.
 Proof.
   split.
-  - intros [tau Ht]. exists (fun i l => allqs (tau i) [] l). intros f i o.
-    rewrite Ht. apply helper. intros qs. apply helper. intros ans. split; intros [H1 H2]; split.
-    + clear H2. induction H1; constructor; trivial. eapply unzip_nil; eassumption. 
-    + cbn in H2. eapply unzip_nil; eauto.       
-    + clear H2. induction H1; constructor; trivial. eapply unzip_nil in H; eauto.
-    + eapply unzip_nil in H2; eauto.
-      instantiate (1 := f).
-      clear - H1. induction H1.
-      * econstructor.
-      * econstructor; eauto. eapply unzip_nil; eauto.
+  - intros [tau Ht]. red. setoid_rewrite Ht.
+    eapply noqinterogation_equiv'.
   - intros [tau Ht]. exists (fun i l => tau i (map snd l)). intros f i o.
     rewrite Ht.
     eapply noqinterrogation_equiv.
 Qed.  
+
+Lemma einterrogation_equiv:
+  ∀ (Q A I O E : Type) (e : E) (tau : I → etree E Q A O),
+  ∃ τ : I → (list A) ↛ (Q + O),
+  ∀ (R : FunRel Q A) (x : I) (o : O),
+    (∃ (qs : list Q) (ans : list A) (e' : E), einterrogation (tau x) R qs ans e e' ∧ tau x e' ans =! Output o)
+      ↔ (∃ (qs : list Q) (ans : list A), noqinterrogation (τ x) R qs ans ∧ τ x ans =! Output o).
+Proof.
+  intros Q A I O E e tau.  
+  exists (fun i l => bind (allqse (tau i) e [] l) (fun x => match x with inl (_, q) => ret (inl q) | inr o => ret (inr o) end)).
+  intros f i o.
+  apply helper. intros qs. apply helper. intros ans. symmetry. split.
+  + intros [H1 H2].
+    assert (∃ e' : E, einterrogation (tau i) f qs ans e e').
+    { clear H2. induction H1.
+      - eexists. econstructor.
+      - psimpl. destruct x as [ [] | ]; psimpl. 
+        destruct IHnoqinterrogation. eexists. econstructor; eauto. eapply unzip_nil_e; eauto.
+    }
+    destruct H as (e' & H). exists e'. split; eauto.
+    psimpl. destruct x as [ [] | ]; psimpl. eapply unzip_nil_e; eauto.
+  + intros (e' & H1 & H2). split.
+    * clear H2. induction H1; constructor; trivial. eapply unzip_nil_e in H; eauto.
+      psimpl. 
+    * psimpl. eapply unzip_nil_e; eauto. cbn. psimpl.
+Qed.
 
 Lemma eOracleComputable_equiv {Q A I O} R :
   eOracleComputable R <-> @OracleComputable Q A I O R.
 Proof.
   rewrite noqOracleComputable_equiv.
   split.
-  - intros (E & e & tau & Ht). exists (fun i l => bind (allqse (tau i) e [] l) (fun x => match x with inl (_, q) => ret (inl q) | inr o => ret (inr o) end)).
-    intros f i o.
-    rewrite Ht. apply helper. intros qs. apply helper. intros ans. symmetry. split.
-    + intros [H1 H2].
-      assert (∃ e' : E, einterrogation (tau i) f qs ans e e').
-      { clear H2. induction H1.
-        - eexists. econstructor.
-        - psimpl. destruct x as [ [] | ]; psimpl. 
-          destruct IHnoqinterrogation. eexists. econstructor; eauto. eapply unzip_nil_e; eauto.
-      }
-      destruct H as (e' & H). exists e'. split; eauto.
-      psimpl. destruct x as [ [] | ]; psimpl. eapply unzip_nil_e; eauto.
-    + intros (e' & H1 & H2). split.
-      * clear H2. induction H1; constructor; trivial. eapply unzip_nil_e in H; eauto.
-        psimpl. eapply unzip_nil_e; eauto. cbn. psimpl.
-      * psimpl. eapply unzip_nil_e; eauto. cbn. psimpl.
+  - intros (E & e & tau & Ht).
+    red. setoid_rewrite Ht. clear Ht.
+    eapply einterrogation_equiv.
   - intros [tau Ht]. exists unit, tt, (fun i e l => bind (tau i l) (fun x => match x with inl q => ret (inl (tt, q)) | inr o => ret (inr o) end)). intros f i o.
     rewrite Ht. apply helper. intros qs. apply helper. intros ans. firstorder.
     + exists tt. split.
@@ -344,7 +370,6 @@ Proof.
     + clear - H. induction H; econstructor; eauto.
       psimpl. destruct x; psimpl.
     + psimpl; destruct x0; psimpl.
-
 Qed.
 
 Hint Constructors interrogation.
@@ -509,10 +534,15 @@ Qed.
 Definition sOracleComputable {Q A I O} (r : FunRel Q A -> I -> O -> Prop) :=
   exists E, exists e : E, exists τ : I -> stree E Q A O, forall R x o, r R x o <-> exists qs ans e', sinterrogation (τ x) R qs ans e e' /\ τ x e' ans =! Output o.
 
-Lemma sOracleComputable_equiv Q A I O F :
-  sOracleComputable F -> @eOracleComputable Q A I O F.
+Lemma sinterrogation_equiv:
+  ∀ (Q A I O E : Type) (e : E) (tau : I → stree E Q A O),
+  ∃ τ : I → etree E Q A O,
+  ∀ (R : FunRel Q A) (x : I) (o : O),
+    (∃ (qs : list Q) (ans : list A) (e' : E), sinterrogation (tau x) R qs ans e e' ∧ tau x e' ans =! Output o)
+      ↔ (∃ (qs : list Q) (ans : list A) (e' : E), einterrogation (τ x) R qs ans e e' ∧ τ x e' ans =! Output o).
 Proof.
-  intros (E & e & tau & Ht). exists E. exists e.
+  intros Q A I O E e tau.
+  
   pose (t := fun i e l => bind (mu (fun n => bind (iterate (fun e => tau i e l) n e) (fun x => match x with Some _ => ret true | _ => ret false end)))
                          (fun n => bind (iterate (fun e => tau i e l) n e)
                                   (fun x => match x with Some (inl (e, Some q)) => ret (inl (e, q))
@@ -521,7 +551,7 @@ Proof.
                                          end))).
   exists t.
   intros f i o.
-  rewrite Ht. clear Ht. do 2 (eapply helper; intros). rename x into qs, x0 into ans.
+  do 2 (eapply helper; intros). rename x into qs, x0 into ans.
   symmetry. split.
   - subst t. intros (e' & H1 & H2). psimpl. destruct x0; psimpl. destruct s; psimpl.
     destruct p; psimpl. destruct o0; psimpl. rename x into n.
@@ -629,6 +659,14 @@ Proof.
       eexists. split.
       econstructor; eauto.
       eauto.
+Qed.
+
+Lemma sOracleComputable_equiv Q A I O F :
+  sOracleComputable F -> @eOracleComputable Q A I O F.
+Proof.
+  intros (E & e & tau & Ht). exists E. exists e.
+  setoid_rewrite Ht. clear Ht.
+  eapply sinterrogation_equiv.
 Qed.
 
 (** ** Lemmas about Turing reducibility *)
