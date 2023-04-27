@@ -5,6 +5,26 @@ From SyntheticComputability.Shared Require Import mu_nat equiv_on.
 
 (** Facts on reflects *)
 
+Lemma reflects_iff (b : bool) P :
+  (if b then P else ~ P) <-> reflects b P.
+Proof.
+  destruct b; firstorder.
+Qed.
+
+Lemma reflects_true P :
+  reflects true P <-> P.
+Proof.
+  clear.
+  firstorder congruence.
+Qed.
+
+
+Lemma reflects_false P :
+  reflects false P <-> ~ P.
+Proof. clear.
+       firstorder congruence.
+Qed.
+
 Lemma reflects_not b P :
   reflects b P -> reflects (negb b) (~P).
 Proof.

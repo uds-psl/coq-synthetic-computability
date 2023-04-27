@@ -265,6 +265,58 @@ Section assume_part.
 
 End assume_part.
 
+Module PartialTactics.
+
+
+Ltac decomp x :=
+  let x1 := fresh "x" in
+  let x2 := fresh "x" in
+  try match type of x with
+    | prod ?A ?B => destruct x as [x1 x2]; decomp x1; decomp x2
+    end.
+
+Ltac next :=
+  (try now eauto);
+  match goal with
+  | [ H : bind ?x ?f =! ?v |- _ ] =>
+      let x := fresh "x" in
+      eapply bind_hasvalue in H as (x & ? & ?);
+      decomp x
+  | [ H : ret ?x =! ?v |- _ ] =>
+      eapply ret_hasvalue_inv in H;
+      inversion H;
+      subst;
+      clear H
+  | [ H : context [ match ?l ++ [_] with nil => _ | _ :: _ => _  end ] |- _ ] => destruct l; cbn in *
+  | [ H : ?l ++ [_] = nil |- _] => destruct l; cbn in *; congruence
+  | [ H : _ :: _ = _ :: _ |- _ ] => inversion H; subst; clear H
+  | [ H : undef =! _ |- _ ] => eapply undef_hasvalue in H; tauto
+  end.
+
+Ltac simpl_assms :=
+  repeat next.
+
+Ltac simpl_goal :=
+  try (progress (setoid_rewrite bind_hasvalue + eapply ret_hasvalue);
+       repeat (setoid_rewrite bind_hasvalue + eexists + eapply ret_hasvalue));
+  eauto.
+
+Ltac psimpl := repeat progress (cbn; simpl_assms; simpl_goal).
+
+End PartialTactics.
+
+Import PartialTactics.
+
+Lemma bind_hasvalue_given :
+  forall {Part : partial.partiality} [A B : Type] (x : part A) (f : A ↛ B) (b : B) a,
+    x=! a -> bind (B:=B) x f =! b <-> f a =! b.
+Proof.
+  intros; split; intros.
+  - psimpl. replace a with x0; eauto.
+    eapply hasvalue_det; eauto.
+  - psimpl.
+Qed.
+
 Lemma list_max_spec L x :
   In x L -> x <= list_max L.
 Proof.
