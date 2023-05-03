@@ -17,11 +17,11 @@ Variable  q : Y → Prop.
 Variable  p : X → Prop.
 Variable  F1 : Functional Y bool X ().
 Variable  tau1 : X → (list bool) ↛ (Y + unit).
-Variable  HF1 : ∀ (R : FunRel Y bool) (x : X) (o : ()), F1 R x o ↔ (∃ (qs : list Y) (ans : list bool), noqinterrogation (tau1 x) R qs ans ∧ tau1 x ans =! inr o).
+Variable  HF1 : ∀ (R : Rel Y bool) (x : X) (o : ()), F1 R x o ↔ (∃ (qs : list Y) (ans : list bool), noqinterrogation (tau1 x) R qs ans ∧ tau1 x ans =! inr o).
 Variable  H1 : ∀ x : X, p x ↔ F1 (char_rel q) x ().
 Variable  F2 : Functional Y bool X ().
 Variable  tau2 : X → (list bool) ↛ (Y + unit).
-Variable  HF2 : ∀ (R : FunRel Y bool) (x : X) (o : ()), F2 R x o ↔ (∃ (qs : list Y) (ans : list bool), noqinterrogation (tau2 x) R qs ans ∧ tau2 x ans =! inr o).
+Variable  HF2 : ∀ (R : Rel Y bool) (x : X) (o : ()), F2 R x o ↔ (∃ (qs : list Y) (ans : list bool), noqinterrogation (tau2 x) R qs ans ∧ tau2 x ans =! inr o).
 Variable  H2 : ∀ x : X, ¬ p x ↔ F2 (char_rel q) x ().
 
 Definition get_ans B (tqs : list (bool * Y)) (ans : list bool) := (map snd (filter (fun '((b, q), a) => b = B) (zip_with pair tqs ans))).
@@ -165,7 +165,8 @@ Proof.
            eauto.
       * edestruct IH as (tqs' & ans' & n' & IH1 & IH2 & IH3); eauto.
         assert (~ p x). {
-          eapply H2, HF2. repeat eexists. 2: eapply seval_hasvalue'; eauto.
+          eapply H2.
+          eapply HF2. repeat eexists. 2: eapply seval_hasvalue'; eauto.
           eauto.
         }
         tauto.
@@ -431,11 +432,6 @@ Proof.
   - intros Hx.
     eapply H1 in Hx as Hx'. eapply HF1 in Hx' as (qs & ans & Hint & Hend).
     eapply seval_hasvalue in Hend as [n Hn].
-    (* edestruct Wf_nat.dec_inh_nat_subset_has_unique_least_element with (P := fun n => seval (tau1 x ans) n = Some (inr ())). *)
-    (* { intros. clear. destruct seval as [ [? | []] | ]; firstorder congruence. } *)
-    (* { eauto. } *)
-    (* clear n Hn. rename x0 into n. destruct H as [ [] ]. rename H into Hn. *)
-    (* rename H0 into Hleast. clear H3. *)
 
     enough (∃ (ans0 : list bool) m (qs0 : list (bool * Y)),
                qs = get_qs1 qs0 /\
@@ -746,7 +742,7 @@ End PT.
 
 Print Assumptions main.
 
-Lemma needed {Part : partiality} {E Q A I O} (τ0 : I -> stree E Q A O) (f : FunRel Q A) e0 :
+Lemma needed {Part : partiality} {E Q A I O} (τ0 : I -> stree E Q A O) (f : Rel Q A) e0 :
   ∃ τ1 : I → tree Q A O,
   ∀ (x : I) (b : O),
     (∃ (qs : list Q) (ans : list A) (e : E), sinterrogation (τ0 x) f qs ans e0 e ∧ τ0 x e ans =! inr b)
@@ -787,14 +783,11 @@ Lemma semi_decidable_OracleSemiDecidable {Part : partiality} {X Y} (q : Y -> Pro
   semi_decidable p -> OracleSemiDecidable q p.
 Proof.
   intros (T & g & Hg) % SemiDecidabilityFacts.semi_decidable_part_iff.
-  unshelve eexists.
-  intros ?. eexists. shelve. split.
+  eexists. split.
   eapply (computable_partial_function (fun x => bind (g x) (fun _ => ret tt))).
-  Unshelve.
-  2:{ intros ? * ? ?. psimpl. }
-  all: cbn. intros. rewrite Hg. split.
-  intros []. psimpl.
-  intros. psimpl.
+  intros. rewrite Hg. split.
+  - intros []. psimpl.
+  - intros. psimpl.
 Qed.
 
 Lemma OracleSemiDecidable_semi_decidable {Part : partiality} {X Y} (q : Y -> Prop) (p : X -> Prop) :
@@ -823,15 +816,14 @@ Lemma red_m_transports_sdec {Part : partiality} {X Y Z} (q : Y -> Prop) (p1 : Z 
   OracleSemiDecidable q p1.
 Proof.
   intros [G [HG H1]] [f Hf].
-  unshelve eexists. intros R. econstructor. shelve. cbn. split.
-  eapply computable_bind.
-  eapply (computable_function f).
-  eapply computable_precompose with (g := snd). eapply HG.
-  cbn. split. Unshelve.
-  - intros ? % Hf % H1. eauto.
-  - red in Hf. intros. rewrite Hf, H1.
-    destruct H as (? & ? & ?). subst. eauto.
-  - intros ? ? ?. firstorder subst. eapply G; eauto.
+  eexists. split.
+  - eapply computable_bind.
+    eapply (computable_function f).
+    eapply computable_precompose with (g := snd). eapply HG.
+  - cbn. split. 
+    + intros ? % Hf % H1. eauto.
+    + red in Hf. intros. rewrite Hf, H1.
+      destruct H as (? & ? & ?). subst. eauto.
 Qed.
 
 Lemma Turing_transports_sdec {Part : partiality} {X Y Z} (q1 : Y -> Prop) (q2 : Z -> Prop) (p : X -> Prop) :
@@ -840,14 +832,11 @@ Lemma Turing_transports_sdec {Part : partiality} {X Y Z} (q1 : Y -> Prop) (q2 : 
   OracleSemiDecidable q2 p.
 Proof.
   intros [G [HG H1]] [F [HF H2]].
-  unshelve eexists. intros R. econstructor. 
-  2:{ split.
-      all: cbn.
-      eapply computable_comp.
-      eapply HF. eapply HG. cbn.
-      intros. rewrite H1.
-      eapply OracleComputable_extensional in HG. eapply HG.
-      eauto.
-  }
-  intros ? ? ? ? ?. eapply G; eauto.
+  eexists. split.
+  all: cbn.
+  - eapply computable_comp.
+    eapply HF. eapply HG.
+  - intros. rewrite H1.
+    eapply OracleComputable_extensional in HG. eapply HG.
+    eauto.
 Qed.

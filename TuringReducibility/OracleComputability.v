@@ -36,15 +36,22 @@ Inductive interrogation {Q A O : Type} (τ : tree Q A O) (R : Q -> A -> Prop) : 
 
 (** ** Oracle Functionals and Turing Reducibility *)
 
-Definition Functional Q A I O := FunRel Q A -> FunRel I O.
+Definition FunRel := True.
+Definition Rel A B := A -> B -> Prop.
 
-Definition OracleComputable {Q A I O} (r : FunRel Q A -> I -> O -> Prop) :=
+Definition Functional Q A I O := (Q -> A -> Prop) -> (I -> O -> Prop).
+
+Definition OracleComputable {Q A I O} (r : (Q -> A -> Prop) -> I -> O -> Prop) :=
   exists τ : I -> tree Q A O, forall R x o, r R x o <-> exists qs ans, interrogation (τ x) R qs ans /\ τ x (zip qs ans) =! Output o.
 
-Definition char_rel {X} (p : X -> Prop) : FunRel X bool.
-  exists (fun x b => if (b : bool) then p x else ~ p x).
-  abstract (intros ? [] [] ? ?; firstorder congruence).
-Defined.
+Definition char_rel {X} (p : X -> Prop) : Rel X bool :=
+  fun x b => if (b : bool) then p x else ~ p x.
+
+Lemma char_rel_functional {X} (p : X -> Prop) :
+  functional (char_rel p).
+Proof.
+  intros ? [] [] ? ?; firstorder congruence.
+Qed.
 
 Definition red_Turing {X Y} (p : X -> Prop) (q : Y -> Prop) :=
   exists r : Functional Y bool X bool, OracleComputable r /\ forall x b, char_rel p x b <-> r (char_rel q) x b.
@@ -93,12 +100,12 @@ Proof.
         split. lia. eauto.
 Qed.
 
-Lemma interrogation_ext {Q A O} τ τ' (f f' : FunRel Q A) q a :
+Lemma interrogation_ext {Q A O} τ τ' (f f' : Rel Q A) q a :
   (forall l v, τ l =! v <-> τ' l =! v) ->
   (forall q_ a, In q_ q -> f q_ a <-> f' q_ a) ->
   interrogation τ f q a <-> @interrogation Q A O τ' f' q a.
 Proof.
-  enough (forall τ τ' (f f' : FunRel Q A) q a,
+  enough (forall τ τ' (f f' : Rel Q A) q a,
              (forall l v, τ l =! v <-> τ' l =! v) ->
              (forall q_ a, In q_ q -> f q_ a <-> f' q_ a) ->
              interrogation τ f q a -> @interrogation Q A O τ' f' q a).
@@ -204,7 +211,7 @@ Proof.
   intros. now rewrite <- H, He.
 Qed.
 
-Lemma OracleComputable_extensional {Q A I O F} {R R' : FunRel Q A} :
+Lemma OracleComputable_extensional {Q A I O F} {R R' : Rel Q A} :
   @OracleComputable Q A I O F ->
   (forall q a, R q a <-> R' q a) ->
   forall i o, F R i o <-> F R' i o.
@@ -215,10 +222,19 @@ Proof.
   erewrite interrogation_ext. reflexivity. reflexivity. firstorder.
 Qed.
 
-Definition modulus_continuous {Q A I O} (F : FunRel Q A -> FunRel I O) :=
-  forall (R : FunRel Q A) (i : I) (o : O), F R i o -> exists L, (forall i', In i' L -> exists o', R i' o') /\ (forall R' : FunRel Q A, (forall i' o' , In i' L -> R i' o' -> R' i' o') -> F R' i o).
+Lemma OracleComputable_functional {Q A I O F} {R : Rel Q A} :
+  @OracleComputable Q A I O F ->
+  functional R -> functional (F R).
+Proof.
+  intros [tau H] Hfun i o1 o2 (qs1 & ans1 & Hint1 & Hend1) % H (qs2 & ans2 & Hint2 & Hend2) % H.
+  eapply interrogation_output_det.
+  3,5: eauto. all: eauto.
+Qed.
 
-Lemma cont_to_cont {P : partiality} {Q A I O} (F : FunRel Q A -> FunRel I O) :
+Definition modulus_continuous {Q A I O} (F : Rel Q A -> Rel I O) :=
+  forall (R : Rel Q A) (i : I) (o : O), F R i o -> exists L, (forall i', In i' L -> exists o', R i' o') /\ (forall R' : Rel Q A, (forall i' o' , In i' L -> R i' o' -> R' i' o') -> F R' i o).
+
+Lemma cont_to_cont {P : partiality} {Q A I O} (F : Rel Q A -> Rel I O) :
   OracleComputable F -> modulus_continuous F.
 Proof.
   intros [τ H] R i v Hv.
@@ -312,7 +328,7 @@ Inductive noqinterrogation {Q A O} (τ : (list A) ↛ (Q + O)) (f : Q -> A -> Pr
                            f q a ->
                            noqinterrogation τ f (qs ++ [q]) (ans ++ [a]).
 
-Definition noqOracleComputable {Q A I O} (r : FunRel Q A -> I -> O -> Prop) :=
+Definition noqOracleComputable {Q A I O} (r : Rel Q A -> I -> O -> Prop) :=
   exists τ : I -> (list A) ↛ (Q + O), forall R x o, r R x o <-> exists qs ans, noqinterrogation (τ x) R qs ans /\ τ x ans =! Output o.
 
 Lemma noqinterrogation_length {Q A O} {tau f qs ans} :
@@ -432,7 +448,7 @@ Qed.
 Lemma noqinterogation_equiv':
   ∀ (Q A I O : Type) (tau : I → tree Q A O),
   ∃ τ : I → (list A) ↛ (Q + O),
-  ∀ (R : FunRel Q A) (x : I) (o : O),
+  ∀ (R : Rel Q A) (x : I) (o : O),
     (∃ (qs : list Q) (ans : list A), interrogation (tau x) R qs ans ∧ tau x (zip qs ans) =! Output o)
       ↔ (∃ (qs : list Q) (ans : list A), noqinterrogation (τ x) R qs ans ∧ τ x ans =! Output o).
 Proof.
@@ -472,7 +488,7 @@ Inductive einterrogation {E Q A O} (τ : etree E Q A O) (f : Q -> A -> Prop) : l
                                       f q a ->
                                       einterrogation τ f (qs ++ [q]) (ans ++ [a]) e1 e2.
 
-Definition eOracleComputable {Q A I O} (r : FunRel Q A -> I -> O -> Prop) :=
+Definition eOracleComputable {Q A I O} (r : Rel Q A -> I -> O -> Prop) :=
   exists E, exists e : E, exists τ : I -> etree E Q A O, forall R x o, r R x o <-> exists qs ans e', einterrogation (τ x) R qs ans e e' /\ τ x e' ans =! Output o.
 
 Fixpoint alles {E Q A O} (τ : etree E Q A O) e (acc : list A) (l : list A) : part (E * Q + O) :=
@@ -569,7 +585,7 @@ Qed.
 Lemma einterrogation_equiv:
   ∀ (Q A I O E : Type) (e : E) (tau : I → etree E Q A O),
   ∃ τ : I → (list A) ↛ (Q + O),
-  ∀ (R : FunRel Q A) (x : I) (o : O),
+  ∀ (R : Rel Q A) (x : I) (o : O),
     (∃ (qs : list Q) (ans : list A) (e' : E), einterrogation (tau x) R qs ans e e' ∧ tau x e' ans =! Output o)
       ↔ (∃ (qs : list Q) (ans : list A), noqinterrogation (τ x) R qs ans ∧ τ x ans =! Output o).
 Proof.
@@ -702,13 +718,13 @@ Proof.
     + eapply sinterrogation_ext; eauto. intros. cbn. now rewrite <- app_assoc.
 Qed.
 
-Definition sOracleComputable {Q A I O} (r : FunRel Q A -> I -> O -> Prop) :=
+Definition sOracleComputable {Q A I O} (r : Rel Q A -> I -> O -> Prop) :=
   exists E, exists e : E, exists τ : I -> stree E Q A O, forall R x o, r R x o <-> exists qs ans e', sinterrogation (τ x) R qs ans e e' /\ τ x e' ans =! Output o.
 
 Lemma sinterrogation_equiv:
   ∀ (Q A I O E : Type) (e : E) (tau : I → stree E Q A O),
   ∃ τ : I → etree E Q A O,
-  ∀ (R : FunRel Q A) (x : I) (o : O),
+  ∀ (R : Rel Q A) (x : I) (o : O),
     (∃ (qs : list Q) (ans : list A) (e' : E), sinterrogation (tau x) R qs ans e e' ∧ tau x e' ans =! Output o)
       ↔ (∃ (qs : list Q) (ans : list A) (e' : E), einterrogation (τ x) R qs ans e e' ∧ τ x e' ans =! Output o).
 Proof.
@@ -926,7 +942,7 @@ Qed.
 
 (** Computability of any partial function *)
 Lemma computable_partial_function {Q A I O : Type} (f : I ↛ O) :
-  OracleComputable (λ (_ : FunRel Q A) (i : I) (o : O), f i =! o).
+  OracleComputable (λ (_ : Rel Q A) (i : I) (o : O), f i =! o).
 Proof.
   intros.
   exists (fun x l => bind (f x) (fun o => ret (inr o))).
@@ -965,7 +981,7 @@ Qed.
 
 (** Computability of the identity  *)
 Lemma computable_id {X Y} :
-  OracleComputable (fun R : FunRel X Y => R).
+  OracleComputable (fun R : Rel X Y => R).
 Proof.
   exists (fun i l => match l with [] => ret (inl i) | (_, b) :: _ => ret (inr b) end).
   intros. split.
@@ -1039,7 +1055,7 @@ Proof.
 Qed.
 
 (** Computability of sequential execution (bind)  *)
-Lemma computable_bind A Q Y Z I (F1: FunRel Q A -> _ -> _ -> Prop) F2 :
+Lemma computable_bind A Q Y Z I (F1: Rel Q A -> _ -> _ -> Prop) F2 :
   OracleComputable (I := I) F1 ->
   OracleComputable (O := Z) F2 ->
   OracleComputable (fun f x z => exists y : Y, F1 f x y /\ F2 f (x, y) z).
@@ -1113,7 +1129,7 @@ Proof using.
 Qed.
 
 (** Computability of case analysis  *)
-Lemma computable_if A Q I O (F1: (FunRel Q A)  -> _ -> _ -> Prop) F2 test :
+Lemma computable_if A Q I O (F1: (Rel Q A)  -> _ -> _ -> Prop) F2 test :
   @OracleComputable Q A I O F1 ->
   @OracleComputable Q A I O F2 ->
   @OracleComputable _ _ _ _ (fun f (x : I) => if test x : bool then F1 f x else F2 f x).
@@ -1146,7 +1162,7 @@ Proof.
 Qed.
 
 (** Closure under composition *)
-Lemma computable_comp A X  Q Y I O (F1 : FunRel Q A -> FunRel X Y) (F2 : FunRel X Y -> I -> O -> Prop) :
+Lemma computable_comp A X  Q Y I O (F1 : Rel Q A -> Rel X Y) (F2 : Rel X Y -> I -> O -> Prop) :
   OracleComputable F1
   -> OracleComputable F2
   -> OracleComputable (fun r x => F2 (F1 r) x).
@@ -1258,16 +1274,7 @@ Proof.
   - intros [R [[τ Ht] HR]].
     exists τ. intros. rewrite HR, Ht. reflexivity.
   - intros [τ Ht].
-    unshelve eexists.
-    {
-      (* the only interesting part of the proof is functionality *)
-      intros R.
-      unshelve eexists. intros x o.
-      exact (∃ (qs : list Y) (ans : list bool), interrogation (τ x) R qs ans ∧ τ x (zip qs ans) =! Output o).
-      intros ?; intros. destruct H as (qs1 & ans1 & H1 & H2).
-      destruct H0 as (qs2 & ans2 & H1' & H2').
-      eapply interrogation_output_det. eapply R. exact H1. eauto. exact H1'. eauto.
-    }
+    exists (fun R x o => ∃ (qs : list Y) (ans : list bool), interrogation (τ x) R qs ans ∧ τ x (zip qs ans) =! Output o).
     cbn. split.
     + exists τ. reflexivity.
     + eapply Ht.
@@ -1301,28 +1308,24 @@ Lemma Turing_upper_semi_lattice {X Y Z} (p : X -> Prop) (q : Y -> Prop) (r : Z -
   p ⪯ᴛ join p q /\ q ⪯ᴛ join p q /\ (p ⪯ᴛ r -> q ⪯ᴛ r -> join p q ⪯ᴛ r).
 Proof.
   repeat split.
-  - unshelve eexists. intros R; econstructor; shelve. split; cbn. 
+  - eexists. split; cbn. 
     eapply computable_precompose with (g := inl).
     eapply computable_id. reflexivity.
-  - unshelve eexists. intros R; econstructor; shelve. split; cbn. 
+  - eexists. split; cbn. 
     eapply computable_precompose with (g := inr).
     eapply computable_id. reflexivity.
   - intros (F1 & [tau1 Htau1] & H1') (F2 & [tau2 Htau2] & H2').
-    unshelve eexists.
-    intros R. unshelve econstructor.
-    intros xy b. exact (match xy with inl x => F1 R x b | inr y => F2 R y b end). all: cbn. 2: split.
-    + intros [] ? ? ? ?; cbn in *. eapply F1; eauto. eapply F2; eauto.
+    exists (fun R xy b => match xy with inl x => F1 R x b | inr y => F2 R y b end). split.
     + exists (fun xy l => match xy with inl x => tau1 x l | inr y => tau2 y l end). intros R [] o; cbn.
       eapply Htau1.
       eapply Htau2.
     + intros []; cbn; firstorder.
-      Unshelve. all: intros ? ?; eapply R; eauto.
 Qed.
 
 (** Turing reduction transports partial computability - relying on the evalt function from above *)
 Lemma Turing_transports_computable {Q A I O} F :
   @OracleComputable Q A I O F ->
-  exists F', forall f R, pcomputes f (the_rel R) -> pcomputes (F' f) (F R).
+  exists F', forall f R, pcomputes f R -> pcomputes (F' f) (F R).
 Proof.
   intros [tau H] % noqOracleComputable_equiv.
   exists (fun f i => bind (mu (fun n => bind (evalt (tau i) f n) (fun res => match res with inl _ => ret false | inr _ => ret true end))) (fun n => bind (evalt (tau i) f n) (fun res => match res with inl _ => undef | inr o => ret o end))).
@@ -1383,8 +1386,13 @@ Proof.
 Qed.
 
 (** Transport of decidability -- which is equivalent to Markov's principle *)
-Definition char_rel_fun {X Y} (f : X -> Y) :=
-  (@Build_FunRel _ _(fun x b => f x = b) ltac:(firstorder congruence)).
+Definition char_rel_fun {X Y} (f : X -> Y) := (fun x b => f x = b).
+
+Lemma char_rel_fun_functional {X Y} (f : X -> Y) :
+  functional (char_rel_fun f).
+Proof.
+  firstorder congruence.
+Qed.
 
 Lemma partial_total X Y (f : X ↛ Y) :
   (forall x, (ter (f x))) -> { g : X -> Y | forall x, f x =! g x}.
@@ -1446,19 +1454,12 @@ Section equivalence.
   Variable X : Type.
   Variable eX : eq_dec X.
   Implicit Type o : oracle X.
-  Implicit Type R : FunRel X bool.
+  Implicit Type R : partial.FunRel X bool.
 
   Program Definition of_o (o : oracle X) :=
     @Build_FunRel _ _ (fun x b => if (b : bool) then S0 o x else S1 o x) _.
   Next Obligation.
     destruct o; intros ? [] [] ? ?; cbn in *; firstorder.
-  Qed.
-
-  Program Definition to_o (R : FunRel X bool) : oracle X :=
-    @Build_oracle _ (fun x => R x true) (fun x => R x false) _.
-  Next Obligation.
-    intros.
-    enough (true = false) by congruence; eapply R; cbn in *; eauto.
   Qed.
 
   Lemma of_o_enumerator o f0 f1 :
@@ -1538,17 +1539,8 @@ Lemma truthtable_Turing {X Y} (p : X -> Prop) (q : Y -> Prop) : (forall y, q y \
   reductions.red_tt p q -> p ⪯ᴛ q.
 Proof.
   intros dq [f Hf]. red in Hf.
-  unshelve eexists.
-  intros R.
-  exists (fun x b => exists L : list bool, List.Forall2 R (projT1 (f x)) L /\
+  exists (fun R x b => exists L : list bool, List.Forall2 R (projT1 (f x)) L /\
                                (truthtables.eval_tt (projT2 (f x)) L = b)).
-  {
-    intros ? ? ? (L1 & ? & ?) (L2 & ? & ?). rewrite <- H0, <- H2.
-    enough (L1 = L2) as -> by reflexivity.
-    clear - H H1. induction H in L2, H1 |- *; inversion H1; subst; f_equal.
-    eapply R; eauto.
-    eauto.
-  }
   split.
   - cbn.
     exists (fun x l => match nth_error (projT1 (f x)) (length l) with
@@ -1618,7 +1610,7 @@ Proof.
         destruct drop; cbn in *; try congruence.
         inversion E. subst. rewrite take_0. reflexivity.
   - cbn. intros x b. split.
-    + rewrite reflects_iff. intros.
+    + intros.
       enough (exists L, Forall2 reflects L (map q (projT1 (f x)))) as [L HL].
       { exists L. split.
         - revert HL. generalize (projT1 (f x)). induction L; cbn in *; intros.
@@ -1629,7 +1621,8 @@ Proof.
         - eapply Hf in HL.
           unfold reflects in *.
           destruct b; try firstorder congruence.
-          rewrite H in HL.
+          cbn in *.
+          rewrite HL in H.
           destruct truthtables.eval_tt; firstorder congruence.
       }
       clear - dq.
@@ -1642,7 +1635,7 @@ Proof.
         -- exists (false :: L). econstructor; eauto.
            firstorder congruence.
     + intros (L & IL & HL).
-      rewrite reflects_iff. unfold reflects. unfold reflects in *.
+      eapply reflects_iff. unfold reflects. unfold reflects in *.
       rewrite Hf, <- HL.
       reflexivity.
       eapply Forall2_fmap_r, Forall2_flip, Forall2_impl. eauto.
@@ -1742,7 +1735,7 @@ From SyntheticComputability Require Import reductions ReducibilityFacts Enumerab
 From SyntheticComputability Require Import ListAutomation.
 
 Lemma computable_Dec Q A I (P : I -> Prop) :
-        (forall i, dec (P i)) -> OracleComputable (fun (R : FunRel Q A) i o => reflects o (P i)).
+        (forall i, dec (P i)) -> OracleComputable (fun (R : Rel Q A) i o => reflects o (P i)).
 Proof.
   intros D.
   eapply OracleComputable_ext. eapply computable_if with (test := fun i => D i).
@@ -1778,27 +1771,7 @@ Section HS.
   Lemma red : DNE -> I ⪯ᴛ HS E_I.
   Proof.
     intros dne.
-    unshelve eexists.
-    { intros R. unshelve eexists.
-      + intros z b. exact (exists x, R x false /\ E_I x > z /\ (forall x', x' < x -> (R x' true \/ R x' false /\ E_I x' <= z)) /\ reflects b (In z (map E_I (seq 0 (x + 1))))).
-      + intros z [] []; repeat setoid_rewrite <- reflects_iff; try congruence.
-        * intros H1 H2. eapply dne. cunwrap. decompose [ex and] H1. decompose [ex and] H2.
-          assert (~~ x = x0). {
-            assert (x < x0 \/ x = x0 \/ x0 < x) as [ | [ | ]] by lia.
-            -- eapply H7 in H8. cunwrap. destruct H8 as [| []]. enough (true = false) by congruence. eapply R; eauto. lia.
-            -- eauto.
-            -- eapply H3 in H8. cunwrap. destruct H8 as [| []]. enough (true = false) by congruence. eapply R; eauto. lia.
-          } cunwrap. subst.
-          firstorder congruence.
-        * intros H1 H2. eapply dne. cunwrap. decompose [ex and] H1. decompose [ex and] H2.
-          assert (~~ x = x0). {
-            assert (x < x0 \/ x = x0 \/ x0 < x) as [ | [ | ]] by lia.
-            -- eapply H7 in H8. cunwrap. destruct H8 as [| []]. enough (true = false) by congruence. eapply R; eauto. lia.
-            -- eauto.
-            -- eapply H3 in H8. cunwrap. destruct H8 as [| []]. enough (true = false) by congruence. eapply R; eauto. lia.
-          } cunwrap. subst.
-          firstorder congruence.
-    }
+    exists (fun R z b => exists x, R x false /\ E_I x > z /\ (forall x', x' < x -> (R x' true \/ R x' false /\ E_I x' <= z)) /\ reflects b (In z (map E_I (seq 0 (x + 1))))).
     cbn. split.
     2:{ intros z b. cbn.
       split.
@@ -1813,7 +1786,7 @@ Section HS.
           2: eapply E_I_injective in H2; lia.
           eapply Hx'. exists x. eauto.
         }
-        rewrite reflects_iff in Hz. unfold reflects in *.
+        eapply reflects_iff in Hz. unfold reflects in *.
         rewrite <- I_iff; eauto.
       + intros.
         destruct H as (x & Hcx & Hxz & Hle & Hb).
@@ -1824,12 +1797,10 @@ Section HS.
     eapply OracleComputable_ext.
     eapply computable_bind with (Y := nat).
     refine (computable_comp _ (nat * nat) _ _ _ _ _ _ _ _).
-    Unshelve.
-    7: intros; econstructor; shelve. all: cbn.
     2: eapply computable_search. 3: cbn.
     eapply computable_bind.
     eapply computable_precompose with (g := snd).
-    eapply computable_id. 4: cbn. 3: cbn.
+    eapply computable_id. 3: cbn. 
     eapply computable_Dec with (P := fun '(i, b) => (b = false /\ E_I (snd i) > ((fst i)))).
     intros []. exact _.
     eapply computable_Dec with (P := fun i => (@In nat (fst i) (@map nat nat E_I (seq 0 (snd i + 1))))).
@@ -1846,12 +1817,6 @@ Section HS.
       intros. eapply H2 in H3. destruct H3 as [ | []].
       + exists true. split. eauto. eapply reflects_false. clear. firstorder congruence.
       + exists false. split; eauto. eapply reflects_false. lia.
-      Unshelve.
-      {
-        rename X into R.
-        intros ? * ? ?. decompose [ex and] H. decompose [ex and] H0.
-        eapply R in H2. eapply H2 in H4. subst. clear - H3 H5. destruct y1, y2; firstorder congruence.
-      }
   Qed.
 
 End HS.
