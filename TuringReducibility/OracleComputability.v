@@ -1291,6 +1291,34 @@ Proof.
     firstorder.
 Qed.
 
+Definition join {X Y} (p : X -> Prop) (q : Y -> Prop) xy :=
+ match xy with
+ | inl x => p x
+ | inr y => q y
+ end.
+
+Lemma Turing_upper_semi_lattice {X Y Z} (p : X -> Prop) (q : Y -> Prop) (r : Z -> Prop) :
+  p ⪯ᴛ join p q /\ q ⪯ᴛ join p q /\ (p ⪯ᴛ r -> q ⪯ᴛ r -> join p q ⪯ᴛ r).
+Proof.
+  repeat split.
+  - unshelve eexists. intros R; econstructor; shelve. split; cbn. 
+    eapply computable_precompose with (g := inl).
+    eapply computable_id. reflexivity.
+  - unshelve eexists. intros R; econstructor; shelve. split; cbn. 
+    eapply computable_precompose with (g := inr).
+    eapply computable_id. reflexivity.
+  - intros (F1 & [tau1 Htau1] & H1') (F2 & [tau2 Htau2] & H2').
+    unshelve eexists.
+    intros R. unshelve econstructor.
+    intros xy b. exact (match xy with inl x => F1 R x b | inr y => F2 R y b end). all: cbn. 2: split.
+    + intros [] ? ? ? ?; cbn in *. eapply F1; eauto. eapply F2; eauto.
+    + exists (fun xy l => match xy with inl x => tau1 x l | inr y => tau2 y l end). intros R [] o; cbn.
+      eapply Htau1.
+      eapply Htau2.
+    + intros []; cbn; firstorder.
+      Unshelve. all: intros ? ?; eapply R; eauto.
+Qed.
+
 (** Turing reduction transports partial computability - relying on the evalt function from above *)
 Lemma Turing_transports_computable {Q A I O} F :
   @OracleComputable Q A I O F ->
@@ -1377,19 +1405,6 @@ Proof.
   destruct (g x); firstorder. eapply hasvalue_det; eauto.
 Qed.
 
-Lemma pcomputes_decider {X} f (R : FunRel X bool) :
-  pcomputes f R -> (forall x, ter (f x)) -> decidable (fun x => R x true).
-Proof.
-  intros Hf HR.
-  eapply partial_decidable with (f := f).
-  - intros x. eauto.
-  - intros x. split.
-    + intros H. now eapply Hf.
-    + intros H. destruct (HR x) as [b Hb].
-      enough (b = true) by congruence.
-      eapply Hf in Hb. eapply R; eauto.
-Qed.
-
 From SyntheticComputability Require Import principles Pigeonhole.
 
 Goal forall X Y (p : X -> Prop) (q : Y -> Prop),
@@ -1405,7 +1420,7 @@ Proof.
   unshelve epose proof (HF' _) as hF'.
   + intros x b. rewrite <- ret_hasvalue_iff.
     specialize (Hf x). clear - Hf. destruct b, (f x); firstorder.
-  + eapply pcomputes_decider. eapply hF'.
+  + eapply partial_decidable. 2:{ intros x. apply hF'. }
     intros. eapply (MP_to_MP_partial mp). intros Hx.
     ccase (p x) as [Hp | Hp].
     -- eapply Hx. exists true. eapply hF'. now eapply (H _ true).
@@ -1519,10 +1534,10 @@ Qed.
 
 (** Truth-table reducibility is included in Turing reducibility  *)
 
-Lemma truthtable_Turing {X Y} (p : X -> Prop) (q : Y -> Prop) : DNE ->
+Lemma truthtable_Turing {X Y} (p : X -> Prop) (q : Y -> Prop) : (forall y, q y \/ ¬ q y) ->
   reductions.red_tt p q -> p ⪯ᴛ q.
 Proof.
-  intros dne [f Hf]. red in Hf.
+  intros dq [f Hf]. red in Hf.
   unshelve eexists.
   intros R.
   exists (fun x b => exists L : list bool, List.Forall2 R (projT1 (f x)) L /\
@@ -1617,16 +1632,14 @@ Proof.
           rewrite H in HL.
           destruct truthtables.eval_tt; firstorder congruence.
       }
-      generalize (projT1 (f x)).
-      intros l.
-      eapply dne.
-      clear. induction l.
-      * cprove exists []. econstructor.
-      * cunwrap. destruct IHl as [L IH].
-        ccase (q a) as [Ha | Ha].
-        -- cprove exists (true :: L). econstructor; eauto.
+      clear - dq.
+      induction (projT1 (f x)).
+      * exists []. econstructor.
+      * destruct IHl as [L IH].
+        destruct (dq a) as [Ha | Ha].
+        -- exists (true :: L). econstructor; eauto.
            firstorder congruence.
-        -- cprove exists (false :: L). econstructor; eauto.
+        -- exists (false :: L). econstructor; eauto.
            firstorder congruence.
     + intros (L & IL & HL).
       rewrite reflects_iff. unfold reflects. unfold reflects in *.
@@ -1634,7 +1647,6 @@ Proof.
       reflexivity.
       eapply Forall2_fmap_r, Forall2_flip, Forall2_impl. eauto.
       intros. cbn in *. destruct y; firstorder congruence.
-      Unshelve. exact True.
 Qed.
 
 (** The halting problem is Turing reducible to its (hypersimple) index set, distinguishing Turing reducibility from truth-table reducibility  *)

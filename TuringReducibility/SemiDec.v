@@ -16,11 +16,11 @@ Context  {Part : partiality} {X : Type} {Y : Type}.
 Variable  q : Y → Prop.
 Variable  p : X → Prop.
 Variable  F1 : Functional Y bool X ().
-Variable  tau1 : X → (list bool) ↛ (Y + ()).
+Variable  tau1 : X → (list bool) ↛ (Y + unit).
 Variable  HF1 : ∀ (R : FunRel Y bool) (x : X) (o : ()), F1 R x o ↔ (∃ (qs : list Y) (ans : list bool), noqinterrogation (tau1 x) R qs ans ∧ tau1 x ans =! inr o).
 Variable  H1 : ∀ x : X, p x ↔ F1 (char_rel q) x ().
 Variable  F2 : Functional Y bool X ().
-Variable  tau2 : X → (list bool) ↛ (Y + ()).
+Variable  tau2 : X → (list bool) ↛ (Y + unit).
 Variable  HF2 : ∀ (R : FunRel Y bool) (x : X) (o : ()), F2 R x o ↔ (∃ (qs : list Y) (ans : list bool), noqinterrogation (tau2 x) R qs ans ∧ tau2 x ans =! inr o).
 Variable  H2 : ∀ x : X, ¬ p x ↔ F2 (char_rel q) x ().
 
@@ -431,11 +431,11 @@ Proof.
   - intros Hx.
     eapply H1 in Hx as Hx'. eapply HF1 in Hx' as (qs & ans & Hint & Hend).
     eapply seval_hasvalue in Hend as [n Hn].
-    edestruct Wf_nat.dec_inh_nat_subset_has_unique_least_element with (P := fun n => seval (tau1 x ans) n = Some (inr ())).
-    { intros. clear. destruct seval as [ [? | []] | ]; firstorder congruence. }
-    { eauto. }
-    clear n Hn. rename x0 into n. destruct H as [ [] ]. rename H into Hn.
-    rename H0 into Hleast. clear H3.
+    (* edestruct Wf_nat.dec_inh_nat_subset_has_unique_least_element with (P := fun n => seval (tau1 x ans) n = Some (inr ())). *)
+    (* { intros. clear. destruct seval as [ [? | []] | ]; firstorder congruence. } *)
+    (* { eauto. } *)
+    (* clear n Hn. rename x0 into n. destruct H as [ [] ]. rename H into Hn. *)
+    (* rename H0 into Hleast. clear H3. *)
 
     enough (∃ (ans0 : list bool) m (qs0 : list (bool * Y)),
                qs = get_qs1 qs0 /\
@@ -461,18 +461,11 @@ Proof.
       eapply sinterrogation_length in H6.
       rewrite map_length in H6. lia.
     } 
-    clear Hleast Hn n. induction Hint.
+    clear Hn n. induction Hint.
     + exists []. exists 0. exists []. repeat econstructor. 
     + cbn in IHHint. destruct IHHint as (ans_ & m & qs_ & -> & -> & IH1 & IH2).
       eapply seval_hasvalue in H as [n Hn].
-      edestruct Wf_nat.dec_inh_nat_subset_has_unique_least_element with (P := fun n => seval (tau1 x (get_ans1 qs_ ans_)) n = Some (inl q0)).
-      { intros. clear - Y_dec. destruct seval as [ [? | []] | ]; try now clear; firstorder congruence.
-        destruct (Y_dec y q0); try firstorder congruence.
-      }
-      { eauto. }
-      clear n Hn. rename x0 into n. destruct H as [ []]. rename H into Hn.
-      rename H3 into Hleast. clear H4.
-
+      
       eapply count_up_1 in Hn as lem; eauto.
       2:{ eapply sinterrogation_length in IH2. rewrite map_length in IH2. lia. }
       destruct lem as (tqs' & ans' & n' & Hn' & HH1 & HH2).
@@ -577,11 +570,6 @@ Proof.
   - intros Hx.
     eapply H2 in Hx as Hx'. eapply HF2 in Hx' as (qs & ans & Hint & Hend).
     eapply seval_hasvalue in Hend as [n Hn].
-    edestruct Wf_nat.dec_inh_nat_subset_has_unique_least_element with (P := fun n => seval (tau2 x ans) n = Some (inr ())).
-    { intros. clear. destruct seval as [ [? | []] | ]; firstorder congruence. }
-    { eauto. }
-    clear n Hn. rename x0 into n. destruct H as [ [] ]. rename H into Hn.
-    rename H0 into Hleast. clear H3.
 
     enough (∃ (ans0 : list bool) m (qs0 : list (bool * Y)),
                qs = get_qs2 qs0 /\
@@ -617,7 +605,7 @@ Proof.
       2: eapply noqinterrogation_length; eauto.
       eauto.
     }
-    clear Hleast Hn n. induction Hint.
+    clear Hn n. induction Hint.
     + exists []. exists 0. exists []. repeat econstructor. 
     + cbn in IHHint. destruct IHHint as (ans_ & m & qs_ & -> & -> & IH1 & IH2).
       eapply seval_hasvalue in H as [n Hn].
@@ -795,38 +783,38 @@ Proof.
   all: eauto.
 Qed.
 
-(* Print Assumptions PT. *)
-
-Lemma OracleSemiDecidable_comp {Part : partiality} {X Y} (q : Y -> Prop) (p : X -> Prop) :
-  decidable q ->
-  OracleSemiDecidable q p <->
-  semi_decidable p.
+Lemma semi_decidable_OracleSemiDecidable {Part : partiality} {X Y} (q : Y -> Prop) (p : X -> Prop) :
+  semi_decidable p -> OracleSemiDecidable q p.
 Proof.
-  intros [f Hf]. split.
-  - intros (F & Hc & HF).
-    eapply SemiDecidabilityFacts.semi_decidable_part_iff.
-    exists unit.
-    setoid_rewrite HF.
-    clear HF p.
-    eapply Turing_transports_computable in Hc as [F' Hc].
-    specialize (Hc (fun y => ret (f y)) (char_rel q)).
-    unshelve epose proof (Hc _).
-    + red. split; intros.
-      * psimpl. eapply reflects_iff, Hf.
-      * eapply ret_hasvalue_iff. cbn in H. eapply reflects_iff in H. specialize (Hf x).
-        unfold reflects in *. destruct (f x), y; firstorder congruence.
-    + clear Hc. unfold pcomputes in H.
-      exists (fun x => F' (fun y : Y => ret (f y)) x).
-      intros. rewrite <- H. firstorder. destruct x0; eauto.
-  - intros (T & g & Hg) % SemiDecidabilityFacts.semi_decidable_part_iff.
-    unshelve eexists.
-    intros ?. eexists. shelve. split.
-    eapply (computable_partial_function (fun x => bind (g x) (fun _ => ret tt))).
-    Unshelve.
-    2:{ intros ? * ? ?. psimpl. }
-    all: cbn. intros. rewrite Hg. split.
-    intros []. psimpl.
-    intros. psimpl.
+  intros (T & g & Hg) % SemiDecidabilityFacts.semi_decidable_part_iff.
+  unshelve eexists.
+  intros ?. eexists. shelve. split.
+  eapply (computable_partial_function (fun x => bind (g x) (fun _ => ret tt))).
+  Unshelve.
+  2:{ intros ? * ? ?. psimpl. }
+  all: cbn. intros. rewrite Hg. split.
+  intros []. psimpl.
+  intros. psimpl.
+Qed.
+
+Lemma OracleSemiDecidable_semi_decidable {Part : partiality} {X Y} (q : Y -> Prop) (p : X -> Prop) :
+  decidable q -> OracleSemiDecidable q p -> semi_decidable p.
+Proof.
+  intros [f Hf] (F & Hc & HF).
+  eapply SemiDecidabilityFacts.semi_decidable_part_iff.
+  exists unit.
+  setoid_rewrite HF.
+  clear HF p.
+  eapply Turing_transports_computable in Hc as [F' Hc].
+  specialize (Hc (fun y => ret (f y)) (char_rel q)).
+  unshelve epose proof (Hc _).
+  + red. split; intros.
+    * psimpl. eapply reflects_iff, Hf.
+    * eapply ret_hasvalue_iff. cbn in H. eapply reflects_iff in H. specialize (Hf x).
+      unfold reflects in *. destruct (f x), y; firstorder congruence.
+  + clear Hc. unfold pcomputes in H.
+    exists (fun x => F' (fun y : Y => ret (f y)) x).
+    intros. rewrite <- H. firstorder. destruct x0; eauto.
 Qed.
 
 Lemma red_m_transports_sdec {Part : partiality} {X Y Z} (q : Y -> Prop) (p1 : Z -> Prop) (p2 : X -> Prop) :
@@ -835,7 +823,7 @@ Lemma red_m_transports_sdec {Part : partiality} {X Y Z} (q : Y -> Prop) (p1 : Z 
   OracleSemiDecidable q p1.
 Proof.
   intros [G [HG H1]] [f Hf].
-  unshelve eexists. intros R. econstructor. shelve. split.
+  unshelve eexists. intros R. econstructor. shelve. cbn. split.
   eapply computable_bind.
   eapply (computable_function f).
   eapply computable_precompose with (g := snd). eapply HG.
