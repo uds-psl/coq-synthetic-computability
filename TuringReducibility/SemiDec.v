@@ -17,11 +17,11 @@ Variable  q : Y → Prop.
 Variable  p : X → Prop.
 Variable  F1 : Functional Y bool X ().
 Variable  tau1 : X → (list bool) ↛ (Y + unit).
-Variable  HF1 : ∀ (R : Rel Y bool) (x : X) (o : ()), F1 R x o ↔ (∃ (qs : list Y) (ans : list bool), noqinterrogation (tau1 x) R qs ans ∧ tau1 x ans =! inr o).
+Variable  HF1 : ∀ (R : Rel Y bool) (x : X) (o : ()), F1 R x o ↔ (∃ (qs : list Y) (ans : list bool), interrogation (tau1 x) R qs ans ∧ tau1 x ans =! inr o).
 Variable  H1 : ∀ x : X, p x ↔ F1 (char_rel q) x ().
 Variable  F2 : Functional Y bool X ().
 Variable  tau2 : X → (list bool) ↛ (Y + unit).
-Variable  HF2 : ∀ (R : Rel Y bool) (x : X) (o : ()), F2 R x o ↔ (∃ (qs : list Y) (ans : list bool), noqinterrogation (tau2 x) R qs ans ∧ tau2 x ans =! inr o).
+Variable  HF2 : ∀ (R : Rel Y bool) (x : X) (o : ()), F2 R x o ↔ (∃ (qs : list Y) (ans : list bool), interrogation (tau2 x) R qs ans ∧ tau2 x ans =! inr o).
 Variable  H2 : ∀ x : X, ¬ p x ↔ F2 (char_rel q) x ().
 
 Definition get_ans B (tqs : list (bool * Y)) (ans : list bool) := (map snd (filter (fun '((b, q), a) => b = B) (zip_with pair tqs ans))).
@@ -81,17 +81,19 @@ Qed.
 
 Variable Y_dec : eq_dec Y.
 
-Lemma count_up_1 m tqs x ans v n :
+Lemma count_up_1 m tqs x ans v :
   p x ->
   length tqs = length ans ->
-  noqinterrogation (tau2 x) (char_rel q) (get_qs2 tqs) (get_ans2 tqs ans) ->
-  seval (tau1 x (get_ans1 tqs ans)) n = Some v ->
+  interrogation (tau2 x) (char_rel q) (get_qs2 tqs) (get_ans2 tqs ans) ->
+  tau1 x (get_ans1 tqs ans) =! v ->
   exists tqs' ans' n',
     seval (tau1 x (get_ans1 tqs ans)) n' = Some v /\
     sinterrogation (subtree' (τ x) ans) (char_rel q) tqs' ans' (None,m, tqs) (None, n', tqs ++ map (pair false) tqs') /\
-    noqinterrogation (subtree (tau2 x) (get_ans2 tqs ans)) (char_rel q) tqs' ans'.
+    interrogation (subtree (tau2 x) (get_ans2 tqs ans)) (char_rel q) tqs' ans'.
 Proof.
   intros Hx Hlen Hi2 Hend.
+  eapply seval_hasvalue in Hend as [n Hend].
+
   edestruct Wf_nat.dec_inh_nat_subset_has_unique_least_element with (P := fun n => seval (tau1 x (get_ans1 tqs ans)) n = Some v).
   { intros. clear - Y_dec. destruct seval as [ [? | []] | ]; try now clear; firstorder congruence.
     all: destruct v as [ | []]; try now clear; firstorder congruence.
@@ -156,9 +158,9 @@ Proof.
            rewrite <- !app_assoc in IH2. cbn in *.
            eapply sinterrogation_ext. 2: eassumption.
            intros. unfold subtree'. cbn. now rewrite <- app_assoc.
-        -- eapply noqinterrogation_cons. eapply seval_hasvalue'; eauto.
+        -- eapply interrogation_cons. eapply seval_hasvalue'; eauto.
            unfold subtree. rewrite app_nil_r. eassumption. eauto.
-           eapply noqinterrogation_ext. 3: eauto. 2: reflexivity.
+           eapply interrogation_ext. 3: eauto. 2: reflexivity.
            intros. unfold subtree.
            unfold get_ans2. rewrite get_ans_app. cbn.
            destruct decide; try congruence. cbn. now rewrite <- app_assoc.
@@ -187,17 +189,17 @@ Proof.
     + cbn. econstructor.
 Qed.
 
-Lemma count_up_2 m tqs x ans v n :
+Lemma count_up_2 m tqs x ans v :
   ~ p x ->
   length tqs = length ans ->
-  noqinterrogation (tau1 x) (char_rel q) (get_qs1 tqs) (get_ans1 tqs ans) ->
-  seval (tau2 x (get_ans2 tqs ans)) n = Some v ->
+  interrogation (tau1 x) (char_rel q) (get_qs1 tqs) (get_ans1 tqs ans) ->
+  tau2 x (get_ans2 tqs ans) =! v ->
   exists tqs' ans' n',
     seval (tau2 x (get_ans2 tqs ans)) n' = Some v /\
     sinterrogation (subtree' (τ x) ans) (char_rel q) tqs' ans' (None,m, tqs) (None, n', tqs ++ map (pair true) tqs') /\
-    noqinterrogation (subtree (tau1 x) (get_ans1 tqs ans)) (char_rel q) tqs' ans'.
+    interrogation (subtree (tau1 x) (get_ans1 tqs ans)) (char_rel q) tqs' ans'.
 Proof.
-  intros Hx Hlen Hi2 Hend.
+  intros Hx Hlen Hi2 [n Hend] % seval_hasvalue.
   edestruct Wf_nat.dec_inh_nat_subset_has_unique_least_element with (P := fun n => seval (tau2 x (get_ans2 tqs ans)) n = Some v).
   { intros. clear - Y_dec. destruct seval as [ [? | []] | ]; try now clear; firstorder congruence.
     all: destruct v as [ | []]; try now clear; firstorder congruence.
@@ -264,9 +266,9 @@ Proof.
            rewrite <- !app_assoc in IH2. cbn in *.
            eapply sinterrogation_ext. 2: eassumption.
            intros. unfold subtree'. cbn. now rewrite <- app_assoc.
-        -- eapply noqinterrogation_cons. eapply seval_hasvalue'; eauto.
+        -- eapply interrogation_cons. eapply seval_hasvalue'; eauto.
            unfold subtree. rewrite app_nil_r. eassumption. eauto.
-           eapply noqinterrogation_ext. 3: eauto. 2: reflexivity.
+           eapply interrogation_ext. 3: eauto. 2: reflexivity.
            intros. unfold subtree.
            unfold get_ans1. rewrite get_ans_app. cbn.
            destruct decide; try congruence. cbn. now rewrite <- app_assoc.
@@ -299,8 +301,8 @@ Lemma back:
     → qs = map snd tqs
       /\ length ans = length tqs 
       /\ match o with Some q => tau2 x (get_ans2 tqs ans) =! inl q | None => True end 
-      ∧ noqinterrogation (tau1 x) (λ (x0 : Y) (b : bool), if b then q x0 else ¬ q x0) (get_qs1 tqs) (get_ans1 tqs ans)
-      ∧ noqinterrogation (tau2 x) (λ (x0 : Y) (b : bool), if b then q x0 else ¬ q x0) (get_qs2 tqs) (get_ans2 tqs ans).
+      ∧ interrogation (tau1 x) (λ (x0 : Y) (b : bool), if b then q x0 else ¬ q x0) (get_qs1 tqs) (get_ans1 tqs ans)
+      ∧ interrogation (tau2 x) (λ (x0 : Y) (b : bool), if b then q x0 else ¬ q x0) (get_qs2 tqs) (get_ans2 tqs ans).
 Proof.
   intros x qs ans n tqs o Hint.
   remember (None, 0, []) as begin.
@@ -431,15 +433,14 @@ Proof.
   intros. split. destruct b; cbn.
   - intros Hx.
     eapply H1 in Hx as Hx'. eapply HF1 in Hx' as (qs & ans & Hint & Hend).
-    eapply seval_hasvalue in Hend as [n Hn].
 
     enough (∃ (ans0 : list bool) m (qs0 : list (bool * Y)),
                qs = get_qs1 qs0 /\
                ans = get_ans1 qs0 ans0 /\
-               noqinterrogation (tau2 x) (char_rel q) (get_qs2 qs0) (get_ans2 qs0 ans0) /\
+               interrogation (tau2 x) (char_rel q) (get_qs2 qs0) (get_ans2 qs0 ans0) /\
                sinterrogation (τ x) (char_rel q) (map snd qs0) ans0 (None, 0, []) (None, m, qs0)).
     { cbn in *. decompose [ex and] H. subst.
-      eapply count_up_1 in Hn as lem; eauto.
+      eapply count_up_1 in Hend as lem; eauto.
       2:{ eapply sinterrogation_length in H6. rewrite map_length in H6. lia. }
 
       destruct lem as (tqs' & ans' & n' & Hn' & IH1 & IH2).
@@ -457,12 +458,11 @@ Proof.
       eapply sinterrogation_length in H6.
       rewrite map_length in H6. lia.
     } 
-    clear Hn n. induction Hint.
+    clear Hend. induction Hint.
     + exists []. exists 0. exists []. repeat econstructor. 
     + cbn in IHHint. destruct IHHint as (ans_ & m & qs_ & -> & -> & IH1 & IH2).
-      eapply seval_hasvalue in H as [n Hn].
-      
-      eapply count_up_1 in Hn as lem; eauto.
+
+      eapply count_up_1 in H as lem; eauto.
       2:{ eapply sinterrogation_length in IH2. rewrite map_length in IH2. lia. }
       destruct lem as (tqs' & ans' & n' & Hn' & HH1 & HH2).
       rename q0 into y.
@@ -478,7 +478,7 @@ Proof.
           cbn. destruct decide; try congruence.
           now rewrite get_qs_map_no.
         * unfold get_ans1. rewrite !get_ans_app.
-          2:{ rewrite map_length. eapply noqinterrogation_length; eauto. }
+          2:{ rewrite map_length. eapply interrogation_length; eauto. }
           2:{ eapply sinterrogation_length in IH2. rewrite map_length in IH2. eauto. }
           cbn. destruct decide; try congruence.
 
@@ -487,13 +487,13 @@ Proof.
           rewrite !get_qs_app.
           rewrite !get_ans_app.
           rewrite get_qs_map_yes, get_ans_map_yes.
-          eapply noqinterrogation_app; eauto.
-          eapply noqinterrogation_app; eauto.
+          eapply interrogation_app; eauto.
+          eapply interrogation_app; eauto.
           cbn. destruct decide; try congruence. destruct decide; try congruence. cbn.
-          eapply noqinterrogate with (qs := []) (ans := []); eauto. econstructor.
+          eapply Interrogate with (qs := []) (ans := []); eauto. econstructor.
           rewrite app_nil_r. eapply seval_hasvalue'; eauto.
-          eapply noqinterrogation_length; eauto.
-          rewrite map_length. eapply noqinterrogation_length; eauto.
+          eapply interrogation_length; eauto.
+          rewrite map_length. eapply interrogation_length; eauto.
           eapply sinterrogation_length in IH2. rewrite map_length in IH2. eauto. 
         * rewrite !map_app. eapply sinterrogation_app.
           eauto.
@@ -509,7 +509,7 @@ Proof.
           rewrite Hn'.
           unfold get_ans2. rewrite get_ans_app.
           2:{  eapply sinterrogation_length in IH2. rewrite map_length in IH2. eauto. }
-          rewrite get_ans_map_yes. 2: eapply noqinterrogation_length; eauto.
+          rewrite get_ans_map_yes. 2: eapply interrogation_length; eauto.
           rewrite E2. rewrite <- app_assoc. psimpl.
           eapply H0.
           eapply sinterrogation_cons.
@@ -520,7 +520,7 @@ Proof.
         enough (~ p x) by tauto.
         eapply H2, HF2. repeat eexists.
         2: eapply seval_hasvalue'; eauto.
-        eapply noqinterrogation_app; eauto.
+        eapply interrogation_app; eauto.
       }
 
       eexists (ans_ ++ ans' ++ [a] ).
@@ -531,7 +531,7 @@ Proof.
         cbn. destruct decide; try congruence.
         now rewrite get_qs_map_no.
       * unfold get_ans1. rewrite !get_ans_app.
-        2:{ rewrite map_length. eapply noqinterrogation_length; eauto. }
+        2:{ rewrite map_length. eapply interrogation_length; eauto. }
         2:{ eapply sinterrogation_length in IH2. rewrite map_length in IH2. eauto. }
         cbn. destruct decide; try congruence.
         now rewrite get_ans_map_no.
@@ -539,11 +539,11 @@ Proof.
         rewrite !get_qs_app.
         rewrite !get_ans_app.
         rewrite get_qs_map_yes, get_ans_map_yes.
-        eapply noqinterrogation_app; eauto.
-        eapply noqinterrogation_app; eauto.
+        eapply interrogation_app; eauto.
+        eapply interrogation_app; eauto.
         cbn. destruct decide; try congruence. econstructor.
-        eapply noqinterrogation_length; eauto.
-        rewrite map_length. eapply noqinterrogation_length; eauto.
+        eapply interrogation_length; eauto.
+        rewrite map_length. eapply interrogation_length; eauto.
         eapply sinterrogation_length in IH2. rewrite map_length in IH2. eauto. 
       * rewrite !map_app. eapply sinterrogation_app.
         eauto.
@@ -561,19 +561,18 @@ Proof.
         rewrite Hn'.
         unfold get_ans2. rewrite get_ans_app.
         2:{  eapply sinterrogation_length in IH2. rewrite map_length in IH2. eauto. }
-        rewrite get_ans_map_yes. 2: eapply noqinterrogation_length; eauto.
+        rewrite get_ans_map_yes. 2: eapply interrogation_length; eauto.
         rewrite E2. rewrite <- app_assoc. psimpl.
   - intros Hx.
     eapply H2 in Hx as Hx'. eapply HF2 in Hx' as (qs & ans & Hint & Hend).
-    eapply seval_hasvalue in Hend as [n Hn].
 
     enough (∃ (ans0 : list bool) m (qs0 : list (bool * Y)),
                qs = get_qs2 qs0 /\
                ans = get_ans2 qs0 ans0 /\
-               noqinterrogation (tau1 x) (char_rel q) (get_qs1 qs0) (get_ans1 qs0 ans0) /\
+               interrogation (tau1 x) (char_rel q) (get_qs1 qs0) (get_ans1 qs0 ans0) /\
                sinterrogation (τ x) (char_rel q) (map snd qs0) ans0 (None, 0, []) (None, m, qs0)).
     { cbn in *. decompose [ex and] H. subst.
-      eapply count_up_2 in Hn as lem; eauto.
+      eapply count_up_2 in Hend as lem; eauto.
       2:{ eapply sinterrogation_length in H6. rewrite map_length in H6. lia. }
 
       destruct lem as (tqs' & ans' & n' & Hn' & IH1 & IH2).
@@ -596,24 +595,16 @@ Proof.
       unfold get_ans1. rewrite get_ans_app.
       2:{ eapply sinterrogation_length in H6.
           rewrite map_length in H6. lia. }
-      eapply noqinterrogation_app; eauto.
+      eapply interrogation_app; eauto.
       rewrite get_ans_map_yes.
-      2: eapply noqinterrogation_length; eauto.
+      2: eapply interrogation_length; eauto.
       eauto.
     }
-    clear Hn n. induction Hint.
+    clear Hend. induction Hint.
     + exists []. exists 0. exists []. repeat econstructor. 
     + cbn in IHHint. destruct IHHint as (ans_ & m & qs_ & -> & -> & IH1 & IH2).
-      eapply seval_hasvalue in H as [n Hn].
-      edestruct Wf_nat.dec_inh_nat_subset_has_unique_least_element with (P := fun n => seval (tau2 x (get_ans2 qs_ ans_)) n = Some (inl q0)).
-      { intros. clear - Y_dec. destruct seval as [ [? | []] | ]; try now clear; firstorder congruence.
-        destruct (Y_dec y q0); try firstorder congruence.
-      }
-      { eauto. }
-      clear n Hn. rename x0 into n. destruct H as [ []]. rename H into Hn.
-      rename H3 into Hleast. clear H4.
 
-      eapply count_up_2 in Hn as lem; eauto.
+      eapply count_up_2 in H as lem; eauto.
       2:{ eapply sinterrogation_length in IH2. rewrite map_length in IH2. lia. }
       destruct lem as (tqs' & ans' & n' & Hn' & HH1 & HH2).
       rename q0 into y.
@@ -630,7 +621,7 @@ Proof.
           destruct decide; try congruence.
           now rewrite get_qs_map_no. 
         * unfold get_ans2. rewrite !get_ans_app.
-          2:{ rewrite map_length. eapply noqinterrogation_length; eauto. }
+          2:{ rewrite map_length. eapply interrogation_length; eauto. }
           2:{ eapply sinterrogation_length in IH2. rewrite map_length in IH2. eauto. }
           cbn. destruct decide; try congruence.
           destruct decide; try congruence.
@@ -640,13 +631,13 @@ Proof.
           rewrite !get_qs_app.
           rewrite !get_ans_app.
           rewrite get_qs_map_yes, get_ans_map_yes.
-          eapply noqinterrogation_app; eauto.
-          eapply noqinterrogation_app; eauto.
+          eapply interrogation_app; eauto.
+          eapply interrogation_app; eauto.
           cbn. destruct decide; try congruence. destruct decide; try congruence. cbn.
-          eapply noqinterrogate with (qs := []) (ans := []); eauto. econstructor.
+          eapply Interrogate with (qs := []) (ans := []); eauto. econstructor.
           rewrite app_nil_r. eapply seval_hasvalue'; eauto.
-          eapply noqinterrogation_length; eauto.
-          rewrite map_length. eapply noqinterrogation_length; eauto.
+          eapply interrogation_length; eauto.
+          rewrite map_length. eapply interrogation_length; eauto.
           eapply sinterrogation_length in IH2. rewrite map_length in IH2. eauto. 
         * rewrite !map_app. eapply sinterrogation_app.
           eauto.
@@ -674,7 +665,7 @@ Proof.
         enough (p x) by tauto.
         eapply H1, HF1. repeat eexists.
         2: eapply seval_hasvalue'; eauto.
-        eapply noqinterrogation_app; eauto.
+        eapply interrogation_app; eauto.
       }
 
       eexists (ans_ ++ ans' ++ [a] ).
@@ -685,7 +676,7 @@ Proof.
         cbn. destruct decide; try congruence.
         now rewrite get_qs_map_no.
       * unfold get_ans2. rewrite !get_ans_app.
-        2:{ rewrite map_length. eapply noqinterrogation_length; eauto. }
+        2:{ rewrite map_length. eapply interrogation_length; eauto. }
         2:{ eapply sinterrogation_length in IH2. rewrite map_length in IH2. eauto. }
         cbn. destruct decide; try congruence.
         now rewrite get_ans_map_no.
@@ -693,11 +684,11 @@ Proof.
         rewrite !get_qs_app.
         rewrite !get_ans_app.
         rewrite get_qs_map_yes, get_ans_map_yes.
-        eapply noqinterrogation_app; eauto.
-        eapply noqinterrogation_app; eauto.
+        eapply interrogation_app; eauto.
+        eapply interrogation_app; eauto.
         cbn. destruct decide; try congruence. econstructor.
-        eapply noqinterrogation_length; eauto.
-        rewrite map_length. eapply noqinterrogation_length; eauto.
+        eapply interrogation_length; eauto.
+        rewrite map_length. eapply interrogation_length; eauto.
         eapply sinterrogation_length in IH2. rewrite map_length in IH2. eauto. 
       * rewrite !map_app. eapply sinterrogation_app.
         eauto.
@@ -721,8 +712,8 @@ Proof.
   - intros (qs & ans & [[o n] tqs] & Hint & Hend).
     assert (
         qs = map snd tqs /\
-          noqinterrogation (tau1 x) (λ (x0 : Y) (b : bool), if b then q x0 else ¬ q x0) (get_qs1 tqs) (get_ans1 tqs ans) /\
-          noqinterrogation (tau2 x) (λ (x0 : Y) (b : bool), if b then q x0 else ¬ q x0) (get_qs2 tqs) (get_ans2 tqs ans)
+          interrogation (tau1 x) (λ (x0 : Y) (b : bool), if b then q x0 else ¬ q x0) (get_qs1 tqs) (get_ans1 tqs ans) /\
+          interrogation (tau2 x) (λ (x0 : Y) (b : bool), if b then q x0 else ¬ q x0) (get_qs2 tqs) (get_ans2 tqs ans)
       ) as [-> [Hi1 Hi2]].
     { eapply back in Hint; firstorder. }
 
@@ -746,13 +737,12 @@ Lemma needed {Part : partiality} {E Q A I O} (τ0 : I -> stree E Q A O) (f : Rel
   ∃ τ1 : I → tree Q A O,
   ∀ (x : I) (b : O),
     (∃ (qs : list Q) (ans : list A) (e : E), sinterrogation (τ0 x) f qs ans e0 e ∧ τ0 x e ans =! inr b)
-      ↔ (∃ (qs : list Q) (ans : list A), interrogation (τ1 x) f qs ans ∧ τ1 x (zip qs ans) =! inr b).
+      ↔ (∃ (qs : list Q) (ans : list A), interrogation (τ1 x) f qs ans ∧ τ1 x (ans) =! inr b).
 Proof.
   destruct (sinterrogation_equiv _ _ _ _ _ e0 τ0) as [τ1 H].
   destruct (einterrogation_equiv _ _ _ _ _ e0 τ1) as [τ2 HH].
-  exists (λ x l, τ2 x (map snd l)).
-  intros. rewrite H. rewrite HH.
-  rewrite noqinterrogation_equiv. reflexivity.
+  exists (λ x l, τ2 x l).
+  intros. rewrite H. rewrite HH. reflexivity.
 Qed.
 
 Definition OracleSemiDecidable {Part : partiality} {X Y} (q : Y -> Prop) (p : X -> Prop) :=
@@ -767,7 +757,7 @@ Lemma PT {Part : partiality} {X Y} (q : Y -> Prop) (p : X -> Prop) :
   OracleSemiDecidable q (fun x => ~ p x) ->
   red_Turing p q.
 Proof.
-  intros Hq HY [F1 [[tau1 HF1] % noqOracleComputable_equiv H1]] [F2 [[tau2 HF2] % noqOracleComputable_equiv H2]].
+  intros Hq HY [F1 [[tau1 HF1] H1]] [F2 [[tau2 HF2] H2]].
   eapply Turing_reducible_without_rel.
   enough
     (  ∃ τ : X → stree (option Y * nat * (list (bool * Y))) Y bool bool,

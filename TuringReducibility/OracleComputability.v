@@ -24,15 +24,17 @@ Context {Part : partiality}.
 
 (** ** Extensional dialogue trees *)
 
-Definition tree  (Q A O : Type) := (list (Q * A)) ↛ (Q + O).
+Definition tree  (Q A O : Type) := (list A) ↛ (Q + O).
 
 Notation Ask q := (inl q).
 Notation Output o := (inr o).
 
-Inductive interrogation {Q A O : Type} (τ : tree Q A O) (R : Q -> A -> Prop) : list Q -> list A -> Prop :=
-    qNoQuestions : interrogation τ R [] []
-  | Interrogate : forall (qs : list Q) (ans : list A) (q : Q) (a : A),
-                     interrogation τ R qs ans -> τ (zip qs ans) =! Ask q -> R q a -> interrogation τ R (qs ++ [q]) (ans ++ [a]).
+Inductive interrogation {Q A O} (τ : (list A) ↛ (Q + O)) (f : Q -> A -> Prop) : list Q -> list A -> Prop :=
+| NoQuestions : interrogation τ f [] []
+| Interrogate qs ans q a : interrogation τ f qs ans ->
+                           τ ans =! inl q ->
+                           f q a ->
+                           interrogation τ f (qs ++ [q]) (ans ++ [a]).
 
 (** ** Oracle Functionals and Turing Reducibility *)
 
@@ -42,7 +44,7 @@ Definition Rel A B := A -> B -> Prop.
 Definition Functional Q A I O := (Q -> A -> Prop) -> (I -> O -> Prop).
 
 Definition OracleComputable {Q A I O} (r : (Q -> A -> Prop) -> I -> O -> Prop) :=
-  exists τ : I -> tree Q A O, forall R x o, r R x o <-> exists qs ans, interrogation (τ x) R qs ans /\ τ x (zip qs ans) =! Output o.
+  exists τ : I -> tree Q A O, forall R x o, r R x o <-> exists qs ans, interrogation (τ x) R qs ans /\ τ x ans =! Output o.
 
 Definition char_rel {X} (p : X -> Prop) : Rel X bool :=
   fun x b => if (b : bool) then p x else ~ p x.
@@ -64,8 +66,8 @@ Proof.
   induction 1; try reflexivity. now rewrite !app_length, IHinterrogation.
 Qed.
 
-Lemma interrogation_app_iff {Q A O} q1 q2 a1 a2 (τ : list (Q * A) ↛ (Q + O)) f :
-  (interrogation τ f q1 a1 /\ interrogation (fun l => τ (zip q1 a1 ++ l)) f q2 a2) <->
+Lemma interrogation_app_iff {Q A O} q1 q2 a1 a2 (τ : tree Q A O) f :
+  (interrogation τ f q1 a1 /\ interrogation (fun l => τ (a1 ++ l)) f q2 a2) <->
     length q2 = length a2 /\ interrogation τ f (q1 ++ q2) (a1 ++ a2).
 Proof.
   induction q2 in a1, q1, a2, τ |- * using rev_ind; cbn; split.
@@ -80,7 +82,7 @@ Proof.
     split. { rewrite !app_length. eapply interrogation_length in H0. cbn; lia. }
     rewrite !app_assoc. econstructor; eauto.
     edestruct IHq2 as [IH _].
-    apply IH. split; eauto. rewrite zip_with_app; eauto. eapply interrogation_length; eauto.
+    apply IH. split; eauto. 
   - rewrite app_length. intros [Hlen H].
     destruct a2 using rev_ind.
     + cbn in *; lia.
@@ -94,9 +96,7 @@ Proof.
         inversion H6; subst; clear H6.
         edestruct IHq2 as [_ IH].
         unshelve epose proof (IH _).
-        2:{ split. eapply H0. econstructor. eapply H0.
-            rewrite zip_with_app in H3; eauto. eapply interrogation_length in H2. rewrite !app_length in H2. lia.
-            eauto. }
+        2:{ split. eapply H0. econstructor. eapply H0. all: eauto. }
         split. lia. eauto.
 Qed.
 
@@ -151,10 +151,10 @@ Proof.
               lia. lia.
 Qed.
 
-Lemma interrogation_app_inv {Q A O} q1 q2 a1 a2 (τ : list (Q * A) ↛ (Q + O)) f :
+Lemma interrogation_app_inv {Q A O} q1 q2 a1 a2 (τ : tree Q A O) f :
   interrogation τ f (q1 ++ q2) (a1 ++ a2) ->
   length q2 = length a2 ->
-  interrogation τ f q1 a1 /\ interrogation (fun l => τ (zip q1 a1 ++ l)) f q2 a2.
+  interrogation τ f q1 a1 /\ interrogation (fun l => τ (a1 ++ l)) f q2 a2.
 Proof.
   intros.
   eapply interrogation_app_iff; firstorder.
@@ -164,8 +164,8 @@ Lemma interrogation_output_det_le :
   ∀ A O (X Y : Type) (τ : X → tree Y A O) (R :  Y -> A -> Prop) (x : X) (y1 y2 : O) (qs1 : list Y) (ans1 : list A),
     functional R ->
     interrogation (τ x) R qs1 ans1
-    → τ x (zip qs1 ans1) =! Output y1
-    → ∀ (qs2 : list Y) (ans2 : list A), interrogation (τ x) R qs2 ans2 → τ x (zip qs2 ans2) =! Output y2 → length qs1 ≤ length qs2 → y1 = y2.
+    → τ x (ans1) =! Output y1
+    → ∀ (qs2 : list Y) (ans2 : list A), interrogation (τ x) R qs2 ans2 → τ x (ans2) =! Output y2 → length qs1 ≤ length qs2 → y1 = y2.
 Proof.
   intros A O X Y τ R x y1 y2 qs1 ans1 Hfun H1 H2 qs2 ans2 H1' H2' l.
   eapply interrogation_det in l; eauto.
@@ -193,8 +193,8 @@ Lemma interrogation_output_det :
   ∀ A O (X Y : Type) (τ : X → tree Y A O) (R :  Y -> A -> Prop) (x : X) (y1 y2 : O) (qs1 : list Y) (ans1 : list A),
     functional R ->
     interrogation (τ x) R qs1 ans1
-    → τ x (zip qs1 ans1) =! Output y1
-    → ∀ (qs2 : list Y) (ans2 : list A), interrogation (τ x) R qs2 ans2 → τ x (zip qs2 ans2) =! Output y2 → y1 = y2.
+    → τ x (ans1) =! Output y1
+    → ∀ (qs2 : list Y) (ans2 : list A), interrogation (τ x) R qs2 ans2 → τ x (ans2) =! Output y2 → y1 = y2.
 Proof.
   intros.
   assert (length qs1 <= length qs2 \/ length qs2 <= length qs1) as [Hlen | Hlen] by lia.
@@ -251,230 +251,6 @@ Proof.
     clear - H1 H. induction H1; econstructor; firstorder.
     all: setoid_rewrite in_app_iff in H.
     all: firstorder.
-Qed.
-
-(** *** Interrogations without question history  *)
-
-Fixpoint allqs {Q A O} (τ : (list (Q * A)) ↛ (Q + O)) (acc : list (Q * A)) (l : list A) : part (Q + O) :=
-  match l with
-  | [] => τ acc
-  | a :: l =>  bind (τ acc) (fun q => match q with inl q => allqs τ (acc ++ [(q,a)]) l | inr o => ret (inr o) end)
-  end.
-
-Lemma zip_nil_left {X Y} {l : list X} :
-  zip l (@nil Y) = nil.
-Proof.
-  destruct l; reflexivity.
-Qed.
-
-Lemma unzip_nil_ {Q A O} (tau : tree Q A O) acc qs ans x :
-  (forall k q a, nth_error (acc ++ zip qs ans) k = Some (q, a) -> tau (take k (acc ++ zip qs ans)) =! (inl q)) ->
-  length qs = length ans ->
-  allqs tau acc ans =! x <-> tau (acc ++ zip qs ans) =! x.
-Proof.
-  intros Hacc Hlen.
-  induction ans in acc, qs, Hacc, Hlen |- *; cbn.
-  - rewrite zip_nil_left, app_nil_r. reflexivity.
-  - cbn.
-    destruct qs as [ | q qs _ ]. { destruct ans; cbn in Hlen; congruence. }
-    cbn.
-    replace (acc ++ (q, a) :: zip qs ans) with ((acc ++ [(q, a)]) ++ zip qs ans).
-    2:{ now rewrite <- !app_assoc. }
-    rewrite <- IHans.
-    3:{ cbn in *; lia. }
-    + specialize (Hacc (length acc) q a).
-      rewrite take_app in Hacc.
-      rewrite bind_hasvalue_given.
-      2:{ eapply Hacc. cbn. rewrite nth_error_app2. 2: lia.
-          now rewrite minus_diag. }
-      cbn. reflexivity.
-    + intros. cbn in Hacc.
-      rewrite <- app_assoc in H |- *. cbn. eapply Hacc.
-      exact H.
-Qed.
-
-Lemma unzip_nil {Q A O} (tau : tree Q A O) f qs ans x :
-  interrogation tau f qs ans ->
-  allqs tau [] ans =! x <-> tau (zip qs ans) =! x.
-Proof.
-  intros.
-  apply unzip_nil_ with (qs := qs) (acc := []).
-  - cbn. induction H; intros.
-    + cbn. destruct k; cbn in *; congruence.
-    + replace (zip (qs ++ [q]) (ans ++ [a])) with (zip qs ans ++ [(q,a)]) in *.
-      2:{ rewrite zip_with_app. reflexivity. eapply interrogation_length; eauto. }
-      assert (length (zip qs ans) = length qs) as Hlen1. { eapply zip_with_length_l_eq, interrogation_length; eauto. }
-      assert (length (zip qs ans) = length ans) as Hlen2. { eapply interrogation_length in H. lia. }
-      assert (k < length ans \/ k = length ans) as [Hl | Hl].
-      { pose proof (nth_error_Some (zip qs ans ++ [(q, a)]) k) as [HH _].
-        rewrite H2 in HH. unshelve epose proof (HH _). congruence.
-        rewrite app_length in H3. cbn in *. lia. }
-      * rewrite nth_error_app1 in H2. 2: lia.
-        eapply IHinterrogation in H2.
-        rewrite take_app_le. 2: lia.
-        eauto.
-      * subst.
-        rewrite <- Hlen2.
-        rewrite nth_error_app2 in H2. 2: lia.
-        rewrite Hlen2, minus_diag in H2. cbn in H2. inversion H2; subst; clear H2.
-        rewrite take_app. eauto.
-  - eapply interrogation_length; eauto.
-Qed.
-
-Inductive noqinterrogation {Q A O} (τ : (list A) ↛ (Q + O)) (f : Q -> A -> Prop) : list Q -> list A -> Prop :=
-| noqNoQuestions : noqinterrogation τ f [] []
-| noqinterrogate qs ans q a : noqinterrogation τ f qs ans ->
-                           τ ans =! inl q ->
-                           f q a ->
-                           noqinterrogation τ f (qs ++ [q]) (ans ++ [a]).
-
-Definition noqOracleComputable {Q A I O} (r : Rel Q A -> I -> O -> Prop) :=
-  exists τ : I -> (list A) ↛ (Q + O), forall R x o, r R x o <-> exists qs ans, noqinterrogation (τ x) R qs ans /\ τ x ans =! Output o.
-
-Lemma noqinterrogation_length {Q A O} {tau f qs ans} :
-  @noqinterrogation Q A O tau f qs ans -> length qs = length ans.
-Proof.
-  induction 1; try reflexivity. now rewrite !app_length, IHnoqinterrogation.
-Qed.
-
-Lemma noqinterrogation_app_iff {Q A O} q1 q2 a1 a2 (τ : list (A) ↛ (Q + O)) f :
-  (noqinterrogation τ f q1 a1 /\ noqinterrogation (fun l => τ (a1 ++ l)) f q2 a2) <->
-    length q2 = length a2 /\ noqinterrogation τ f (q1 ++ q2) (a1 ++ a2).
-Proof.
-  induction q2 in a1, q1, a2, τ |- * using rev_ind; cbn; split.
-  - intros [H1 H2]. inversion H2; subst.
-    + rewrite !app_nil_r. split; eauto.
-    + destruct qs; cbn in *; congruence.
-  - intros [Hlen H]. destruct a2; cbn in *; try lia.
-    split. rewrite !app_nil_r in *; eauto. econstructor.
-  - intros [H1 H2]. inversion H2. { destruct q2; cbn in *; congruence. }
-    subst. eapply app_inj_2 in H. 2: cbn; lia.
-    destruct H. subst. inversion H5. subst. clear H5.
-    split. { rewrite !app_length. eapply noqinterrogation_length in H0. cbn; lia. }
-    rewrite !app_assoc. econstructor; eauto.
-    edestruct IHq2 as [IH _].
-    apply IH. split; eauto.
-  - rewrite app_length. intros [Hlen H].
-    destruct a2 using rev_ind.
-    + cbn in *; lia.
-    + clear IHa2. rewrite app_length in *. cbn in *.
-      rewrite app_assoc in *. inversion H.
-      * destruct q1, q2; cbn in *; congruence.
-      * eapply app_inj_2 in H0. 2: cbn; lia.
-        rewrite app_assoc in H1.
-        eapply app_inj_2 in H1. 2: cbn; lia.
-        destruct H0, H1. subst. inversion H5; subst; clear H5.
-        inversion H6; subst; clear H6.
-        edestruct IHq2 as [_ IH].
-        unshelve epose proof (IH _).
-        2:{ split. eapply H0. econstructor; eauto. eapply H0. }
-        split. lia. eauto.
-Qed.
-
-Lemma noqinterrogation_app_inv {Q A O} q1 q2 a1 a2 (τ : list (A) ↛ (Q + O)) f :
-  noqinterrogation τ f (q1 ++ q2) (a1 ++ a2) ->
-  length q2 = length a2 ->
-  noqinterrogation τ f q1 a1 /\ noqinterrogation (fun l => τ (a1 ++ l)) f q2 a2.
-Proof.
-  intros.
-  eapply noqinterrogation_app_iff; firstorder.
-Qed.
-
-Lemma noqinterrogation_cons {Q A O} q1 q2 a1 a2 τ (f : Q -> A -> Prop) :
-  τ [] =! inl q1 ->
-  f q1 a1 ->
-  @noqinterrogation Q A O (fun l => τ (a1 :: l)) f q2 a2 ->
-  noqinterrogation τ f (q1 :: q2) (a1 :: a2).
-Proof.
-  intros H1 H2.
-  induction q2 in a1, a2, H1, H2 |- * using rev_ind.
-  - inversion 1; subst.
-    + eapply noqinterrogate with (qs := []) (ans := []). econstructor. eauto. eauto.
-    + destruct qs; cbn in *; congruence.
-  - inversion 1.
-    + destruct q2; cbn in *; congruence.
-    + subst. assert (qs = q2 /\ q = x) as [<- <-].
-      { eapply app_inj_2 in H0. 2: reflexivity. firstorder congruence. }
-      replace (q1 :: qs ++ [q]) with ((q1 :: qs) ++ [q]) by reflexivity.
-      replace (a1 :: ans ++ [a]) with ((a1 :: ans) ++ [a]) by reflexivity.
-      econstructor. eapply IHq2; eauto. eauto. eauto.
-Qed.
-
-Lemma noqinterrogation_ext {Q A O} τ τ' (f f' : Q -> A -> Prop) q a :
-  (forall l v, τ l =! v <-> τ' l =! v) ->
-  (forall q a, f q a <-> f' q a) ->
-  noqinterrogation τ f q a <-> @noqinterrogation Q A O τ' f' q a.
-Proof.
-  enough (forall τ τ' (f f' : Q -> A -> Prop) q a,
-             (forall l v, τ l =! v <-> τ' l =! v) ->
-             (forall q a, f q a <-> f' q a) ->
-             noqinterrogation τ f q a -> @noqinterrogation Q A O τ' f' q a).
-  { split; eapply H; firstorder. }
-  clear. intros ? ? ? ? ? ? Heq ?.
-  induction 1; econstructor; eauto.
-  all: firstorder.
-Qed.
-
-Lemma noqinterrogation_app {Q A O} q1 q2 a1 a2 τ f :
-  @noqinterrogation Q A O τ f q1 a1 ->
-  noqinterrogation (fun l => τ (a1 ++ l)) f q2 a2 ->
-  noqinterrogation τ f (q1 ++ q2) (a1 ++ a2).
-Proof.
-  induction 1 in q2, a2 |- *; cbn.
-  - eauto.
-  - intros. rewrite <- !app_assoc.
-    eapply IHnoqinterrogation.
-    eapply noqinterrogation_cons.
-    + now rewrite app_nil_r.
-    + eauto.
-    + eapply noqinterrogation_ext; eauto. cbn. intros. now rewrite <- app_assoc.
-Qed.
-
-Lemma noqinterrogation_equiv:
-  ∀ (Q A I O : Type) (tau : I → (list A) ↛ (Q + O)) (f : Q -> A -> Prop) (i : I) (o : O),
-    (∃ (qs : list Q) (ans : list A), noqinterrogation (tau i) f qs ans ∧ tau i ans =! Output o)
-      ↔ (∃ (qs : list Q) (ans : list A), interrogation (λ l : list (Q * A), tau i (map snd l)) f qs ans ∧ tau i (map snd (zip qs ans)) =! Output o).
-Proof.
-  intros Q A I O tau f i o.
-  apply ex_iff_forall. intros qs. apply ex_iff_forall. intros ans. symmetry. split; intros [H1 H2]; split.
-  + clear H2. induction H1; constructor; trivial.
-    rewrite snd_zip in H; trivial. now rewrite (interrogation_length H1).
-  + rewrite snd_zip in H2; trivial. now rewrite (interrogation_length H1).
-  + clear H2. induction H1; constructor; trivial.
-    rewrite snd_zip; trivial. now rewrite (noqinterrogation_length H1).
-  + rewrite snd_zip; trivial. now rewrite (noqinterrogation_length H1).
-Qed.
-
-Lemma noqinterogation_equiv':
-  ∀ (Q A I O : Type) (tau : I → tree Q A O),
-  ∃ τ : I → (list A) ↛ (Q + O),
-  ∀ (R : Rel Q A) (x : I) (o : O),
-    (∃ (qs : list Q) (ans : list A), interrogation (tau x) R qs ans ∧ tau x (zip qs ans) =! Output o)
-      ↔ (∃ (qs : list Q) (ans : list A), noqinterrogation (τ x) R qs ans ∧ τ x ans =! Output o).
-Proof.
-  intros Q A I O tau.
-
-  exists (fun i l => allqs (tau i) [] l). intros f i o.
-  apply ex_iff_forall. intros qs. apply ex_iff_forall. intros ans. split; intros [H1 H2]; split.
-  + clear H2. induction H1; constructor; trivial. eapply unzip_nil; eassumption.
-  + cbn in H2. eapply unzip_nil; eauto.
-  + clear H2. induction H1; constructor; trivial. eapply unzip_nil in H; eauto.
-  + eapply unzip_nil in H2; eauto.
-    instantiate (1 := f).
-    clear - H1. induction H1.
-    * econstructor.
-    * econstructor; eauto. eapply unzip_nil; eauto.
-Qed.
-
-Lemma noqOracleComputable_equiv {Q A I O} F :
-  OracleComputable F <-> @noqOracleComputable Q A I O F.
-Proof.
-  split.
-  - intros [tau Ht]. red. setoid_rewrite Ht.
-    eapply noqinterogation_equiv'.
-  - intros [tau Ht]. exists (fun i l => tau i (map snd l)). intros f i o.
-    rewrite Ht.
-    eapply noqinterrogation_equiv.
 Qed.
 
 (** *** Interrogations with accumulator argument E  *)
@@ -587,7 +363,7 @@ Lemma einterrogation_equiv:
   ∃ τ : I → (list A) ↛ (Q + O),
   ∀ (R : Rel Q A) (x : I) (o : O),
     (∃ (qs : list Q) (ans : list A) (e' : E), einterrogation (tau x) R qs ans e e' ∧ tau x e' ans =! Output o)
-      ↔ (∃ (qs : list Q) (ans : list A), noqinterrogation (τ x) R qs ans ∧ τ x ans =! Output o).
+      ↔ (∃ (qs : list Q) (ans : list A), interrogation (τ x) R qs ans ∧ τ x ans =! Output o).
 Proof.
   intros Q A I O E e tau.
   exists (fun i l => bind (alles (tau i) e [] l) (fun x => match x with inl (_, q) => ret (inl q) | inr o => ret (inr o) end)).
@@ -598,7 +374,7 @@ Proof.
     { clear H2. induction H1.
       - eexists. econstructor.
       - psimpl. destruct x as [ [] | ]; psimpl.
-        destruct IHnoqinterrogation. eexists. econstructor; eauto. eapply unzip_nil_e; eauto.
+        destruct IHinterrogation. eexists. econstructor; eauto. eapply unzip_nil_e; eauto.
     }
     destruct H as (e' & H). exists e'. split; eauto.
     psimpl. destruct x as [ [] | ]; psimpl. eapply unzip_nil_e; eauto.
@@ -611,7 +387,6 @@ Qed.
 Lemma eOracleComputable_equiv {Q A I O} R :
   eOracleComputable R <-> @OracleComputable Q A I O R.
 Proof.
-  rewrite noqOracleComputable_equiv.
   split.
   - intros (E & e & tau & Ht).
     red. setoid_rewrite Ht. clear Ht.
@@ -886,7 +661,7 @@ Proof.
 Qed.
 
 Lemma interrogation_plus {Q A O} τ f n l lv v2 :
-  @noqinterrogation Q A O τ (fun x y => f x =! y) l lv ->
+  @interrogation Q A O τ (fun x y => f x =! y) l lv ->
   evalt (fun l' => τ (lv ++ l')) f n =! v2 ->
   evalt τ f (length l + n) =! v2.
 Proof.
@@ -895,15 +670,50 @@ Proof.
   - intros. cbn in H2.
     cbn -[evalt]. rewrite app_length. cbn -[evalt].
     replace (length qs + 1 + n) with (length qs + (S n)) by lia.
-    eapply IHnoqinterrogation.
+    eapply IHinterrogation.
     cbn. psimpl. rewrite app_nil_r. eassumption.
     cbn. psimpl. eapply evalt_ext; eauto.
     cbn. intros. now rewrite <- app_assoc.
 Qed.
 
+Lemma interrogation_cons {Q A O} q1 q2 a1 a2 τ (f : Q -> A -> Prop) :
+  τ [] =! inl q1 ->
+  f q1 a1 ->
+  @interrogation Q A O (fun l => τ (a1 :: l)) f q2 a2 ->
+  interrogation τ f (q1 :: q2) (a1 :: a2).
+Proof.
+  intros H1 H2.
+  induction q2 in a1, a2, H1, H2 |- * using rev_ind.
+  - inversion 1; subst.
+    + eapply Interrogate with (qs := []) (ans := []). econstructor. eauto. eauto.
+    + destruct qs; cbn in *; congruence.
+  - inversion 1.
+    + destruct q2; cbn in *; congruence.
+    + subst. assert (qs = q2 /\ q = x) as [<- <-].
+      { eapply app_inj_2 in H0. 2: reflexivity. firstorder congruence. }
+      replace (q1 :: qs ++ [q]) with ((q1 :: qs) ++ [q]) by reflexivity.
+      replace (a1 :: ans ++ [a]) with ((a1 :: ans) ++ [a]) by reflexivity.
+      econstructor. eapply IHq2; eauto. eauto. eauto.
+Qed.
+
+Lemma interrogation_app {Q A O} q1 q2 a1 a2 τ f :
+  @interrogation Q A O τ f q1 a1 ->
+  interrogation (fun l => τ (a1 ++ l)) f q2 a2 ->
+  interrogation τ f (q1 ++ q2) (a1 ++ a2).
+Proof.
+  induction 1 in q2, a2 |- *; cbn.
+  - eauto.
+  - intros. rewrite <- !app_assoc.
+    eapply IHinterrogation.
+    eapply interrogation_cons.
+    + now rewrite app_nil_r.
+    + eauto.
+    + eapply interrogation_ext; eauto. cbn. intros. now rewrite <- app_assoc.
+Qed.
+
 Lemma evalt_to_interrogation:
   ∀ (Q A I O : Type) (τ : I → (list A) ↛ (Q + O)) (f : Q ↛ A) (i : I) (o : O) (n : nat),
-    evalt (τ i) f n =! Output o → ∃ (qs : list Q) (ans : list A), length qs <= n /\ noqinterrogation (τ i) (λ (x : Q) (y : A), f x =! y) qs ans ∧ τ i ans =! Output o.
+    evalt (τ i) f n =! Output o → ∃ (qs : list Q) (ans : list A), length qs <= n /\ interrogation (τ i) (λ (x : Q) (y : A), f x =! y) qs ans ∧ τ i ans =! Output o.
 Proof.
   intros Q A I O τ f i o n H.
   induction n in τ, H |- *.
@@ -912,15 +722,15 @@ Proof.
   * cbn in *. psimpl. destruct x; psimpl.
     -- eapply (IHn (fun i l => τ i (x :: l))) in H1 as (qs & ans & H3 & H1 & H2).
        exists (q :: qs), (x :: ans). split; eauto. cbn; lia. repeat split.
-       eapply noqinterrogation_app with (q1 := [q]) (a1 := [x]).
-       eapply noqinterrogate with (qs := []) (ans := []); eauto.
-       econstructor. eauto. eauto.
-    -- exists [], []. repeat split. cbn. lia. econstructor. eauto.
+       eapply interrogation_app with (q1 := [q]) (a1 := [x]).
+       eapply Interrogate with (qs := []) (ans := []); eauto.
+       eauto. eauto.
+    -- exists [], []. repeat split. cbn. lia. eauto. eauto.
 Qed.
 
-Lemma noqinterrogation_equiv_evalt Q A I O :
+Lemma interrogation_equiv_evalt Q A I O :
   forall (τ : I -> list A ↛ (Q + O)) (f : Q ↛ A) (i : I) (o : O),
-    (exists (qs : list Q) (ans : list A), noqinterrogation (τ i) (fun x y => f x =! y) qs ans /\ τ i ans =! inr o) <-> (exists n : nat, evalt (τ i) f n =! inr o).
+    (exists (qs : list Q) (ans : list A), interrogation (τ i) (fun x y => f x =! y) qs ans /\ τ i ans =! inr o) <-> (exists n : nat, evalt (τ i) f n =! inr o).
 Proof.
   intros τ f i o. split.
   + intros (qs & ans & Hi & Hout).
@@ -983,7 +793,7 @@ Qed.
 Lemma computable_id {X Y} :
   OracleComputable (fun R : Rel X Y => R).
 Proof.
-  exists (fun i l => match l with [] => ret (inl i) | (_, b) :: _ => ret (inr b) end).
+  exists (fun i l => match l with [] => ret (inl i) | b :: _ => ret (inr b) end).
   intros. split.
   - intros H. exists [x], [o]. split. 2: psimpl.
     eapply (Interrogate _ _ [] []); eauto.
@@ -999,7 +809,6 @@ Qed.
 Lemma computable_search I :
   OracleComputable (fun R (i : I) n => R (i, n) true /\ forall m, m < n -> R (i, m) false).
 Proof.
-  eapply noqOracleComputable_equiv.
   exists (fun i l => ret (match list_find (fun b => b = true) l with Some (i, _) => inr i | _ => inl (i, length l) end)).
   intros f i v. symmetry. split.
   - intros (qs & ans & H1 & H2).
@@ -1019,7 +828,7 @@ Proof.
           cbn. eapply list_find_app_None in E_ as [E1 E2].
           rewrite E1 in H0. next. cbn in E2. destruct (decide (a = true)); inversion E2.
           destruct a; try congruence.
-          destruct IHnoqinterrogation as [IH1 IH2]; eauto.
+          destruct IHinterrogation as [IH1 IH2]; eauto.
           split; congruence.
       }
       subst n.
@@ -1033,7 +842,7 @@ Proof.
         -- eapply list_find_app_None in E_ as [E1 E2].
            rewrite E1 in H0. next. cbn in E2. destruct a; cbv in E2; inversion E2.
            eauto.
-        -- eapply IHnoqinterrogation. eapply list_find_app_None in E_. firstorder.
+        -- eapply IHinterrogation. eapply list_find_app_None in E_. firstorder.
            now rewrite repeat_length.
   - intros (Hv & Hl).
     exists (map (pair i) (seq 0 (v + 1))), (repeat false v ++ [true]).
@@ -1060,7 +869,7 @@ Lemma computable_bind A Q Y Z I (F1: Rel Q A -> _ -> _ -> Prop) F2 :
   OracleComputable (O := Z) F2 ->
   OracleComputable (fun f x z => exists y : Y, F1 f x y /\ F2 f (x, y) z).
 Proof using.
-  intros [tau1 H1] % noqOracleComputable_equiv [tau2 H2] % noqOracleComputable_equiv.
+  intros [tau1 H1] [tau2 H2].
   eapply eOracleComputable_equiv.
   eapply sOracleComputable_equiv.
   exists (option (Y * nat)), None.
@@ -1075,15 +884,15 @@ Proof using.
     destruct info as [ [y n] |  ]; simpl_assms.
     all: destruct x0; simpl_assms.
     exists y. rename R into f. rename x into i.
-    enough (n <= length ans /\ noqinterrogation (tau1 i) f (take n qs) (take n ans) ∧ tau1 i (take n ans) =! inr y /\  noqinterrogation (tau2 (i, y)) f (drop n qs) (drop n ans))
+    enough (n <= length ans /\ interrogation (tau1 i) f (take n qs) (take n ans) ∧ tau1 i (take n ans) =! inr y /\  interrogation (tau2 (i, y)) f (drop n qs) (drop n ans))
       by firstorder. clear H.
     generalize (eq_refl (@None (prod Y nat))).
     revert H1. generalize (@None (prod Y nat)) at 2 3. intros none H1 Heqnone.
     change (match Some (y,n) with Some (y, n) =>
                                     n ≤ length ans ∧
-                                      noqinterrogation (tau1 i) f (take n qs) (take n ans) ∧ tau1 i (take n ans) =! inr y /\  noqinterrogation (tau2 (i, y)) f (drop n qs) (drop n ans)
+                                      interrogation (tau1 i) f (take n qs) (take n ans) ∧ tau1 i (take n ans) =! inr y /\  interrogation (tau2 (i, y)) f (drop n qs) (drop n ans)
                              | None =>
-                                 noqinterrogation (tau1 i) f qs ans
+                                 interrogation (tau1 i) f qs ans
             end).
 
     revert H1. (generalize (Some (y, n))). intros.
@@ -1105,13 +914,11 @@ Proof using.
         -- rewrite !take_app_le; try lia. eauto.
         -- rewrite !drop_app_le; try lia. econstructor; eauto.
       * simpl_assms.  destruct x; simpl_assms.
-        assert (length qs = length ans) as Hlen by (eapply sinterrogation_length; eauto).
-        econstructor; eauto.
   - intros (y & (qs1 & ans1 & H1 & H1') & (qs2 & ans2 & H2 & H2')).
     exists (qs1 ++ qs2).
     exists (ans1 ++ ans2).
     exists (Some (y, length qs1)). split.
-    2:{ assert (length qs1 = length ans1) as Hlen by (eapply noqinterrogation_length; eauto).
+    2:{ assert (length qs1 = length ans1) as Hlen by (eapply interrogation_length; eauto).
         psimpl. rewrite Hlen. rewrite drop_app. eauto. cbn. psimpl. }
     eapply sinterrogation_app. instantiate (1 := None).
     + clear - H1.
@@ -1120,7 +927,7 @@ Proof using.
       * econstructor 3; eauto. cbn. psimpl.
     + eapply sinterrogation_scons. psimpl. rewrite app_nil_r. eauto. cbn.
       rewrite app_nil_r. cbn. psimpl.
-      assert (length qs1 = length ans1) as -> by (eapply noqinterrogation_length; eauto).
+      assert (length qs1 = length ans1) as -> by (eapply interrogation_length; eauto).
       clear - H2.
       induction H2.
       * econstructor.
@@ -1167,7 +974,7 @@ Lemma computable_comp A X  Q Y I O (F1 : Rel Q A -> Rel X Y) (F2 : Rel X Y -> I 
   -> OracleComputable F2
   -> OracleComputable (fun r x => F2 (F1 r) x).
 Proof.
-  intros [t1 H1] % noqOracleComputable_equiv [t2 H2] % noqOracleComputable_equiv.
+  intros [t1 H1] [t2 H2].
   eapply eOracleComputable_equiv.
   eapply sOracleComputable_equiv.
   eexists (list (X * Y) * option (X * nat))%type.
@@ -1191,13 +998,13 @@ Proof.
     destruct qs' as [ [ ] | ]; unfold t in Hend; simpl_assms. destruct x1; simpl_assms.
     destruct x0; simpl_assms.
     rename R into f. rename x into i.
-    enough (noqinterrogation (t2 i) (F1 f) (map fst ans') (map snd ans')).
+    enough (interrogation (t2 i) (F1 f) (map fst ans') (map snd ans')).
     firstorder. clear H.
     enough (forall h, sinterrogation (t i) f qs ans ([], None) h ->
-                 (noqinterrogation (t2 i) (F1 f) (map fst (fst h))) (map snd (fst h)) /\
+                 (interrogation (t2 i) (F1 f) (map fst (fst h))) (map snd (fst h)) /\
                    match snd h with
                      None => True
-                   | Some (x, n) => t2 i (map snd (fst h)) =! inl x /\ noqinterrogation (t1 x) f (lastn n qs) (lastn n ans)
+                   | Some (x, n) => t2 i (map snd (fst h)) =! inl x /\ interrogation (t1 x) f (lastn n qs) (lastn n ans)
                    end
            ).
     { eapply H in Hint. cbn in Hint. eapply Hint. }
@@ -1221,24 +1028,24 @@ Proof.
       destruct e1' as (qs_ans & [ (x & n) | ]); cbn in *.
       * psimpl. destruct x0; psimpl.
         rewrite !lastn_S.
-        firstorder. econstructor; eauto.
+        firstorder. 
       * psimpl. destruct x; psimpl.
   - intros (xs & ys & Hint & Hend).
     rename x into i. rename R into f.
     enough (∃ (qs : list Q) (ans : list A), sinterrogation (t i) f qs ans ([], None) (zip xs ys, None)).
     { firstorder. exists x, x0. eexists. split. eauto. cbn. psimpl.
-      rewrite snd_zip. eauto. eapply noqinterrogation_length in Hint. lia.
+      rewrite snd_zip. eauto. eapply interrogation_length in Hint. lia.
       cbn. psimpl. }
     clear Hend. induction Hint; cbn.
     + exists [], []. econstructor.
     + rename qs into xs. rename ans into ys.
       destruct IHHint as (qs & ans & IH).
-      rewrite zip_with_app. 2: eapply noqinterrogation_length; eauto.
+      rewrite zip_with_app. 2: eapply interrogation_length; eauto.
       eapply H1 in H0 as (qs' & ans' & Hint' & Hend'). cbn.
       exists (qs ++ qs'), (ans ++ ans').
       assert (sinterrogation (t i) f qs ans  ([], None) (zip xs ys, Some (q, 0))).
       { econstructor 2. eauto. cbn. psimpl. rewrite snd_zip. eauto.
-        eapply noqinterrogation_length in Hint; lia. cbn.
+        eapply interrogation_length in Hint; lia. cbn.
         psimpl.
       }
       eapply sinterrogation_app. eauto.
@@ -1268,13 +1075,13 @@ Notation "P ⪯ᴛ Q" := (red_Turing P Q) (at level 50).
 
 (** The relational layer can be dropped *)
 Lemma Turing_reducible_without_rel X Y (p : X -> Prop) (q : Y -> Prop) :
-  p ⪯ᴛ q <-> exists τ, forall x b, char_rel p x b ↔ (∃ qs ans, interrogation (τ x) (char_rel q) qs ans ∧ τ x (zip qs ans) =! Output b).
+  p ⪯ᴛ q <-> exists τ, forall x b, char_rel p x b ↔ (∃ qs ans, interrogation (τ x) (char_rel q) qs ans ∧ τ x (ans) =! Output b).
 Proof.
   split.
   - intros [R [[τ Ht] HR]].
     exists τ. intros. rewrite HR, Ht. reflexivity.
   - intros [τ Ht].
-    exists (fun R x o => ∃ (qs : list Y) (ans : list bool), interrogation (τ x) R qs ans ∧ τ x (zip qs ans) =! Output o).
+    exists (fun R x o => ∃ (qs : list Y) (ans : list bool), interrogation (τ x) R qs ans ∧ τ x (ans) =! Output o).
     cbn. split.
     + exists τ. reflexivity.
     + eapply Ht.
@@ -1327,13 +1134,13 @@ Lemma Turing_transports_computable {Q A I O} F :
   @OracleComputable Q A I O F ->
   exists F', forall f R, pcomputes f R -> pcomputes (F' f) (F R).
 Proof.
-  intros [tau H] % noqOracleComputable_equiv.
+  intros [tau H].
   exists (fun f i => bind (mu (fun n => bind (evalt (tau i) f n) (fun res => match res with inl _ => ret false | inr _ => ret true end))) (fun n => bind (evalt (tau i) f n) (fun res => match res with inl _ => undef | inr o => ret o end))).
   intros f R HfR. unfold pcomputes in *. intros.
   rewrite H.
-  setoid_rewrite noqinterrogation_ext.
+  setoid_rewrite interrogation_ext.
   2: reflexivity. 2:{ intros. split. intros hf % HfR. eapply hf. firstorder. }
-  setoid_rewrite noqinterrogation_equiv_evalt.
+  setoid_rewrite interrogation_equiv_evalt.
   rewrite !bind_hasvalue. split.
   - intros (? & ? & ?). simpl_assms. destruct x1; simpl_assms.
   - intros (n & Hn).
@@ -1344,11 +1151,10 @@ Proof.
         eapply ret_hasvalue_iff.
         assert (exists n, evalt (tau x) f n =! Output y) by eauto.
         assert (exists n, evalt (tau x) f n =! Output o) by eauto.
-        eapply noqinterrogation_equiv_evalt in H2, H3.
-        rewrite noqinterrogation_equiv in H2, H3.
+        eapply interrogation_equiv_evalt in H2, H3.
         destruct H2 as (? & ? & H2 & ?).
         destruct H3 as (? & ? & H3 & ?).
-        eapply interrogation_output_det with (τ := fun x => (λ l : list (Q * A), tau x (map snd l))).
+        eapply interrogation_output_det with (τ := tau).
         2: eapply H3. 3: eapply H2. all: eauto.
         intros ?; intros. eapply hasvalue_det; eauto.
     }
@@ -1361,17 +1167,17 @@ Proof.
     clear H0.
     eapply evalt_to_interrogation in Hn as (qs & ans & H1 & H2 & H3).
     assert (x0 < length qs \/ length qs <= x0) as [|] by lia.
-    + eapply noqinterrogation_length in H2 as Hlen.
+    + eapply interrogation_length in H2 as Hlen.
       rewrite <- (take_drop x0 qs) in H2.
       rewrite <- (take_drop x0 ans) in H2.
-      eapply noqinterrogation_app_inv in H2 as [].
+      eapply interrogation_app_inv in H2 as [].
       replace x0 with (length (take x0 qs) + 0). 2:{ rewrite firstn_length. lia. }
       2:{ rewrite !skipn_length. lia. }
       destruct (drop x0 qs) eqn:E.
       { eapply (f_equal length) in E. cbn in E. rewrite skipn_length in E. lia. }
       destruct (drop x0 ans) eqn:E'.
       { eapply (f_equal length) in E'. cbn in E'. rewrite skipn_length in E'. lia. }
-      eapply (noqinterrogation_app_inv [q] _ [a]) in H4 as [].
+      eapply (interrogation_app_inv [q] _ [a]) in H4 as [].
       inversion H4.
       assert (qs0 = nil /\ ans0 = nil) as [-> ->]. { eapply (f_equal length) in H6, H7. rewrite app_length in *; cbn in *. destruct qs0, ans0; cbn in *; try lia. eauto. }
       inversion H6.  inversion H7. subst.
@@ -1542,21 +1348,18 @@ Proof.
   exists (fun R x b => exists L : list bool, List.Forall2 R (projT1 (f x)) L /\
                                (truthtables.eval_tt (projT2 (f x)) L = b)).
   split.
-  - cbn.
+  - clear dq. cbn.
     exists (fun x l => match nth_error (projT1 (f x)) (length l) with
                | Some a => ret (Ask a)
-               | None => ret (inr (truthtables.eval_tt (projT2 (f x)) (map snd l)))
+               | None => ret (inr (truthtables.eval_tt (projT2 (f x)) (l)))
                end).
     intros R x o. split.
     + intros (L & H1 & <-). exists (projT1 (f x)). exists L. split.
-      2:{ rewrite zip_with_length.
-          eapply Forall2_length in H1.
-          rewrite <- H1. rewrite Nat.min_id.
+      2:{ eapply Forall2_length in H1.
+          rewrite <- H1. 
           edestruct nth_error_None as [_ H].
           rewrite H. 2: lia.
-          rewrite snd_zip.
           eapply ret_hasvalue.
-          lia.
       }
       assert (prefix (projT1 (f x)) (projT1 (f x))) by eauto.
       revert H.
@@ -1573,25 +1376,22 @@ Proof.
           rewrite H. now rewrite <- app_assoc.
         }
         destruct H as [ll ->].
-        rewrite zip_with_length.
         eapply Forall2_length in H0. rewrite <- H0.
-        rewrite Nat.min_id. rewrite nth_error_app1. 2: rewrite app_length; cbn; lia.
+        rewrite nth_error_app1. 2: rewrite app_length; cbn; lia.
         rewrite nth_error_app2. 2: lia. rewrite minus_diag. cbn. psimpl.
         eauto.
     + intros (qs & ans & H1 & H2).
-      rewrite zip_with_length in H2.
       eapply interrogation_length in H1 as Hlen. rewrite <- Hlen in H2.
-      rewrite Nat.min_id in H2. destruct nth_error eqn:E; psimpl.
-      exists ans. rewrite snd_zip. 2: lia. split; eauto.
+      destruct nth_error eqn:E; psimpl.
+      exists ans. split; eauto.
       eapply nth_error_None in E.
       enough (Forall2 R (take (length qs) (projT1 (f x))) ans). { rewrite firstn_all2 in H. eauto. eauto. }
       clear - H1. induction H1.
       * econstructor.
       * rewrite app_length. cbn.
         destruct nth_error eqn:E; psimpl.
-        rewrite zip_with_length in E.
         eapply interrogation_length in H1 as Hlen.
-        rewrite <- Hlen in E. rewrite Nat.min_id in E.
+        rewrite <- Hlen in E. 
         rewrite <- (firstn_skipn (length qs) (projT1 (f x))).
         rewrite firstn_app.
         rewrite take_length.
@@ -1634,7 +1434,7 @@ Proof.
            firstorder congruence.
         -- exists (false :: L). econstructor; eauto.
            firstorder congruence.
-    + intros (L & IL & HL).
+    + clear dq. intros (L & IL & HL).
       eapply reflects_iff. unfold reflects. unfold reflects in *.
       rewrite Hf, <- HL.
       reflexivity.
