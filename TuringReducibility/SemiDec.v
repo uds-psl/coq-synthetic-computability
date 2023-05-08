@@ -830,3 +830,12 @@ Proof.
     eapply OracleComputable_extensional in HG. eapply HG.
     eauto.
 Qed.
+
+Lemma oracle_semi_decidable_complement_iff {Part : partiality} {X} (A : X -> Prop) {Y} (B : Y -> Prop) :
+  stable B -> OracleSemiDecidable B A <-> OracleSemiDecidable (fun y => ~ B y) A.
+Proof.
+  intros DN.
+  split.
+  - intros H. apply (Turing_transports_sdec H), Turing_red_compl. exact DN.
+  - intros H. apply (Turing_transports_sdec H),compl_Turing_red. exact DN.
+Qed.

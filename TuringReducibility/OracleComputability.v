@@ -1130,11 +1130,11 @@ Proof.
 Qed.
 
 (** Turing reduction transports partial computability - relying on the evalt function from above *)
-Lemma Turing_transports_computable {Q A I O} F :
-  @OracleComputable Q A I O F ->
-  exists F', forall f R, pcomputes f R -> pcomputes (F' f) (F R).
+Lemma Turing_transports_computable_strong {Q A I O} F tau :
+  (∀ (R : Q → A → Prop) (x : I) (o : O), F R x o ↔ (∃ (qs : list Q) (ans : list A), interrogation (tau x) R qs ans ∧ tau x ans =! Output o)) ->
+  {F' | forall f R, pcomputes f R -> pcomputes (F' f) (F R)}.
 Proof.
-  intros [tau H].
+  intros H.
   exists (fun f i => bind (mu (fun n => bind (evalt (tau i) f n) (fun res => match res with inl _ => ret false | inr _ => ret true end))) (fun n => bind (evalt (tau i) f n) (fun res => match res with inl _ => undef | inr o => ret o end))).
   intros f R HfR. unfold pcomputes in *. intros.
   rewrite H.
@@ -1191,6 +1191,14 @@ Proof.
       rewrite app_nil_r. psimpl. cbn. psimpl.
 Qed.
 
+Lemma Turing_transports_computable {Q A I O} F :
+  @OracleComputable Q A I O F ->
+  exists F', forall f R, pcomputes f R -> pcomputes (F' f) (F R).
+Proof.
+  intros [tau H].
+  destruct (Turing_transports_computable_strong F tau) as [F' ]; eauto.
+Qed.
+
 (** Transport of decidability -- which is equivalent to Markov's principle *)
 Definition char_rel_fun {X Y} (f : X -> Y) := (fun x b => f x = b).
 
@@ -1221,7 +1229,7 @@ Qed.
 
 From SyntheticComputability Require Import principles Pigeonhole.
 
-Goal forall X Y (p : X -> Prop) (q : Y -> Prop),
+Lemma transport_decidable : forall X Y (p : X -> Prop) (q : Y -> Prop),
     MP ->
     p ⪯ᴛ q -> decidable q -> decidable p.
 Proof.
@@ -1337,6 +1345,57 @@ Proof.
   eapply H with (q := fun x => True).
   eapply bienumerable_Turing; eauto.
   exists (fun _ => true). cbv. firstorder.
+Qed.
+
+Definition stable {X} (p : X -> Prop) := forall x, ~~ p x -> p x.
+Notation compl p := (fun x => ~ p x).
+
+Lemma Turing_red_compl {X} (P : X -> Prop): 
+  stable P -> P ⪯ᴛ compl P.
+Proof.
+  intros DN.
+  exists (fun R x b => R x (negb b)).
+  split.
+ - eapply OracleComputable_ext. eapply computable_bind.
+   eapply computable_id.
+   eapply computable_precompose with (g := snd).
+   eapply computable_function with (f := negb).
+   cbn. firstorder subst. now destruct x; cbn in *.
+   exists (negb o). now destruct o; cbn in *.
+ - intros ? []; cbn; firstorder congruence.
+Qed.
+
+Lemma compl_Turing_red {X} (P : X -> Prop): 
+  stable P -> (compl P) ⪯ᴛ P.
+Proof.
+  intros DN.
+  exists (fun R x b => R x (negb b)).
+  split.
+ - eapply OracleComputable_ext. eapply computable_bind.
+   eapply computable_id.
+   eapply computable_precompose with (g := snd).
+   eapply computable_function with (f := negb).
+   cbn. firstorder subst. now destruct x; cbn in *.
+   exists (negb o). now destruct o; cbn in *.
+ - intros ? []; cbn; firstorder congruence.
+Qed.
+
+Lemma decidable_compl_stable {X} (P : X -> Prop) :
+  (forall P : X -> Prop, decidable (compl P) -> decidable P) -> stable P.
+Proof.
+  intros H x Hx.
+  destruct (H (fun _ => P x)) as [f Hf].
+  - exists (fun _ => false). firstorder congruence.
+  - specialize (Hf x). destruct (f x); firstorder congruence.
+Qed.
+
+Lemma rev {X} (P : X -> Prop) :
+  MP ->
+  (forall P : X -> Prop, P ⪯ᴛ compl P) -> stable P.
+Proof.
+  intros mp H.
+  eapply decidable_compl_stable.
+  intros Q. eapply transport_decidable; eauto.
 Qed.
 
 (** Truth-table reducibility is included in Turing reducibility  *)
@@ -1622,3 +1681,5 @@ Section HS.
 End HS.
 
 End part.
+
+Notation "P ⪯ᴛ Q" := (red_Turing P Q) (at level 50).

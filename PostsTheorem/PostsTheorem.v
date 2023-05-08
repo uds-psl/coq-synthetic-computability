@@ -1,7 +1,7 @@
 (** * Post's Theorem *)
 
 From SyntheticComputability.Shared Require Import embed_nat.
-From SyntheticComputability.PostsTheorem Require Import OracleComputability TuringJump ArithmeticalHierarchySemantic.
+From SyntheticComputability Require Import TuringReducibility.OracleComputability TuringJump ArithmeticalHierarchySemantic SemiDec reductions.
 Require Import Lia List Vector PeanoNat.
 Import Vector.VectorNotations.
 Local Notation vec := Vector.t.
@@ -12,25 +12,26 @@ Require Import Equations.Prop.DepElim.
 
 Section PostsTheorem.
 
-  (* Axiom LEM : forall p, p \/ ~p. *)
-
-  (* Lemma DN p : ~~p -> p. Proof. now destruct (LEM p). Qed. *)
-
   Variable vec_to_nat : forall k, vec nat k -> nat.
   Variable nat_to_vec : forall k, nat -> vec nat k.
-  Variable vec_nat_inv : forall k v, nat_to_vec k (vec_to_nat k v) = v.
-  Variable nat_vec_inv : forall k n, vec_to_nat k (nat_to_vec k n) = n.
+  Variable vec_nat_inv : forall k v, nat_to_vec k (vec_to_nat v) = v.
+  Variable nat_vec_inv : forall k n, vec_to_nat (nat_to_vec k n) = n.
 
   Variable list_vec_to_nat : forall k, list (vec nat k) -> nat.
   Variable nat_to_list_vec : forall k, nat -> list (vec nat k).
-  Variable list_vec_nat_inv : forall k v, nat_to_list_vec k (list_vec_to_nat k v) = v.
-  Variable nat_list_vec_inv : forall k n, list_vec_to_nat k (nat_to_list_vec k n) = n.
+  Variable list_vec_nat_inv : forall k v, nat_to_list_vec k (list_vec_to_nat v) = v.
+  Variable nat_list_vec_inv : forall k n, list_vec_to_nat (nat_to_list_vec k n) = n.
+
+  Variable nat_to_list_bool : nat -> list bool.
+  Variable list_bool_to_nat : list bool -> nat.
+  Variable list_bool_nat_inv : forall l, nat_to_list_bool (list_bool_to_nat l) = l.
+  Variable nat_list_bool_inv : forall n, list_bool_to_nat (nat_to_list_bool n) = n.
 
   Lemma dec_vec {k} (v v' : vec nat k) :
     {v = v'} + {v <> v'}.
   Proof.
-    specialize (Nat.eq_dec (vec_to_nat k v) (vec_to_nat k v')) as [eq | neq].
-    - left. rewrite <- (vec_nat_inv k v). rewrite <- (vec_nat_inv k v'). now f_equal.
+    specialize (Nat.eq_dec (vec_to_nat v) (vec_to_nat v')) as [eq | neq].
+    - left. rewrite <- (vec_nat_inv v). rewrite <- (vec_nat_inv v'). now f_equal.
     - right. now intros ->.
   Qed.
 
@@ -71,8 +72,8 @@ Section PostsTheorem.
   Lemma jumpNKSemiDec n {k1 k2}:
     oracle_semi_decidable (∅^[n,k1]) (∅^[S n,k2]).
   Proof.
-    eapply semi_decidable_m_red. 1: apply jumpNKspec.
-    eapply semi_dec_turing_red_trans.
+    eapply red_m_transports_sdec. 2: apply jumpNKspec.
+    eapply Turing_transports_sdec.
     - apply semidecidable_J.
     - apply red_m_impl_red_T, jumpNKspec.
   Qed.
@@ -82,88 +83,49 @@ Section PostsTheorem.
   Proof.
     intros lem H. depelim H.  rename p0 into p'. rename H into Hp'.
     exists p'. split;[easy|].
-    unshelve eapply mk_semi_dec with
-    (r := fun R v => exists n, R (n::v) true /\ forall n', n' < n -> exists b, R (n' :: v) b).
-    intros f v. refine (bind (mu (fun x => f (x :: v))) (fun _ => ret I)).
-    3:{ cbn. intros. split.
+    exists (fun R v o => exists n, R (n::v) true /\ forall n', n' < n -> R (n' :: v) false). split.
+    2:{ cbn. intros. split.
         2: firstorder.
-        intros (? & H).
-        exists x0. split. eauto.
-        intros. clear H H0.
-        destruct (lem _ _ Hp' (n' :: x)).
-        { exists true; firstorder. }
-        { exists false; firstorder. }
+        intros H.
+        eapply Wf_nat.dec_inh_nat_subset_has_unique_least_element in H as [m [[H1 H2] H3]].
+        2:{ intros n0. eapply (lem _ _ Hp' (n0 :: x)). }
+        firstorder lia.
     }
-    - intros f R Hf v. cbn. split.
-      + intros (? & ? % mu_hasvalue & _) % bind_hasvalue.
-        destruct H.
-        exists x. split. eapply Hf. eauto.
-        exists false. eapply Hf. eauto.
-      + intros (x & ? & ?).
-        eapply bind_hasvalue. red in Hf. setoid_rewrite <- Hf in H. setoid_rewrite <- Hf in H0.
-        enough (exists a : nat, mu (fun x0 : nat => f (x0 :: v)) =! a) as []. { exists x0. firstorder. eapply ret_hasvalue. }
-        eapply mu_ter. firstorder.
-    - intros R v [x Hx]. exists (List.map (fun x => (x::v)) (seq 0 (S x))). split.
-      + intros. eapply in_map_iff in H as (? & ? & ?). subst.
-        eapply in_seq in H0 as [_ ?]. cbn in H.
-        assert (x0 < x \/ x0 = x) as [Hl | ->] by lia.
-        * eapply Hx. lia.
-        * exists true; firstorder.
-      + intros. exists x. firstorder.
-        * eapply H. eapply in_map_iff. eexists. split. eauto. eapply in_seq. lia. eauto.
-        * edestruct H1. eapply H2.
-          exists x0. eapply H. eapply in_map_iff. eexists. split. eauto. eapply in_seq. lia. eauto.
+    eapply OracleComputable_ext.
+    eapply computable_bind.
+    eapply computable_comp.
+    2: eapply computable_search. all: cbn.
+    2: eapply computable_ret with (v := tt).
+    eapply computable_precompose with (g := fun '(v,x) => x :: v).
+    eapply computable_id.
+    intros ? ? []; cbn; firstorder.
   Qed.
 
   Lemma Σ_semi_decidable_in_Π2 {k} (p: (vec nat k) -> Prop) n (DN : DNE_Σ n):
     (exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p) -> isΣsem (S n) p.
   Proof.
-    intros [p' [Πp' [om Hom]]].
-    erewrite PredExt. 2: apply Hom.
-
-    erewrite PredExt. 2: intros v; apply (oracle_iff_exists_LT_LF dec_vec). destruct om as [r r' Hr cont]. cbn in *.
-    unshelve erewrite PredExt. { intros v. apply (exists LTLFx : nat, 
-      (fun v =>
-      ((fun v => let (LT, LFx) := unembed (hd v) in let (LF, x) := unembed LFx in let v := (tl v) in 
-        List.Forall p' (nat_to_list_vec (S k) LT)) v) /\
-      ((fun v => let (LT, LFx) := unembed (hd v) in let (LF, x) := unembed LFx in let v := (tl v) in
-        List.Forall (fun y => ~p' y) (nat_to_list_vec (S k) LF)) v) /\
-      (fun v => let (LT, LFx) := unembed (hd v) in let (LF, x) := unembed LFx in let v := (tl v) in
-        seval (r' (oracle_from_lists dec_vec (nat_to_list_vec (S k) LT) (nat_to_list_vec (S k) LF)) v) x = Some I) v) (LTLFx::v)). }
-      2: {
-        setoid_rewrite seval_hasvalue.
-        intros v. split.
-        - intros [LT [LF [H1 [H2 [x H3]]]]].
-          exists (embed ((list_vec_to_nat _ LT), embed((list_vec_to_nat _ LF), x))).
-          rewrite eqhd. repeat rewrite embedP. rewrite eqtl. cbn.
-          repeat rewrite List.Forall_forall.
-          now repeat rewrite (list_vec_nat_inv).
-        - intros [LTLFx H]. rewrite eqhd in H. rewrite eqtl in H.
-          destruct (unembed LTLFx) as [LT LFx].
-          destruct (unembed LFx) as [LF x].
-          exists (nat_to_list_vec _ LT), (nat_to_list_vec _ LF).
-          repeat rewrite <- List.Forall_forall.
-          repeat split. 3: eexists. all: apply H.
+    intros [p' [Πp' [om [[τ Hom] H]]]].
+    erewrite PredExt. 2: apply H.
+    erewrite PredExt. 2: intros v; apply Hom.
+    unshelve erewrite PredExt. { intros v. apply (exists num : nat,
+      (fun v => (fun v => let (qs, ans) := unembed (hd v) in let v := (tl v) in
+         interrogation (τ v) (char_rel p') (nat_to_list_vec (S k) qs) (nat_to_list_bool ans)) v
+             /\ (fun v => let (qs, ans) := unembed (hd v) in let v := (tl v) in τ v (nat_to_list_bool ans) =! inr tt) v)
+       (num :: v)). }
+    2: { intros v. split.
+         - intros (qs & ans & H1 & H2).
+           exists (embed (list_vec_to_nat qs, (list_bool_to_nat ans))).
+           rewrite eqhd. repeat rewrite embedP. rewrite eqtl. cbn.
+           rewrite !list_vec_nat_inv, !list_bool_nat_inv. eauto.
+         - intros [num Hn]. rewrite eqhd in Hn.
+           destruct (unembed num) as [qs ans].
+           rewrite eqtl in Hn. cbn in Hn.
+           eauto.
       } apply isΣsemE.
       repeat apply isΣsem_and_closed.
-      - clear DN.
-        eapply isΣsem_m_red_closed. { apply isΣΠn_In_ΠΣSn in Πp'. eapply (isΣsemListΣ vec_nat_inv), Πp'. }
-        exists (fun v => let (LT, LFx) := unembed (hd v) in LT::(tl v)).
-        intros v. dependent destruction v. rewrite eqhd. now destruct unembed; destruct unembed.
-      - eapply isΣsem_m_red_closed. { eapply negΣinΠsem, (isΣΠn_In_ΣΠSn 1) in Πp'. apply (isΣsemListΣ vec_nat_inv), Πp'. exact DN. }
-        exists (fun v => let (_, LFx) := unembed (hd v) in let (LF, _) := unembed LFx in LF::(tl v)).
-        intros v. dependent destruction v. rewrite eqhd. now destruct unembed; destruct unembed.
-      - clear DN. erewrite PredExt with (g := fun v => (fun v => let (LT, LFx) := unembed (hd v) in
-        let (LF, x) := unembed LFx in
-        let v0 := tl v in
-        match seval (A:=True)
-        (r' (oracle_from_lists dec_vec (nat_to_list_vec (S k) LT)
-                (nat_to_list_vec (S k) LF)) v0) x
-        with Some _ => true | None => false end) v = true).
-        + apply isΣΠsem0.
-        + intros v. dependent destruction v. rewrite eqhd. rewrite eqtl.
-          destruct unembed. destruct unembed. destruct seval; split; now destruct t + intros [=].
-  Qed.
+      - admit.
+      - admit. 
+  Admitted.
 
   Lemma Σ_semi_decidable_in_Π {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :
     isΣsem (S n) p <-> exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p.
@@ -211,12 +173,12 @@ Section PostsTheorem.
   Proof.
     induction n as [|n IH].
     - intros k p H.
-      apply (red_m_iff_semidec_jump_vec vec_to_nat nat_to_vec vec_nat_inv).
-      apply no_oracle_semi_decidable. { exists (fun _ => false). split; [intros [] |intros [=]]. }
+      apply (@red_m_iff_semidec_jump_vec vec_to_nat nat_to_vec vec_nat_inv).
+      eapply semi_decidable_OracleSemiDecidable. 
       now apply semi_dec_iff_Σ1.
     - intros k p [p' [Σp' Sp']]%Σ_semi_decidable_in_Σ.
-      apply (red_m_iff_semidec_jump_vec vec_to_nat nat_to_vec vec_nat_inv).
-      eapply (semi_dec_turing_red_trans Sp').
+      apply (@red_m_iff_semidec_jump_vec vec_to_nat nat_to_vec vec_nat_inv).
+      eapply (Turing_transports_sdec Sp').
       apply red_m_impl_red_T. eapply IH; eauto.
       all: eauto.
       { intros n' q Hq. eapply DN. now eapply isΣΠn_In_ΣΠSn with (l := 1). }
@@ -227,13 +189,9 @@ Section PostsTheorem.
   Proof.
     intros k p H. destruct n.
     - dependent destruction H.
-      unshelve eexists. {
-        unshelve econstructor.
-        - intros _. apply (@Build_FunRel _ _ (fun v b => f v = b)). { now intros ? ? ? -> ->. }
-        - intros _ v. apply ret, f, v.
-        - intros f' ? _ x b. cbn. now rewrite ret_hasvalue_iff.
-        - intros ? ? ?. now exists List.nil.
-      } cbn. intros x []. reflexivity. now destruct f.
+      eexists. split.
+      eapply computable_function with (f := f).
+      cbn. intros x []. reflexivity. cbn. destruct (f x); firstorder congruence.
     - apply red_m_impl_red_T. eapply jump_Σn_complete; eauto.
       { intros n' q Hq. eapply DN. now eapply isΣΠn_In_ΣΠSn with (l := 1). }
   Qed.
@@ -243,13 +201,13 @@ Section PostsTheorem.
   Proof.
     split.
     - intros [p' [Σp' Sp']]%Σ_semi_decidable_in_Σ.
-      eapply (semi_dec_turing_red_trans Sp').
+      eapply (Turing_transports_sdec Sp').
       eapply jump_Σn_complete_redT.
       all: eauto.
     - intros H. apply Σ_semi_decidable_in_Σ; eauto.
       exists (∅^[n]). split.
       + apply jump_in_Σn; eauto.
-      + apply (semi_dec_turing_red_trans H), red_m_impl_red_T, jumpNKspec.
+      + apply (Turing_transports_sdec H), red_m_impl_red_T, jumpNKspec.
   Qed.
 
   Theorem PostsTheorem {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :

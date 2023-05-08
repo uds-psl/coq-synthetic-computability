@@ -20,7 +20,7 @@ Derive Signature for vec.
 Lemma eqhd : forall (x:nat) n (v: vec nat n), (VectorDef.hd (x :: v)) = x. Proof. reflexivity. Qed.
 Lemma eqtl : forall (x:nat) n (v: vec nat n), (VectorDef.tl (x :: v)) = v. Proof. reflexivity. Qed.
 
-Notation "P ⪯ₘ Q" := (reduces P Q) (at level 70).
+Notation "P ⪯ₘ Q" := (reduces P Q) (at level 50).
 
 Section ArithmeticalHierarchySemantic.
 

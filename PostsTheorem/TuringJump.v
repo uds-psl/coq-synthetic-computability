@@ -1,7 +1,8 @@
 (** * Turing Jump *)
 
 From SyntheticComputability.Shared Require Import embed_nat.
-From SyntheticComputability.Synthetic Require Import Definitions.
+From SyntheticComputability Require Import Definitions EPF SemiDec reductions.
+Import EmbedNatNotations.
 
 From SyntheticComputability Require Import partial.
 Require Import ssreflect Setoid.
@@ -10,11 +11,42 @@ Require Import Lia Vector List PeanoNat.
 Import ListNotations.
 Local Notation vec := Vector.t.
 
-Require Import SyntheticComputability.PostsTheorem.OracleComputability.
+Require Import SyntheticComputability.TuringReducibility.OracleComputability.
+
+Notation compl p := (fun x => ~ p x).
+
+Local Tactic Notation "intros" "⟨" ident(n) "," ident(m) "⟩" :=
+  let nm := fresh "nm" in
+  let E := fresh "E" in
+  intros nm; destruct (unembed nm) as [n m] eqn:E.
 
 Section halting.
 
   Variable Part : partiality.
+
+  Lemma semi_decidable_part_iff_unit {X} {p : X -> Prop} :
+    semi_decidable p <-> exists (f : X -> part unit), forall x, p x <-> f x =! tt.
+  Proof.
+    split.
+    - intros [f Hf].
+      exists (fun x : X => mkpart (fun n : nat => if f x n then Some tt else None)).
+      intros x.
+      rewrite (Hf x). split.
+      + intros [n H].
+        apply mkpart_hasvalue. {
+          intros n1 n2 [] []. destruct (f x n1), (f x n2). all: congruence.
+        }
+        exists n. now rewrite H.
+      + intros [n H]%mkpart_hasvalue1. exists n.
+        destruct f; congruence.
+    - intros [f Hf]. exists (fun x n => if seval (f x) n is Some _ then true else false).
+      intros x. rewrite Hf. split.
+      + intros H. eapply seval_hasvalue in H as [n H].
+        exists n. now rewrite H.
+      + intros [n H]. eapply seval_hasvalue. exists n.
+        destruct seval as [[]|]; congruence.
+  Qed.
+
   Variable θ : nat -> nat ↛ nat.
 
   Variable EPF :
@@ -24,23 +56,23 @@ Section halting.
 
   Lemma semidecidable_K : semi_decidable K.
   Proof.
-    apply semi_decidable_part_iff_True.
-    exists (fun i => bind (θ i i) (fun _ => ret I)).
+    apply semi_decidable_part_iff_unit.
+    exists (fun i => bind (θ i i) (fun _ => ret tt)).
     intros n. rewrite bind_hasvalue. setoid_rewrite <- ret_hasvalue_iff.
     firstorder.
   Qed.
 
   Lemma not_semidecidable_compl_K : ~ semi_decidable (compl K).
   Proof.
-    intros (f & Hf) % semi_decidable_part_iff_True.
-    unfold compl, K in Hf.
+    intros (f & Hf) % semi_decidable_part_iff_unit.
+    unfold K in Hf.
     specialize (EPF (fun i => bind (f i) (fun _ => ret 42))) as [i Hi].
     specialize (Hf i). specialize (Hi i).
     setoid_rewrite bind_hasvalue in Hi.
     enough (compl K i <-> K i) by firstorder.
-    unfold compl, K. rewrite Hf.
+    unfold K. rewrite Hf.
     split.
-    - intros. exists 42. apply Hi. exists I. now rewrite <- ret_hasvalue_iff.
+    - intros. exists 42. apply Hi. exists tt. now rewrite <- ret_hasvalue_iff.
     - now intros [n [[] H]%Hi].
   Qed.
 
@@ -74,101 +106,125 @@ Module Ξ.
 
   Context {Part : partiality}.
 
-  Axiom ξ : nat -> (nat ↛ bool) -> (nat ↛ True).
+  Variable EPF_assm : EPF.
+  Definition θ := proj1_sig EPF_assm.
+  Definition EPF := proj2_sig EPF_assm.
+
+  Variable ξ : nat -> nat -> tree nat bool unit.
 
   Axiom ξ_surjective :
-    forall f : (nat ↛ bool) -> (nat ↛ True), (continuous_f f) -> exists c, forall r n i, ξ c r n =! i <-> f r n =! i.
+    forall τ : nat -> tree nat bool unit, exists c, forall l i o, ξ c i l =! o <-> τ i l =! o.
 
-  Axiom ξ_cont :
-    forall c, continuous_f (ξ c).
+  Definition ξ' : nat -> nat -> tree nat bool unit :=
+      (fun ic x l => let (i, c) := unembed ic in ξ c (embed (i, x)) l).
 
-  Definition ξ' : nat -> (nat ↛ bool) -> (nat ↛ True) := 
-      (fun ic f x => let (i, c) := unembed ic in ξ c f (embed (i, x))).
 
   Fact ξ'_parametric :
-    forall f : nat -> (nat ↛ bool) -> (nat ↛ True), (forall i, continuous_f (f i)) -> exists γ, forall j r n i, ξ' (γ j) r n =! i <-> f j r n =! i.
+    forall f : nat -> nat -> tree nat bool unit, exists γ, forall j l i o, ξ' (γ j) i l =! o <-> f j i l =! o.
   Proof.
-    intros f cont. unfold ξ'.
-    assert (continuous_f (fun f' x => let (k, l) := unembed x in f k f' l)) as contF. {
-      intros f' x []. destruct unembed. apply cont.
-    }
-    destruct (ξ_surjective _ contF) as [c Hc].
+    intros f. unfold ξ'.
+    destruct (ξ_surjective (fun ji l => let (j, i) := unembed ji in f j i l)) as [c Hc].
     exists (fun i => embed(i, c)). intros i. rewrite embedP.
-    intros r n []. rewrite Hc. now rewrite embedP.
+    intros r n ?. rewrite Hc. now rewrite embedP.
   Qed.
 
-  Fact ξ'_surjective (f : (nat ↛ bool) -> (nat ↛ True)) (contF : continuous_f f):
-    exists c, forall r n i, ξ' c r n =! i <-> f r n =! i.
+  Fact ξ'_surjective (τ : nat -> tree nat bool unit) :
+    exists j, forall l i o, ξ' j i l =! o <-> τ i l =! o.
   Proof.
-    destruct (ξ'_parametric _ (fun _ => contF)) as [γ Hγ].
+    destruct (ξ'_parametric (fun _ => τ)) as [γ Hγ].
     now exists (γ 27).
   Qed.
 
-  Fact ξ'_cont :
-    forall c, continuous_f (ξ' c).
-  Proof.
-    intros ⟨i, c⟩. intros f x. unfold ξ'. rewrite E. apply ξ_cont.
-  Qed.
-  
   Lemma Ξ_spec (c : nat) :
-    { om : @oracle_machine Part nat bool nat True | om.(oracle_fun_part) = ξ' c }.
+    { F : (nat -> bool -> Prop) -> nat -> unit -> Prop | forall R x o, F R x o <-> (exists (qs : list _) (ans : list _), interrogation (ξ' c x) R qs ans /\ ξ' c x ans =! inr o)}.
   Proof.
-    unshelve eexists. {
-      destruct (@core_to_om Part nat nat True Nat.eq_dec) with (C := ξ' c) as [om Hom].
-      - intros f x []. apply ξ'_cont.
-      - exact om.
-    } cbn. now destruct core_to_om.
+    pose (τ := ξ' c).
+    exists (fun R i o => (exists (qs : list _) (ans : list _), interrogation (τ i) R qs ans /\ τ i ans =! inr o)).
+    reflexivity.
   Qed.
 
   Definition Ξ c := proj1_sig (Ξ_spec c).
 
-  Fact parametric (f : nat -> @oracle_machine Part nat bool nat True) : 
-    exists γ, forall j R x i, Ξ (γ j) R x i <-> f j R x i.
+  Fact computable :
+    OracleComputable (fun R '(c,i) o => Ξ c R i o).
   Proof.
-    destruct (ξ'_parametric _ (fun j => (@oracle_machine_core_coninous _ _ _ _ _ (f j)))) as [γ Hγ].
-    exists γ. intros j. apply (eq_core Nat.eq_dec).
-    unfold Ξ. destruct (Ξ_spec (γ j)) as [om' eq].
-    intros f' x z. specialize (Hγ j).
-    rewrite <- eq in Hγ. apply Hγ.
+    exists (fun '(c,i) => ξ' c i). intros R [c i] [].
+    unfold Ξ. destruct Ξ_spec as [F H]; cbn in *.
+    eapply H.
   Qed.
 
-  Fact surjective (om : oracle_machine nat bool nat True) : 
-    exists c, forall R x i, Ξ c R x i <-> om R x i.
+  Notation oracle_machine Q A I O := {F : (Q -> A -> Prop) -> I -> O -> Prop & {τ | forall R i o, F R i o <-> (exists (qs : list _) (ans : list _), interrogation (τ i) R qs ans /\ τ i ans =! inr o)}}.
+
+  Fact parametric (f : nat -> oracle_machine nat bool nat unit) :
+    exists γ, forall j R x i, Ξ (γ j) R x i <-> projT1 (f j) R x i.
   Proof.
-    destruct (parametric (fun _ => om)) as [γ Hγ].
-    now exists (γ 27).
+    destruct (ξ'_parametric (fun c => proj1_sig (projT2 (f c)))) as [γ Hγ].
+    exists γ. intros j. 
+    unfold Ξ. destruct (Ξ_spec (γ j)) as [om' eq].
+    intros f' x z. specialize (Hγ j).
+    cbn.
+    rewrite eq. symmetry.
+    rewrite (proj2_sig (projT2 (f j))).
+    setoid_rewrite Hγ.
+    destruct (f j) as [? []]; cbn in *.
+    firstorder.
+    exists x2, x3. split; eauto. eapply interrogation_ext; eauto.
+    exists x2, x3. split; eauto. eapply interrogation_ext. 3: eauto. 2: eauto.
+    firstorder.
   Qed.
+
+  Fact surjective (F : (nat -> bool -> Prop) -> nat -> unit -> Prop) (H : OracleComputable F) :
+    exists c, forall R x i, Ξ c R x i <-> F R x i.
+  Proof.
+    destruct H as [τ Hτ].
+    unshelve edestruct (@parametric) as [γ Hγ].
+    - intros _. exists F. exists τ. eauto.
+    - now exists (γ 27).
+  Qed.
+
+  Lemma parametric_jump' c x :
+    ∑ τ : nat -> (list bool) ↛ (nat + unit),
+        forall (R : nat -> bool -> Prop) (i : nat) (o : unit), Ξ c R x tt <-> (exists (qs : list nat) (ans : list bool), interrogation (τ i) R qs ans /\ τ i ans =! inr o).
+  Proof.
+    unfold Ξ. destruct (Ξ_spec c) as [F HF]. cbn.
+    exists (fun _ => ξ' c x). intros ? ? []. eapply HF.
+  Qed.
+
 End Ξ.
 
 Opaque Ξ.Ξ.
 Notation Ξ := Ξ.Ξ.
 
+Notation oracle_semi_decidable := OracleSemiDecidable.
+
 Section jump.
   (** ** Synthetic Turing Jump *)
 
-  Definition J Q c := Ξ c (char_rel Q) c I.
+  Definition J Q c := Ξ c (char_rel Q) c tt.
 
   Lemma semidecidable_J Q : oracle_semi_decidable Q (J Q).
   Proof.
-    eapply mk_semi_dec with
-      (r := fun O c => Ξ c O c I)
-      (r' := fun f c => (Ξ c).(oracle_fun_part) f c).
-    - intros f R Hf c. now apply Ξ.
-    - intros R c. apply Ξ.
+    exists (fun O c o => Ξ c O c tt). split.
+    - eapply OracleComputable_ext.
+      eapply computable_bind.
+      2: eapply Ξ.computable. 2: cbn.
+      eapply computable_ident. cbn.
+      intros ? ? []; firstorder subst.
+      assumption.
     - unfold J. reflexivity.
   Qed.
 
   Lemma not_semidecidable_compl_J Q : ~ oracle_semi_decidable Q (compl (J Q)).
   Proof.
-    intros (om & H). cbn in *.
-    specialize (Ξ.surjective om) as [c Hc].
-    unfold compl, J in H. specialize (H c).
+    intros (F & Hcomp & H). 
+    specialize (Ξ.surjective Hcomp) as [c Hc].
+    unfold J in H. specialize (H c).
     rewrite <- Hc in H. tauto.
   Qed.
 
   (** Complement not semi-decidable ***)
 
-  Definition 𝒥 Q := fun! ⟨c, x⟩ =>  Ξ c (char_rel Q) x I.
+  Definition 𝒥 Q := fun! ⟨c, x⟩ =>  Ξ c (char_rel Q) x tt.
 
   Lemma J_self_𝒥_m_red:
     forall Q, (J Q) ⪯ₘ (𝒥 Q).
@@ -177,12 +233,13 @@ Section jump.
     intros c. unfold J, 𝒥. now rewrite embedP.
   Qed.
 
-  Definition parametric_jump : nat -> oracle_machine nat bool nat True.
+  Notation oracle_machine Q A I O := {F : (Q -> A -> Prop) -> I -> O -> Prop & {τ | forall R i o, F R i o <-> (exists (qs : list _) (ans : list _), interrogation (τ i) R qs ans /\ τ i ans =! inr o)}}.
+
+  Definition parametric_jump : nat -> oracle_machine nat bool nat unit.
   Proof.
     intros ⟨c, x⟩.
-    eapply mk𝕄True with (r := fun R _ => Ξ c R x I) (r' := fun f _ => (Ξ c).(oracle_fun_part) f x).
-    - intros f R H cx. now apply Ξ.
-    - intros R _. apply Ξ.
+    exists (fun R _ o => Ξ c R x tt).
+    eapply Ξ.parametric_jump'.
   Defined.
 
   Lemma red_𝒥_J_self Q : 
@@ -198,58 +255,74 @@ Section jump.
     oracle_semi_decidable Q P <-> P ⪯ₘ (J Q).
   Proof.
     split.
-    - intros [om H]. apply red_m_transitive with (𝒥 Q). 2: apply red_𝒥_J_self.
-      specialize (Ξ.surjective om) as [c Hc].
+    - intros [om [Hom H]]. apply red_m_transitive with (𝒥 Q). 2: apply red_𝒥_J_self.
+      specialize (Ξ.surjective Hom) as [c Hc].
       unfold 𝒥.
       exists (fun x => embed (c, x)).
       intros x. rewrite H. rewrite embedP. now rewrite Hc.
     - intros [f Hf]. unfold reduction in Hf.
       unfold oracle_semi_decidable.
+      red in Hf.
       setoid_rewrite Hf.
-      eapply mk_semi_dec with 
-        (r := fun O c => Ξ (f c) O (f c) I)
-        (r' := fun o c => (Ξ (f c)).(oracle_fun_part) o (f c)).
-      + intros. now apply Ξ.
-      + intros R c. apply Ξ.
+      exists (fun O c o => Ξ (f c) O (f c) tt). split.
+      + eapply OracleComputable_ext.
+        eapply computable_bind.
+        2: eapply computable_precompose with (g := fun '(c, i) => (f c, f i)).
+        2: eapply Ξ.computable.
+        2: cbn.
+        eapply computable_ident.
+        intros ? ? []. firstorder subst. auto.
       + reflexivity.
   Qed.
 
   Variable vec_to_nat : forall k, vec nat k -> nat.
   Variable nat_to_vec : forall k, nat -> vec nat k.
-  Variable vec_nat_inv : forall k v, nat_to_vec k (vec_to_nat _ v) = v.
-  Variable nat_vec_inv : forall k n, vec_to_nat _ (nat_to_vec k n) = n.
+  Variable vec_nat_inv : forall k v, nat_to_vec k (vec_to_nat v) = v.
+  Variable nat_vec_inv : forall k n, vec_to_nat (nat_to_vec k n) = n.
 
   Lemma red_m_iff_semidec_jump_vec {k} (P : vec nat k -> Prop) (Q : nat -> Prop): 
     oracle_semi_decidable Q P <-> P ⪯ₘ (J Q).
   Proof.
     specialize (red_m_iff_semidec_jump (fun n => P (nat_to_vec k n)) Q) as [H1 H2].
     split.
-    - intros [[r r' Hr cont] Hom]. cbn in *.
+    - intros [F [Hcom Hom]]. cbn in *.
       eapply red_m_transitive with (fun n : nat => P (nat_to_vec k n)). {
         exists (@vec_to_nat k). intros v. now rewrite vec_nat_inv.
       }
       apply H1.
-      eapply mk_semi_dec with
-        (r := fun R n => r R (nat_to_vec k n ) I)
-        (r' := fun f n => r' f (nat_to_vec k n)).
-      + intros f R Hf x. now apply Hr.
-      + intros R x. apply cont.
+      exists (fun R n o => F R (nat_to_vec k n ) tt). split.
+      + eapply OracleComputable_ext.
+        eapply computable_precompose.
+        eapply Hcom. cbn.
+        intros ? ? []. reflexivity.
       + now setoid_rewrite <- Hom.
     - intros H. specialize (H2 ltac:(eapply red_m_transitive with P, H; now exists (nat_to_vec k))).
-      destruct H2 as [[r r' Hr cont] Hom]. cbn in *.
-      eapply mk_semi_dec with
-        (r := fun R v => r R (vec_to_nat _ v) I)
-        (r' := fun f v => r' f (vec_to_nat _ v)).
-      + cbn. unfold pcomputes. intros f R Hf x. now apply Hr.
-      + intros R x. apply cont.
+      destruct H2 as [F [Hcom Hom]]. cbn in *.
+      exists (fun R v o => F R (vec_to_nat v) tt). split.
+      + eapply OracleComputable_ext.
+        eapply computable_precompose.
+        eapply Hcom. cbn.
+        intros ? ? []. reflexivity.
       + intros v. rewrite <- Hom. now rewrite vec_nat_inv.
+  Qed.
+
+  Notation "P ⪯ᴛ Q" := (red_Turing P Q) (at level 50).
+
+  Lemma red_m_impl_red_T {X Y} (p : X -> Prop) (q : Y -> Prop) :
+    p ⪯ₘ q -> p ⪯ᴛ q.
+  Proof.
+    intros [f Hf].
+    eexists. split.
+    eapply computable_precompose with (g := f).
+    eapply computable_id. cbn.
+    intros ? []; firstorder.
   Qed.
 
   Lemma red_T_imp_red_T_jumps  (P : nat -> Prop) (Q : nat -> Prop): 
     P ⪯ᴛ Q -> (J P) ⪯ᴛ (J Q).
   Proof.
     intros rT. apply red_m_impl_red_T, red_m_iff_semidec_jump.
-    eapply semi_dec_turing_red_trans; [apply semidecidable_J|apply rT].
+    eapply Turing_transports_sdec; [apply semidecidable_J|apply rT].
   Qed.
 
 End jump.
