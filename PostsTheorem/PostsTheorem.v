@@ -101,6 +101,13 @@ Section PostsTheorem.
     intros ? ? []; cbn; firstorder.
   Qed.
 
+  Lemma interrogation_is_Π (k n : nat) (p' : vec nat (S k) -> Prop) (τ : vec nat k -> tree (vec nat (S k)) bool unit) :
+      isΠsem n p' ->
+        isΠsem n
+          (fun v : vec nat (S k) => let (qs, ans) := unembed (hd v) in let v0 := tl v in interrogation (τ v0) (char_rel p') (nat_to_list_vec (S k) qs) (nat_to_list_bool ans)).
+  Proof.
+  Admitted.
+
   Lemma Σ_semi_decidable_in_Π2 {k} (p: (vec nat k) -> Prop) n (DN : DNE_Σ n):
     (exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p) -> isΣsem (S n) p.
   Proof.
@@ -123,9 +130,18 @@ Section PostsTheorem.
            eauto.
       } apply isΣsemE.
       repeat apply isΣsem_and_closed.
-      - admit.
-      - admit. 
-  Admitted.
+      - eapply isΣΠn_In_ΠΣSn. now eapply interrogation_is_Π.
+      - replace (S n) with (n + 1) by lia. eapply isΣΠn_In_ΣΠSn.
+        eapply semi_dec_iff_Σ1.
+        exists (fun v i => let (_, ans) := unembed (hd v) in let v0 := tl v in
+                                                     match seval (τ v0 (nat_to_list_bool ans)) i with
+                                                     | Some (inr _) => true
+                                                     | _ => false
+                                                     end).
+        red. intros x. destruct unembed. rewrite seval_hasvalue.
+        firstorder. eexists. rewrite H0. reflexivity.
+        destruct seval as [ [ | [] ] | ]eqn:E; eauto.
+  Qed.
 
   Lemma Σ_semi_decidable_in_Π {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :
     isΣsem (S n) p <-> exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p.
