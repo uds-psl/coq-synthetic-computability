@@ -253,35 +253,32 @@ Section ArithmeticalHierarchySemantic.
   Variable list_vec_nat_inv : forall k v, nat_to_list_vec k (list_vec_to_nat v) = v.
   Variable nat_list_vec_inv : forall k n, list_vec_to_nat (nat_to_list_vec k n) = n.
 
-  Lemma isΣsem_if_closed n (f : nat -> bool) :
-    (forall k (p: vec nat k -> Prop), isΣsem n p -> forall (q : vec nat k -> Prop), isΣsem n q -> isΣsem n (fun v => if f (Vector.hd v) then p (Vector.tl v) else q (Vector.tl v)))
-/\  (forall k (p: vec nat k -> Prop), isΠsem n p -> forall (q : vec nat k -> Prop), isΠsem n q -> isΠsem n (fun v => if f (Vector.hd v) then p (Vector.tl v) else q (Vector.tl v))). 
+  Lemma isΣsem_if_closed n :
+    (forall k (p: vec nat k -> Prop), isΣsem n p -> forall (q : vec nat k -> Prop) (f : nat -> bool), isΣsem n q -> isΣsem n (fun v => if f (Vector.hd v) then p (Vector.tl v) else q (Vector.tl v)))
+/\  (forall k (p: vec nat k -> Prop), isΠsem n p -> forall (q : vec nat k -> Prop) (f : nat -> bool), isΠsem n q -> isΠsem n (fun v => if f (Vector.hd v) then p (Vector.tl v) else q (Vector.tl v))). 
   Proof.
     induction n as [|n IH].
     - split.
-      + intros k p Hp q Hq. dependent destruction Hp. dependent destruction Hq.
+      + intros k p Hp q f Hq. dependent destruction Hp. dependent destruction Hq.
         rewrite PredExt with (g := fun v => (if f (Vector.hd v) then f0 (Vector.tl v) else f1 (Vector.tl v)) = true). 
         apply isΣsem0.
         intros v. destruct f; reflexivity.
-      + intros k p Hp q Hq. dependent destruction Hp. dependent destruction Hq.
+      + intros k p Hp q f Hq. dependent destruction Hp. dependent destruction Hq.
         rewrite PredExt with (g := fun v => (if f (Vector.hd v) then f0 (Vector.tl v) else f1 (Vector.tl v)) = true). 
         apply isΠsem0.
         intros v. destruct f; reflexivity.
-    - split; intros k p Hp q Hq; dependent destruction Hp; dependent destruction Hq.
-      + (* unshelve erewrite PredExt; [exact (fun v => exists y x : nat, (fun v => p (Vector.hd v:: Vector.tl (Vector.tl v)) /\ p0 (Vector.hd (Vector.tl v)::Vector.tl (Vector.tl v))) (x::y::v))| | firstorder]. *)
-  (*      apply isΣsemTwoEx. apply IH. *)
-  (*       * eapply isΣsem_m_red_closed. { apply H0. } *)
-  (*         now exists (fun v => (Vector.hd v :: Vector.tl (Vector.tl v))). *)
-  (*       * eapply isΣsem_m_red_closed. { apply H. } *)
-  (*         now exists (fun v => Vector.hd (Vector.tl v) :: Vector.tl (Vector.tl v)). *)
-  (*     + unshelve erewrite PredExt; [exact (fun v => forall y x : nat, (fun v => p (Vector.hd v:: Vector.tl (Vector.tl v)) /\ p0 (Vector.hd (Vector.tl v)::Vector.tl (Vector.tl v))) (x::y::v))| | firstorder]. *)
-  (*       apply isΠsemTwoAll. apply IH. *)
-  (*       * eapply isΣsem_m_red_closed. { apply H0. } *)
-  (*         now exists (fun v => (Vector.hd v :: Vector.tl (Vector.tl v))). *)
-  (*       * eapply isΣsem_m_red_closed. { apply H. } *)
-  (*         now exists (fun v => Vector.hd (Vector.tl v) :: Vector.tl (Vector.tl v)). *)
-  (* Qed. *)
-  Admitted.
+    - split; intros k p Hp q f Hq; dependent destruction Hp; dependent destruction Hq.
+      + unshelve erewrite PredExt; [exact (fun v => exists x : nat, (fun v => if f (Vector.hd (Vector.tl v)) then p0 (Vector.hd v :: Vector.tl (Vector.tl v)) else p (Vector.hd v :: Vector.tl (Vector.tl v))) (x :: v)) | |].
+        eapply isΣsemS.
+        eapply isΣsem_m_red_closed. eapply IH. exact H. exact H0.
+        exists (fun v => (Vector.hd (Vector.tl v)) :: Vector.hd v :: Vector.tl (Vector.tl v)). red. cbn. reflexivity.
+        firstorder. cbn. destruct f; eauto. cbn in *. destruct f; eauto.
+      + unshelve erewrite PredExt; [exact (fun v => forall x : nat, (fun v => if f (Vector.hd (Vector.tl v)) then p0 (Vector.hd v :: Vector.tl (Vector.tl v)) else p (Vector.hd v :: Vector.tl (Vector.tl v))) (x :: v)) | |].
+        eapply isΠsemS.
+        eapply isΣsem_m_red_closed. eapply IH. exact H. exact H0.
+        exists (fun v => (Vector.hd (Vector.tl v)) :: Vector.hd v :: Vector.tl (Vector.tl v)). red. cbn. reflexivity.
+        firstorder. cbn. destruct f; eauto. cbn in *. destruct f; eauto. 
+  Qed.
 
   Lemma isΣΠball n :
     (forall k (p : vec nat (S k) -> Prop), isΣsem n p -> isΣsem n (fun v => forall l, l < (Vector.hd v) -> p (l::(Vector.tl v))))

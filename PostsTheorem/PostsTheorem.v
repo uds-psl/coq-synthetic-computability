@@ -166,7 +166,7 @@ Section PostsTheorem.
             4: refine (fun v => hd v = embed (hd (tl v), ( (snd (unembed (hd (tl (tl v)))))))).
             intros. exact _.
             eapply isΣsem_if_closed with (f := fun x => let '(a,b) := unembed x in
-                                                 List.nth a (nat_to_list_bool b) false). 1-4: eauto.
+                                                 List.nth a (nat_to_list_bool b) false). 
             Unshelve.
             4: refine (fun v => p' (List.nth (hd v) (nat_to_list_vec (S k) (fst (unembed (hd (tl v))))) (42 :: const 42 k))).
             4: refine (fun v => ~ p' (List.nth (hd v) (nat_to_list_vec (S k) (fst (unembed (hd (tl v))))) (42 :: const 42 k))).
