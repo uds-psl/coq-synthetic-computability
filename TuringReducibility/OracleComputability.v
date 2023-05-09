@@ -117,6 +117,43 @@ Proof.
   - eapply H. rewrite in_app_iff; firstorder. firstorder.
 Qed.
 
+Lemma interrogation_quantifiers {Q A O} (τ : (list A) ↛ (Q + O)) (R : Q -> A -> Prop) qs ans q0 a0 :
+  interrogation τ R qs ans <-> length ans = length qs /\ forall n, n < length ans -> τ (take n ans) =! inl (nth n qs q0)
+                                                                            /\ R (nth n qs q0) (nth n ans a0).
+Proof.
+  split.
+  - induction 1; cbn; intros. split; lia.
+    destruct IHinterrogation as [IH1 IH2].
+    rewrite !app_length in *. cbn in *. split; try lia.
+    intros.
+    assert (n = length ans \/ n < length ans) as [-> | Hlt] by lia.
+    + rewrite take_app. rewrite nth_middle.
+      rewrite IH1.
+      rewrite !nth_middle. firstorder.
+    + rewrite take_app_le. 2: lia.
+      rewrite !app_nth1; try lia.
+      firstorder.
+  - intros [H1 H2]. induction ans in qs, H1, H2 |- * using rev_ind.
+    + destruct qs; cbn in *; try lia.
+      econstructor.
+    + destruct qs using rev_ind; cbn in *.
+      * rewrite app_length in *. cbn in *. lia.
+      * rewrite !app_length in *. cbn in *.
+        destruct (H2 (length ans)) as [HH1 HH2].
+        lia.
+        assert (length ans = length qs) as E by lia.
+        rewrite take_app, E, nth_middle in HH1.
+        rewrite E, nth_middle, <- E, nth_middle in HH2.
+        econstructor; eauto. eapply IHans.
+        lia.
+        intros. clear HH1 HH2.
+        destruct (H2 n) as [HH1 HH2].
+        lia.
+        rewrite take_app_le in HH1. 2: lia.
+        rewrite !app_nth1 in *; try lia.
+        firstorder.
+Qed.
+
 Lemma interrogation_det {A Q O} qs1 ans1 qs2 ans2 τ f :
   functional f ->
   @interrogation Q A O τ f qs1 ans1 ->

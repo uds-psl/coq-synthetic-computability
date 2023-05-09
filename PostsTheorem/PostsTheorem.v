@@ -101,13 +101,6 @@ Section PostsTheorem.
     intros ? ? []; cbn; firstorder.
   Qed.
 
-  Lemma interrogation_is_Π (k n : nat) (p' : vec nat (S k) -> Prop) (τ : vec nat k -> tree (vec nat (S k)) bool unit) :
-      isΠsem n p' ->
-        isΠsem n
-          (fun v : vec nat (S k) => let (qs, ans) := unembed (hd v) in let v0 := tl v in interrogation (τ v0) (char_rel p') (nat_to_list_vec (S k) qs) (nat_to_list_bool ans)).
-  Proof.
-  Admitted.
-
   Lemma Σ_semi_decidable_in_Π2 {k} (p: (vec nat k) -> Prop) n (DN : DNE_Σ n):
     (exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p) -> isΣsem (S n) p.
   Proof.
@@ -130,7 +123,65 @@ Section PostsTheorem.
            eauto.
       } apply isΣsemE.
       repeat apply isΣsem_and_closed.
-      - eapply isΣΠn_In_ΠΣSn. now eapply interrogation_is_Π.
+      - erewrite PredExt with (g := fun v => interrogation (τ (tl v)) (char_rel p') (nat_to_list_vec (S k) (fst (unembed (hd v)))) (nat_to_list_bool (snd (unembed (hd v))))).
+        2: { intros. now destruct unembed. }
+        erewrite PredExt. 2:{ intros. unshelve eapply interrogation_quantifiers. exact (const 42 _). exact false. }
+        apply isΣsem_and_closed.
+        + replace (S n) with (n + 1) by lia. eapply isΣΠn_In_ΣΠSn.
+          eapply semi_dec_iff_Σ1. eapply SemiDecidabilityFacts.decidable_semi_decidable, DecidabilityFacts.dec_decidable.
+          intros. exact _.
+        + eapply isΣsem_m_red_closed.
+          apply isΣsem_and_closed.
+          replace (S n) with (n + 1) by lia. eapply isΣΠn_In_ΣΠSn.
+          eapply semi_dec_iff_Σ1. eapply SemiDecidabilityFacts.decidable_semi_decidable, DecidabilityFacts.dec_decidable.
+          instantiate (1 := fun v => hd v = length (nat_to_list_bool (snd (unembed (hd (tl v)))))). exact _.
+          eapply isΣΠball. eassumption.
+          2:{  instantiate (1 := k). Unshelve.
+               2: refine (fun v => 
+                                  τ (tl (tl v)) (firstn (hd v) (nat_to_list_bool (snd (unembed (hd (tl v)))))) =! inl (List.nth (hd v) (nat_to_list_vec (S k) (fst (unembed (hd (tl v))))) (const 42 (S k))) /\
+                                  char_rel p' (List.nth (hd v) (nat_to_list_vec (S k) (fst (unembed (hd (tl v))))) (const 42 (S k))) (List.nth (hd v) (nat_to_list_bool (snd (unembed (hd (tl v))))) false)).
+               cbn. exists (fun v => length (nat_to_list_bool (snd (unembed (hd v)))) :: v).
+               red. firstorder.
+          }
+          cbn. apply isΣsem_and_closed.
+          * replace (S n) with (n + 1) by lia. eapply isΣΠn_In_ΣΠSn.
+            eapply semi_dec_iff_Σ1.
+            exists (fun v i => match seval (τ (tl (tl v)) (firstn (hd v) (nat_to_list_bool (snd (unembed (hd (tl v))))))) i with
+                       | Some (inl q) => if dec_vec q (List.nth (hd v) (nat_to_list_vec (S k) (fst (unembed (hd (tl v))))) (42 :: const 42 k)) then
+                                          true else false
+                       | _ => false
+                       end).
+            red. intros x. rewrite seval_hasvalue.
+            firstorder. eexists. rewrite H0. destruct dec_vec; try congruence.
+            destruct seval as [ [ | [] ] | ]eqn:E; eauto.
+            destruct dec_vec; try congruence.
+            subst. eauto.
+          * unfold char_rel.
+            eapply isΣsem_m_red_closed.
+            apply isΣsem_and_closed.
+            replace (S n) with (n + 1) by lia. eapply isΣΠn_In_ΣΠSn.
+            eapply semi_dec_iff_Σ1. eapply SemiDecidabilityFacts.decidable_semi_decidable, DecidabilityFacts.dec_decidable.
+            instantiate (2 := S (S (S k))).
+            Unshelve.
+            4: refine (fun v => hd v = embed (hd (tl v), ( (snd (unembed (hd (tl (tl v)))))))).
+            intros. exact _.
+            eapply isΣsem_if_closed with (f := fun x => let '(a,b) := unembed x in
+                                                 List.nth a (nat_to_list_bool b) false). 1-4: eauto.
+            Unshelve.
+            4: refine (fun v => p' (List.nth (hd v) (nat_to_list_vec (S k) (fst (unembed (hd (tl v))))) (42 :: const 42 k))).
+            4: refine (fun v => ~ p' (List.nth (hd v) (nat_to_list_vec (S k) (fst (unembed (hd (tl v))))) (42 :: const 42 k))).
+            3:{ red. exists (fun v => embed (hd v, snd (unembed (hd (tl v)))) :: v).
+                red. firstorder; cbn -[unembed embed] in *; try rewrite !embedP in *; eauto.
+                rewrite embedP in H1. eauto.
+            }
+            eapply isΣΠn_In_ΠΣSn. eapply isΣsem_m_red_closed with (q := p'). eauto.
+            exists (fun v => (List.nth (hd v) (nat_to_list_vec (S k) (fst (unembed (hd (tl v))))) (42 :: const 42 k))).
+            firstorder.
+            eapply isΣsem_m_red_closed with (q := compl p').
+            replace (S n) with (1 + n) by lia. eapply isΣΠn_In_ΣΠSn.
+            eapply negΣinΠsem; eauto.
+            exists (fun v => (List.nth (hd v) (nat_to_list_vec (S k) (fst (unembed (hd (tl v))))) (42 :: const 42 k))).
+            firstorder.
       - replace (S n) with (n + 1) by lia. eapply isΣΠn_In_ΣΠSn.
         eapply semi_dec_iff_Σ1.
         exists (fun v i => let (_, ans) := unembed (hd v) in let v0 := tl v in
