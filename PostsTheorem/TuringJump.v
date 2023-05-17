@@ -136,17 +136,17 @@ Module Ξ.
   Qed.
 
   Lemma Ξ_spec (c : nat) :
-    { F : (nat -> bool -> Prop) -> nat -> unit -> Prop | forall R x o, F R x o <-> (exists (qs : list _) (ans : list _), interrogation (ξ' c x) R qs ans /\ ξ' c x ans =! inr o)}.
+    { F : (nat -> bool -> Prop) -> nat -> Prop | forall R x, F R x <-> (exists (qs : list _) (ans : list _), interrogation (ξ' c x) R qs ans /\ ξ' c x ans =! inr tt)}.
   Proof.
     pose (τ := ξ' c).
-    exists (fun R i o => (exists (qs : list _) (ans : list _), interrogation (τ i) R qs ans /\ τ i ans =! inr o)).
+    exists (fun R i => (exists (qs : list _) (ans : list _), interrogation (τ i) R qs ans /\ τ i ans =! inr tt)).
     reflexivity.
   Qed.
 
   Definition Ξ c := proj1_sig (Ξ_spec c).
 
   Fact computable :
-    OracleComputable (fun R '(c,i) o => Ξ c R i o).
+    OracleComputable (fun R '(c,i) (o : unit) => Ξ c R i).
   Proof.
     exists (fun '(c,i) => ξ' c i). intros R [c i] [].
     unfold Ξ. destruct Ξ_spec as [F H]; cbn in *.
@@ -156,12 +156,12 @@ Module Ξ.
   Notation oracle_machine Q A I O := {F : (Q -> A -> Prop) -> I -> O -> Prop & {τ | forall R i o, F R i o <-> (exists (qs : list _) (ans : list _), interrogation (τ i) R qs ans /\ τ i ans =! inr o)}}.
 
   Fact parametric (f : nat -> oracle_machine nat bool nat unit) :
-    exists γ, forall j R x i, Ξ (γ j) R x i <-> projT1 (f j) R x i.
+    exists γ, forall j R x, Ξ (γ j) R x <-> projT1 (f j) R x tt.
   Proof.
     destruct (ξ'_parametric (fun c => proj1_sig (projT2 (f c)))) as [γ Hγ].
-    exists γ. intros j. 
+    exists γ. intros j.
     unfold Ξ. destruct (Ξ_spec (γ j)) as [om' eq].
-    intros f' x z. specialize (Hγ j).
+    intros f' x. specialize (Hγ j).
     cbn.
     rewrite eq. symmetry.
     rewrite (proj2_sig (projT2 (f j))).
@@ -174,7 +174,7 @@ Module Ξ.
   Qed.
 
   Fact surjective (F : (nat -> bool -> Prop) -> nat -> unit -> Prop) (H : OracleComputable F) :
-    exists c, forall R x i, Ξ c R x i <-> F R x i.
+    exists c, forall R x, Ξ c R x <-> F R x tt.
   Proof.
     destruct H as [τ Hτ].
     unshelve edestruct (@parametric) as [γ Hγ].
@@ -184,7 +184,7 @@ Module Ξ.
 
   Lemma parametric_jump' c x :
     ∑ τ : nat -> (list bool) ↛ (nat + unit),
-        forall (R : nat -> bool -> Prop) (i : nat) (o : unit), Ξ c R x tt <-> (exists (qs : list nat) (ans : list bool), interrogation (τ i) R qs ans /\ τ i ans =! inr o).
+        forall (R : nat -> bool -> Prop) (i : nat) o, Ξ c R x <-> (exists (qs : list nat) (ans : list bool), interrogation (τ i) R qs ans /\ τ i ans =! inr o).
   Proof.
     unfold Ξ. destruct (Ξ_spec c) as [F HF]. cbn.
     exists (fun _ => ξ' c x). intros ? ? []. eapply HF.
@@ -200,11 +200,11 @@ Notation oracle_semi_decidable := OracleSemiDecidable.
 Section jump.
   (** ** Synthetic Turing Jump *)
 
-  Definition J Q c := Ξ c (char_rel Q) c tt.
+  Definition J Q c := Ξ c (char_rel Q) c.
 
   Lemma semidecidable_J Q : oracle_semi_decidable Q (J Q).
   Proof.
-    exists (fun O c o => Ξ c O c tt). split.
+    exists (fun O c o => Ξ c O c). split.
     - eapply OracleComputable_ext.
       eapply computable_bind.
       2: eapply Ξ.computable. 2: cbn.
@@ -224,7 +224,7 @@ Section jump.
 
   (** Complement not semi-decidable ***)
 
-  Definition 𝒥 Q := fun! ⟨c, x⟩ =>  Ξ c (char_rel Q) x tt.
+  Definition 𝒥 Q := fun! ⟨c, x⟩ =>  Ξ c (char_rel Q) x.
 
   Lemma J_self_𝒥_m_red:
     forall Q, (J Q) ⪯ₘ (𝒥 Q).
@@ -238,7 +238,7 @@ Section jump.
   Definition parametric_jump : nat -> oracle_machine nat bool nat unit.
   Proof.
     intros ⟨c, x⟩.
-    exists (fun R _ o => Ξ c R x tt).
+    exists (fun R _ o => Ξ c R x).
     eapply Ξ.parametric_jump'.
   Defined.
 
@@ -247,8 +247,8 @@ Section jump.
   Proof.
     destruct (Ξ.parametric parametric_jump) as [γ Hγ].
     exists γ. unfold J, 𝒥. intros ⟨c, x⟩.
-    setoid_rewrite Hγ. unfold parametric_jump. rewrite E. cbn.
-    reflexivity.
+    erewrite Hγ. unfold parametric_jump. rewrite E. cbn.
+    reflexivity. 
   Qed.
 
   Lemma red_m_iff_semidec_jump (P : nat -> Prop) (Q : nat -> Prop): 
@@ -264,7 +264,7 @@ Section jump.
       unfold oracle_semi_decidable.
       red in Hf.
       setoid_rewrite Hf.
-      exists (fun O c o => Ξ (f c) O (f c) tt). split.
+      exists (fun O c o => Ξ (f c) O (f c)). split.
       + eapply OracleComputable_ext.
         eapply computable_bind.
         2: eapply computable_precompose with (g := fun '(c, i) => (f c, f i)).
