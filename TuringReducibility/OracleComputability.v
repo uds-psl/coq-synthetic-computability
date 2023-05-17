@@ -1417,22 +1417,15 @@ Proof.
  - intros ? []; cbn; firstorder congruence.
 Qed.
 
-Lemma decidable_compl_stable {X} (P : X -> Prop) :
-  (forall P : X -> Prop, decidable (compl P) -> decidable P) -> stable P.
+Lemma rev X (x0 : X) :
+  MP -> (forall P : X -> Prop, P ⪯ᴛ compl P) -> DNE.
 Proof.
-  intros H x Hx.
-  destruct (H (fun _ => P x)) as [f Hf].
-  - exists (fun _ => false). firstorder congruence.
-  - specialize (Hf x). destruct (f x); firstorder congruence.
-Qed.
-
-Lemma rev {X} (P : X -> Prop) :
-  MP ->
-  (forall P : X -> Prop, P ⪯ᴛ compl P) -> stable P.
-Proof.
-  intros mp H.
-  eapply decidable_compl_stable.
-  intros Q. eapply transport_decidable; eauto.
+  intros mp H P HP.
+  specialize (H (fun _ => P)).
+  apply transport_decidable in H as [f Hf].
+  - specialize (Hf x0). cbn in Hf. clear mp. destruct (f x0); firstorder congruence. 
+  - auto.
+  - exists (fun _ => false). clear - HP. firstorder congruence.
 Qed.
 
 (** Truth-table reducibility is included in Turing reducibility  *)
