@@ -95,20 +95,6 @@ Section ArithmeticalHierarchySemantic.
     - intros. econstructor. eapply H. reflexivity. firstorder.
   Qed.
 
-  Goal isΣsem 1 (curry1 (fun n => exists k, n = 2 * k)).
-  Proof.
-    eapply PredExt.
-    - eapply isΣsemS. unshelve apply isΠsem0.
-      apply curry2. intros k n.
-      exact (n =? (2*k)).
-    - intros v.
-      repeat dependent destruction v.
-      cbn. unfold curry0.
-      split.
-      + intros [k H]. exists k. now apply Nat.eqb_eq.
-      + intros [k H]. exists k. now apply Nat.eqb_eq.
-  Qed.
-
   Lemma semi_dec_iff_Σ1 {k} (p : vec nat k -> Prop):
     semi_decidable p <-> isΣsem 1 p.
   Proof.
@@ -458,43 +444,43 @@ Section ArithmeticalHierarchySemantic.
     now intros.
   Qed.
 
-  Lemma isΣsemListΣ {k k'} (p : vec nat k -> Prop) n: 
-    (isΣsem n p -> isΣsem n
-      (fun v : vec nat (S k') =>
-        List.Forall p (nat_to_list_vec k (Vector.hd v))))
-  /\
-    (isΠsem n p -> isΠsem n
-      (fun v : vec nat (S k') =>
-        List.Forall p (nat_to_list_vec k (Vector.hd v)))).
-  Proof.
-    assert ((fun v : vec nat (S k') => Forall p (nat_to_list_vec k (Vector.hd v)))
-    ⪯ₘ (fun v : vec nat (S (S k')) =>
-        forall l : nat,
-        l < Vector.hd v ->
-        (fun v0 : vec nat (S (S k')) =>
-         p (nth (Vector.hd v0) (nat_to_list_vec k (Vector.hd (Vector.tl v0))) (const 42 k)))
-          (l :: Vector.tl v))) as mred. {
-      exists (fun v => (length (nat_to_list_vec k (Vector.hd v)))::v).
-      intros v. dependent destruction v. cbn.
-      remember (nat_to_list_vec k h) as L. clear.
-      rewrite List.Forall_forall. split.
-      - intros H l lt. apply H. now apply List.nth_In.
-      - intros H x i. eapply List.In_nth in i as [l [lt <-]]. now apply H. 
-    }
-    split. all: intros H.
-    all: unshelve eapply isΣsem_m_red_closed. 2, 4: exact (
-      fun v : vec nat (S (S k')) =>
-        forall l : nat,
-        l < (Vector.hd v) ->
-        (fun v => 
-          p (List.nth (Vector.hd v) (nat_to_list_vec k (Vector.hd (Vector.tl v))) (const 42 k)))(l:: Vector.tl v)
-    ).
-    2, 4: apply mred.
-    all: apply isΣΠball.
-    all: eapply isΣsem_m_red_closed.
-    1, 3: apply H.
-    all: eexists; intros v; split; apply (fun x => x).
-  Qed.
+  (* Lemma isΣsemListΣ {k k'} (p : vec nat k -> Prop) n:  *)
+  (*   (isΣsem n p -> isΣsem n *)
+  (*     (fun v : vec nat (S k') => *)
+  (*       List.Forall p (nat_to_list_vec k (Vector.hd v)))) *)
+  (* /\ *)
+  (*   (isΠsem n p -> isΠsem n *)
+  (*     (fun v : vec nat (S k') => *)
+  (*       List.Forall p (nat_to_list_vec k (Vector.hd v)))). *)
+  (* Proof. *)
+  (*   assert ((fun v : vec nat (S k') => Forall p (nat_to_list_vec k (Vector.hd v))) *)
+  (*   ⪯ₘ (fun v : vec nat (S (S k')) => *)
+  (*       forall l : nat, *)
+  (*       l < Vector.hd v -> *)
+  (*       (fun v0 : vec nat (S (S k')) => *)
+  (*        p (nth (Vector.hd v0) (nat_to_list_vec k (Vector.hd (Vector.tl v0))) (const 42 k))) *)
+  (*         (l :: Vector.tl v))) as mred. { *)
+  (*     exists (fun v => (length (nat_to_list_vec k (Vector.hd v)))::v). *)
+  (*     intros v. dependent destruction v. cbn. *)
+  (*     remember (nat_to_list_vec k h) as L. clear. *)
+  (*     rewrite List.Forall_forall. split. *)
+  (*     - intros H l lt. apply H. now apply List.nth_In. *)
+  (*     - intros H x i. eapply List.In_nth in i as [l [lt <-]]. now apply H.  *)
+  (*   } *)
+  (*   split. all: intros H. *)
+  (*   all: unshelve eapply isΣsem_m_red_closed. 2, 4: exact ( *)
+  (*     fun v : vec nat (S (S k')) => *)
+  (*       forall l : nat, *)
+  (*       l < (Vector.hd v) -> *)
+  (*       (fun v =>  *)
+  (*         p (List.nth (Vector.hd v) (nat_to_list_vec k (Vector.hd (Vector.tl v))) (const 42 k)))(l:: Vector.tl v) *)
+  (*   ). *)
+  (*   2, 4: apply mred. *)
+  (*   all: apply isΣΠball. *)
+  (*   all: eapply isΣsem_m_red_closed. *)
+  (*   1, 3: apply H. *)
+  (*   all: eexists; intros v; split; apply (fun x => x). *)
+  (* Qed. *)
 
   (** Σ and Π are complements **)
 
@@ -719,6 +705,15 @@ Section ArithmeticalHierarchySemantic.
       eapply DNEimpl. 2: exact Hp.
       eapply LEM_Σ_to_DNE_Σ. assumption. 
       assumption.
+  Qed.
+
+  Goal DNE_Π 1.
+  Proof.
+    intros k p H x. depelim H. depelim H.
+    cbn in *. rewrite H0. setoid_rewrite H.
+    firstorder. destruct (f (x0 :: x)) eqn:E; eauto.
+    contradiction H1. intros HE.
+    rewrite HE in E. congruence.
   Qed.
 
 End ArithmeticalHierarchySemantic.
