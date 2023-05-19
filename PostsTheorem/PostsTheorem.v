@@ -86,7 +86,7 @@ Section PostsTheorem.
     exists (fun R v o => exists n, R (n::v) true /\ forall n', n' < n -> R (n' :: v) false). split.
     2:{ cbn. intros. split.
         2: firstorder.
-        intros H.
+        intros H. eapply H0 in H.
         eapply Wf_nat.dec_inh_nat_subset_has_unique_least_element in H as [m [[H1 H2] H3]].
         2:{ intros n0. eapply (lem _ _ Hp' (n0 :: x)). }
         firstorder lia.
@@ -105,9 +105,9 @@ Section PostsTheorem.
     (exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p) -> isΣsem (S n) p.
   Proof.
     intros [p' [Πp' [om [[τ Hom] H]]]].
-    erewrite PredExt. 2: apply H.
-    erewrite PredExt. 2: intros v; apply Hom.
-    unshelve erewrite PredExt. { intros v. apply (exists num : nat,
+    eapply PredExt. 2: apply H.
+    eapply PredExt. 2: intros v; apply Hom.
+    unshelve eapply PredExt. { intros v. apply (exists num : nat,
       (fun v => (fun v => let (qs, ans) := unembed (hd v) in let v := (tl v) in
          interrogation (τ v) (char_rel p') (nat_to_list_vec (S k) qs) (nat_to_list_bool ans)) v
              /\ (fun v => let (qs, ans) := unembed (hd v) in let v := (tl v) in τ v (nat_to_list_bool ans) =! inr tt) v)
@@ -123,9 +123,9 @@ Section PostsTheorem.
            eauto.
       } apply isΣsemE.
       repeat apply isΣsem_and_closed.
-      - erewrite PredExt with (g := fun v => interrogation (τ (tl v)) (char_rel p') (nat_to_list_vec (S k) (fst (unembed (hd v)))) (nat_to_list_bool (snd (unembed (hd v))))).
-        2: { intros. now destruct unembed. }
-        erewrite PredExt. 2:{ intros. unshelve eapply interrogation_quantifiers. exact (const 42 _). exact false. }
+      - unshelve eapply PredExt. exact (fun v => interrogation (τ (tl v)) (char_rel p') (nat_to_list_vec (S k) (fst (unembed (hd v)))) (nat_to_list_bool (snd (unembed (hd v))))).
+        2: { intros. cbn. now destruct unembed. }
+        eapply PredExt. 2:{ intros. unshelve eapply interrogation_quantifiers. exact (const 42 _). exact false. }
         apply isΣsem_and_closed.
         + replace (S n) with (n + 1) by lia. eapply isΣΠn_In_ΣΠSn.
           eapply semi_dec_iff_Σ1. eapply SemiDecidabilityFacts.decidable_semi_decidable, DecidabilityFacts.dec_decidable.
@@ -227,7 +227,7 @@ Section PostsTheorem.
     @isΣsem n (S k) (∅^[n]).
   Proof.
     induction n as [|n IH] in k, DN |-*.
-    - rewrite PredExt with (g := fun _ => false=true). { apply isΣsem0. } setoid_rewrite jumpNK0. clear. firstorder congruence.
+    - unshelve eapply PredExt. exact (fun _ => false=true). { apply isΣsem0. } setoid_rewrite jumpNK0. clear. firstorder congruence.
     - apply Σ_semi_decidable_in_Σ; eauto.
       { intros n' p Hp. eapply DN. now eapply isΣΠn_In_ΣΠSn with (l := 1). }
       exists (jumpNK n). split; [apply IH|].
@@ -258,7 +258,7 @@ Section PostsTheorem.
     - dependent destruction H.
       eexists. split.
       eapply computable_function with (f := f).
-      cbn. intros x []. reflexivity. cbn. destruct (f x); firstorder congruence.
+      cbn. intros x []. cbn in *. firstorder. cbn in *. rewrite H. destruct (f x); firstorder congruence.
     - apply red_m_impl_red_T. eapply jump_Σn_complete; eauto.
       { intros n' q Hq. eapply DN. now eapply isΣΠn_In_ΣΠSn with (l := 1). }
   Qed.

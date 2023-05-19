@@ -24,26 +24,32 @@ Notation "P ⪯ₘ Q" := (reduces P Q) (at level 50).
 
 Section ArithmeticalHierarchySemantic.
 
-  (* ((vec nat k) -> Prop) punktweise gleich -> gleich *)
-  (* und äquivalente Prop sind gleich *)
-  Lemma fun_ext_prop_ext:
-    (forall {X Y} (f g : X -> Y), (forall x, f x = g x) -> f = g) ->
-    (forall (p q : Prop), (p <-> q) -> p = q) ->
-    forall {k} (f g:(vec nat k) -> Prop) , (forall v, f v <-> g v) -> f = g.
+  Inductive isΣsem : nat -> forall (k: nat), ((vec nat k) -> Prop) -> Prop :=
+  | isΣsem0_ {k} p (f: vec nat k -> bool) : (forall v, p v <-> f v = true) -> isΣsem 0 p
+  | isΣsemS_ {n} {k} p' {p: vec nat (S k) -> Prop} : @isΠsem n (S k) p -> (forall v, p' v <-> exists x, p (x::v)) -> @isΣsem (S n) k p' 
+  with isΠsem : nat -> forall (k: nat), ((vec nat k) -> Prop) -> Prop :=
+  | isΠsem0_ {k} p (f: vec nat k -> bool) : (forall v, p v <-> f v = true) -> isΠsem 0 p
+  | isΠsemS_ {n} {k} p' {p: vec nat (S k) -> Prop} : @isΣsem n (S k) p -> (forall v, p' v <-> forall x, p (x::v)) -> @isΠsem (S n) k p'.
+
+  Lemma isΠsem0 {k} (f: vec nat k -> bool) : isΠsem 0 (fun v => f v = true).
   Proof.
-    intros Fext Pext k f g H.
-    apply Fext. intros x. apply Pext. apply H.
+    econstructor. reflexivity.
   Qed.
 
-  Axiom PredExt : forall (k : nat) (f g : vec nat k -> Prop), (forall v : vec nat k, f v <-> g v) -> f = g.
+  Lemma isΣsem0 {k} (f: vec nat k -> bool) : isΣsem 0 (fun v => f v = true).
+  Proof.
+    econstructor. reflexivity.
+  Qed.
 
-  Inductive isΣsem : nat -> forall (k: nat), ((vec nat k) -> Prop) -> Prop :=
-  | isΣsem0 {k} (f: vec nat k -> bool) : isΣsem 0 (fun v => f v = true)
-  | isΣsemS {n} {k} {p: vec nat (S k) -> Prop} : @isΠsem n (S k) p -> @isΣsem (S n) k (fun v => exists x, p (x::v))
-  
-  with isΠsem : nat -> forall (k: nat), ((vec nat k) -> Prop) -> Prop :=
-  | isΠsem0 {k} (f: vec nat k -> bool) : isΠsem 0 (fun v => f v = true)
-  | isΠsemS {n} {k} {p: vec nat (S k) -> Prop} : @isΣsem n (S k) p -> @isΠsem (S n) k (fun v => forall x, p (x::v)).
+  Lemma isΣsemS {n} {k} {p: vec nat (S k) -> Prop} : @isΠsem n (S k) p -> @isΣsem (S n) k (fun v => exists x, p (x::v)).
+  Proof.
+    econstructor. eauto. reflexivity.
+  Qed.
+
+  Lemma isΠsemS {n} {k} {p: vec nat (S k) -> Prop} : @isΣsem n (S k) p -> @isΠsem (S n) k (fun v =>  forall x, p (x::v)).
+  Proof.
+    econstructor. eauto. reflexivity.
+  Qed.
 
   Derive Signature for isΣsem.
   Derive Signature for isΠsem.
@@ -78,9 +84,20 @@ Section ArithmeticalHierarchySemantic.
     intros P. apply curry. intros n. apply curry1. exact (P n).
   Defined.
 
+  Lemma PredExt :
+    (forall n k (p: vec nat k -> Prop), isΣsem n p -> forall p', (forall v, p' v <-> p v) -> isΣsem n p')
+ /\ (forall n k (p: vec nat k -> Prop), isΠsem n p -> forall p', (forall v, p' v <-> p v) -> isΠsem n p').
+  Proof.
+    eapply isΣsem_isΠsem_mutind.
+    - intros. econstructor. intros. now rewrite H, i.
+    - intros. econstructor. eapply H. reflexivity. firstorder.
+    - intros. econstructor. intros. now rewrite H, i.
+    - intros. econstructor. eapply H. reflexivity. firstorder.
+  Qed.
+
   Goal isΣsem 1 (curry1 (fun n => exists k, n = 2 * k)).
   Proof.
-    erewrite PredExt.
+    eapply PredExt.
     - eapply isΣsemS. unshelve apply isΠsem0.
       apply curry2. intros k n.
       exact (n =? (2*k)).
@@ -98,12 +115,12 @@ Section ArithmeticalHierarchySemantic.
   unfold semi_decidable, semi_decider.
   split.
   - intros [f Hf].
-    rewrite (PredExt Hf).
-    unshelve erewrite PredExt. {
+    eapply PredExt. 2: exact Hf.
+    unshelve eapply PredExt. {
       exact (fun v => exists n, (fun v => (fun v => f (Vector.tl v) (Vector.hd v)) v = true) (n::v)).
     } 2: reflexivity. eapply isΣsemS, isΠsem0.
   - intros H. repeat dependent destruction H.
-    now exists (fun v n => f (n::v)).
+    exists (fun v n => f (n::v)). firstorder.
   Qed.
 
   Lemma isΣΠsem0 {k} (f: vec nat k -> bool) n :
@@ -112,10 +129,10 @@ Section ArithmeticalHierarchySemantic.
     induction n in k, f |-*.
     - split; apply isΣsem0 + apply isΠsem0.
     - split.
-      + rewrite PredExt with (g := fun v => exists x, f (Vector.tl (x::v)) = true) by firstorder.
+      + unshelve eapply PredExt. exact (fun v => exists x, f (Vector.tl (x::v)) = true). 2: firstorder.
         change (isΣsem (S n) (fun v => exists x, (fun v => f (Vector.tl v) = true) (x::v))).
         apply isΣsemS. apply IHn.
-      + rewrite PredExt with (g := fun v => forall x, f (Vector.tl (x::v)) = true) by firstorder.
+      + unshelve eapply PredExt. exact (fun v => forall x, f (Vector.tl (x::v)) = true). 2: firstorder.
         change (isΠsem (S n) (fun v => forall x, (fun v => f (Vector.tl v) = true) (x::v))).
         apply isΠsemS. apply IHn.
   Qed.
@@ -125,9 +142,9 @@ Section ArithmeticalHierarchySemantic.
 /\  (forall n k (p: vec nat k -> Prop), isΠsem n p -> isΠsem (l + n) p).
   Proof.
     apply isΣsem_isΠsem_mutind; intros.
-    all: try apply isΣΠsem0.
+    1,3: eapply PredExt; [eapply isΣΠsem0 | ]; cbn; eassumption.
     all: replace (l + S n) with (S l + n) by lia.
-    all: now constructor.
+    all: cbn; econstructor; eauto.
   Qed.
 
   Lemma isΣsem_m_red_closed : 
@@ -135,22 +152,22 @@ Section ArithmeticalHierarchySemantic.
 /\  (forall n k (q: vec nat k -> Prop), isΠsem n q -> forall k' (p : vec nat k' -> Prop), p ⪯ₘ q -> isΠsem n p).
   Proof.
     apply isΣsem_isΠsem_mutind.
-    - intros k f k' p [e He].
-      erewrite PredExt. 2: apply He. apply isΣsem0.
-    - intros n k q Πq IH k' p [e He].
-      erewrite PredExt. 2: apply He.
-      unshelve erewrite PredExt. 2: eapply isΣsemS, IH.
+    - intros ? ? ? ? ? ? [e He]. eapply PredExt. 2: apply He. eapply isΣsem0_.
+      intros. eapply i.
+    - intros n k p' q Πq IH k' H p [e He].
+      eapply PredExt. 2: apply He.
+      unshelve eapply PredExt. 2: eapply isΣsemS, IH.
       + exists (fun v => (Vector.hd v)::(e (Vector.tl v))).
-        intros x. split; intros H; apply H.
-      + reflexivity.
-    - intros k f k' p [e He].
-      erewrite PredExt. 2: apply He. apply isΠsem0.
-    - intros n k q Πq IH k' p [e He].
-      erewrite PredExt. 2: apply He.
-      unshelve erewrite PredExt. 2: eapply isΠsemS, IH.
+        intros x. split; intros HH; apply HH.
+      + firstorder.
+    - intros k p' f H k' p [e He].
+      eapply PredExt. 2: apply He. eapply isΠsem0_. intros. eapply H.
+    - intros n k p' q Πq IH k' H p [e He].
+      eapply PredExt. 2: apply He.
+      unshelve eapply PredExt. 2: eapply isΠsemS, IH.
       + exists (fun v => (Vector.hd v)::(e (Vector.tl v))).
-        intros x. split; intros H; apply H.
-      + reflexivity.
+        intros x. split; intros HH; apply HH.
+      + firstorder.
   Qed.
   
   Lemma isΣsemTwoEx k n (p : vec nat (S (S k)) -> Prop):
@@ -163,7 +180,7 @@ Section ArithmeticalHierarchySemantic.
       exists (fun v => let (x, y) := unembed (VectorDef.hd v) in x :: y :: Vector.tl v).
       intros v. destruct unembed. reflexivity.
     }
-    apply isΣsemS in H. erewrite PredExt. { apply H. }
+    apply isΣsemS in H. eapply PredExt. { apply H. }
     intros v. cbv beta. split.
     - intros [y [x Hp]]. exists (embed (x, y)).
       now rewrite eqhd, eqtl, embedP.
@@ -174,8 +191,9 @@ Section ArithmeticalHierarchySemantic.
   Lemma isΣsemE k n (p : vec nat (S k) -> Prop):
     isΣsem (S n) p -> isΣsem (S n) (fun v => exists x : nat, p (x :: v)).
   Proof.
-    intros H. dependent destruction H.
-    now apply isΣsemTwoEx.
+    intros H. dependent destruction H. cbn in *.
+    eapply PredExt.
+    eapply isΣsemTwoEx; eauto. firstorder. 
   Qed.
 
   Lemma isΠsemTwoAll k n (p : vec nat (S (S k)) -> Prop):
@@ -188,7 +206,7 @@ Section ArithmeticalHierarchySemantic.
       exists (fun v => let (x, y) := unembed (VectorDef.hd v) in x :: y :: Vector.tl v).
       intros v. destruct unembed. reflexivity.
     }
-    apply isΠsemS in H. erewrite PredExt. { apply H. }
+    apply isΠsemS in H. eapply PredExt. { apply H. }
     intros v. cbv beta. split.
     - intros Hp m. rewrite eqhd, eqtl.
       now destruct (unembed m) as [x y] eqn:eq.
@@ -200,7 +218,7 @@ Section ArithmeticalHierarchySemantic.
     isΠsem (S n) p -> isΠsem (S n) (fun v => forall x : nat, p (x :: v)).
   Proof.
     intros H. dependent destruction H.
-    now apply isΠsemTwoAll.
+    eapply PredExt. eapply isΠsemTwoAll. eauto. firstorder.
   Qed.
 
   Lemma isΣΠn_In_ΠΣSn :
@@ -210,10 +228,10 @@ Section ArithmeticalHierarchySemantic.
     split; intros n k p H.
     - eapply isΣsem_m_red_closed in H.
       2: { exists (fun v => Vector.tl v). intros v. split; intros pv; apply pv. }
-      apply isΠsemS in H. erewrite PredExt. 1: apply H. firstorder.
+      apply isΠsemS in H. eapply PredExt. 1: apply H. firstorder.
     - eapply isΣsem_m_red_closed in H.
       2: { exists (fun v => Vector.tl v). intros v. split; intros pv; apply pv. }
-      apply isΣsemS in H. erewrite PredExt. 1: apply H. firstorder.
+      apply isΣsemS in H. eapply PredExt. 1: apply H. firstorder.
   Qed.
   
   Lemma isΣsem_and_closed n :
@@ -223,23 +241,27 @@ Section ArithmeticalHierarchySemantic.
     induction n as [|n IH].
     - split.
       + intros k p Hp q Hq. dependent destruction Hp. dependent destruction Hq.
-        rewrite PredExt with (g := fun v => f0 v && f v = true) by now setoid_rewrite andb_true_iff.
+        unshelve eapply PredExt. exact (fun v => f0 v && f v = true). 2: cbn; intros; rewrite andb_true_iff; firstorder.
         apply isΣsem0.
       + intros k p Hp q Hq. dependent destruction Hp. dependent destruction Hq.
-        rewrite PredExt with (g := fun v => f0 v && f v = true) by now setoid_rewrite andb_true_iff.
+        unshelve eapply PredExt. exact (fun v => f0 v && f v = true). 2: cbn; intros; rewrite andb_true_iff; firstorder.
         apply isΠsem0.
     - split; intros k p Hp q Hq; dependent destruction Hp; dependent destruction Hq.
-      + unshelve erewrite PredExt; [exact (fun v => exists y x : nat, (fun v => p (Vector.hd v:: Vector.tl (Vector.tl v)) /\ p0 (Vector.hd (Vector.tl v)::Vector.tl (Vector.tl v))) (x::y::v))| | firstorder].
-       apply isΣsemTwoEx. apply IH.
-        * eapply isΣsem_m_red_closed. { apply H0. }
-          now exists (fun v => (Vector.hd v :: Vector.tl (Vector.tl v))).
+      + unshelve eapply PredExt.
+        exact (fun v => exists y x : nat, (fun v => p0 (Vector.hd v:: Vector.tl (Vector.tl v)) /\ p1 (Vector.hd (Vector.tl v)::Vector.tl (Vector.tl v))) (x::y::v)).
+        2:{ cbn in *. intros. rewrite H0, H2. clear. firstorder. }
+        apply isΣsemTwoEx. apply IH.
         * eapply isΣsem_m_red_closed. { apply H. }
+          now exists (fun v => (Vector.hd v :: Vector.tl (Vector.tl v))). 
+        * eapply isΣsem_m_red_closed. { apply H1. }
           now exists (fun v => Vector.hd (Vector.tl v) :: Vector.tl (Vector.tl v)).
-      + unshelve erewrite PredExt; [exact (fun v => forall y x : nat, (fun v => p (Vector.hd v:: Vector.tl (Vector.tl v)) /\ p0 (Vector.hd (Vector.tl v)::Vector.tl (Vector.tl v))) (x::y::v))| | firstorder].
+      + unshelve eapply PredExt.
+        exact (fun v => forall y x : nat, (fun v => p0 (Vector.hd v:: Vector.tl (Vector.tl v)) /\ p1 (Vector.hd (Vector.tl v)::Vector.tl (Vector.tl v))) (x::y::v)).
+        2:{ cbn in *. intros. rewrite H0, H2. clear. firstorder. }
         apply isΠsemTwoAll. apply IH.
-        * eapply isΣsem_m_red_closed. { apply H0. }
-          now exists (fun v => (Vector.hd v :: Vector.tl (Vector.tl v))).
         * eapply isΣsem_m_red_closed. { apply H. }
+          now exists (fun v => (Vector.hd v :: Vector.tl (Vector.tl v))). 
+        * eapply isΣsem_m_red_closed. { apply H1. }
           now exists (fun v => Vector.hd (Vector.tl v) :: Vector.tl (Vector.tl v)).
   Qed.
 
@@ -260,24 +282,26 @@ Section ArithmeticalHierarchySemantic.
     induction n as [|n IH].
     - split.
       + intros k p Hp q f Hq. dependent destruction Hp. dependent destruction Hq.
-        rewrite PredExt with (g := fun v => (if f (Vector.hd v) then f0 (Vector.tl v) else f1 (Vector.tl v)) = true). 
+        unshelve eapply PredExt. exact (fun v => (if f (Vector.hd v) then f0 (Vector.tl v) else f1 (Vector.tl v)) = true). 
         apply isΣsem0.
-        intros v. destruct f; reflexivity.
+        intros v. cbn. destruct f; firstorder.
       + intros k p Hp q f Hq. dependent destruction Hp. dependent destruction Hq.
-        rewrite PredExt with (g := fun v => (if f (Vector.hd v) then f0 (Vector.tl v) else f1 (Vector.tl v)) = true). 
+        unshelve eapply PredExt. exact (fun v => (if f (Vector.hd v) then f0 (Vector.tl v) else f1 (Vector.tl v)) = true). 
         apply isΠsem0.
-        intros v. destruct f; reflexivity.
-    - split; intros k p Hp q f Hq; dependent destruction Hp; dependent destruction Hq.
-      + unshelve erewrite PredExt; [exact (fun v => exists x : nat, (fun v => if f (Vector.hd (Vector.tl v)) then p0 (Vector.hd v :: Vector.tl (Vector.tl v)) else p (Vector.hd v :: Vector.tl (Vector.tl v))) (x :: v)) | |].
+        intros v. cbn. destruct f; firstorder.
+    - split; intros k p Hp q f Hq; dependent destruction Hp; dependent destruction Hq; cbn in *.
+      + unshelve eapply PredExt.
+        exact (fun v => exists x : nat, (fun v => if f (Vector.hd (Vector.tl v)) then p0 (Vector.hd v :: Vector.tl (Vector.tl v)) else p1 (Vector.hd v :: Vector.tl (Vector.tl v))) (x :: v)). 2: firstorder.
         eapply isΣsemS.
-        eapply isΣsem_m_red_closed. eapply IH. exact H. exact H0.
+        eapply isΣsem_m_red_closed. eapply IH. exact H. exact H1.
         exists (fun v => (Vector.hd (Vector.tl v)) :: Vector.hd v :: Vector.tl (Vector.tl v)). red. cbn. reflexivity.
-        firstorder. cbn. destruct f; eauto. cbn in *. destruct f; eauto.
-      + unshelve erewrite PredExt; [exact (fun v => forall x : nat, (fun v => if f (Vector.hd (Vector.tl v)) then p0 (Vector.hd v :: Vector.tl (Vector.tl v)) else p (Vector.hd v :: Vector.tl (Vector.tl v))) (x :: v)) | |].
+        firstorder. cbn. destruct f; firstorder. cbn in *. destruct f; firstorder.
+      + unshelve eapply PredExt.
+        exact (fun v => forall x : nat, (fun v => if f (Vector.hd (Vector.tl v)) then p0 (Vector.hd v :: Vector.tl (Vector.tl v)) else p1 (Vector.hd v :: Vector.tl (Vector.tl v))) (x :: v)). 2: firstorder.
         eapply isΠsemS.
-        eapply isΣsem_m_red_closed. eapply IH. exact H. exact H0.
+        eapply isΣsem_m_red_closed. eapply IH. exact H. exact H1.
         exists (fun v => (Vector.hd (Vector.tl v)) :: Vector.hd v :: Vector.tl (Vector.tl v)). red. cbn. reflexivity.
-        firstorder. cbn. destruct f; eauto. cbn in *. destruct f; eauto. 
+        firstorder. cbn. destruct f; firstorder. cbn in *. destruct f; firstorder.
   Qed.
 
   Lemma isΣΠball n :
@@ -285,21 +309,21 @@ Section ArithmeticalHierarchySemantic.
 /\  (forall k (p : vec nat (S k) -> Prop), isΠsem n p -> isΠsem n (fun v => forall l, l < (Vector.hd v) -> p (l::(Vector.tl v)))).
   Proof.
     induction n as [|n [IH1 IH2]]; split; intros k p H; dependent destruction H.
-    - unshelve erewrite PredExt with (g := fun v => (fix f' n v := match n with 0 => true | S n => f(n::v) && f' n v end)(Vector.hd v)(Vector.tl v) = true). 1: apply isΣsem0.
-      intros v. dependent destruction v. clear.
+    - unshelve eapply PredExt. cbn in *. exact (fun v => (fix f' n v := match n with 0 => true | S n => f(n::v) && f' n v end)(Vector.hd v)(Vector.tl v) = true). 1: apply isΣsem0.
+      intros v. dependent destruction v. setoid_rewrite H. clear.
       rewrite eqhd, eqtl. induction h as [|n IH].
       + split; lia.
       + split.
-        * intros H. apply andb_true_iff. split; [apply H;lia|]. apply IH. intros l H'. apply H. lia.
+        * intros H. apply andb_true_iff. firstorder. 
         * intros [H H']%andb_true_iff. intros l le. assert (l = n \/ l < n) as [->|] by lia; [apply H | now apply IH].
-    - unshelve erewrite PredExt with (g := fun v => (fix f' n v := match n with 0 => true | S n => f(n::v) && f' n v end)(Vector.hd v)(Vector.tl v) = true). 1: apply isΠsem0.
-      intros v. dependent destruction v. clear.
+    - unshelve eapply PredExt. cbn in *. exact (fun v => (fix f' n v := match n with 0 => true | S n => f(n::v) && f' n v end)(Vector.hd v)(Vector.tl v) = true). 1: apply isΠsem0.
+      intros v. dependent destruction v. setoid_rewrite H. clear.
       rewrite eqhd, eqtl. induction h as [|n IH].
       + split; lia.
       + split.
-        * intros H. apply andb_true_iff. split; [apply H;lia|]. apply IH. intros l H'. apply H. lia.
+        * intros H. apply andb_true_iff. firstorder. 
         * intros [H H']%andb_true_iff. intros l le. assert (l = n \/ l < n) as [->|] by lia; [apply H | now apply IH].
-    - unshelve erewrite PredExt.
+    - unshelve eapply PredExt.
         1: exact (fun v =>
         exists L : nat,
         (fun v => let L := Vector.hd v in let N := Vector.hd (Vector.tl v) in let v := Vector.tl (Vector.tl v) in
@@ -317,7 +341,7 @@ Section ArithmeticalHierarchySemantic.
           )(N::L::v)
         )(L::v)).
       2: { 
-        clear n IH1 IH2 H. intros v. cbn. dependent destruction v. rewrite eqhd. rewrite eqtl.
+        clear n IH1 IH2 H. intros v. cbn. dependent destruction v. rewrite eqhd. rewrite eqtl. setoid_rewrite H0. clear H0.
         induction h as [|n [IH1 IH2]].
         - firstorder lia.
         - split.
@@ -368,7 +392,7 @@ Section ArithmeticalHierarchySemantic.
         | right _ => 42
         end in Vector.tl (N :: xl :: l :: v0)).
       now intros.
-  - unshelve erewrite PredExt. {
+  - unshelve eapply PredExt. {
       exact (fun v =>
       forall L : nat,
       (fun v => let L := Vector.hd v in let N := Vector.hd (Vector.tl v) in let v := Vector.tl (Vector.tl v) in
@@ -386,7 +410,7 @@ Section ArithmeticalHierarchySemantic.
         )(N::L::v)
       )(L::v)).
     } 2: { 
-      clear n IH1 IH2 H. intros v. cbn. dependent destruction v. rewrite eqhd, eqtl.
+      clear n IH1 IH2 H. intros v. cbn. dependent destruction v. rewrite eqhd, eqtl. setoid_rewrite H0. clear H0.
       induction h as [|n [IH1 IH2]].
       - firstorder lia.
       - split.
@@ -505,11 +529,12 @@ Section ArithmeticalHierarchySemantic.
  /\ (forall k (p : vec nat k -> Prop), isΠsem 0 p -> isΣsem 0 (fun v => ~ (p v))).
   Proof.
     split.
-    all: intros k p H; inversion H.
-    all: assert ((fun v : vec nat k => f v <> true) = (fun v : vec nat k => (fun v => if f v then false else true) v = true)) as -> by (apply PredExt; intros; now destruct f).
-    all: constructor.
+    all: intros k p H; dependent destruction H; cbn in *.
+    all: econstructor; setoid_rewrite H.
+    all: instantiate (1 := fun v => negb (f v)); cbn; intros.
+    all: destruct (f v); cbn; firstorder congruence.
   Qed.
-  
+
   Lemma int_notEx_Allnot {X} k (p: vec X (S k) -> Prop):
     forall v, (~(exists x, p (x::v)) <-> (forall x, ~p (x::v))).
   Proof. clear. firstorder. Qed.
@@ -518,11 +543,9 @@ Section ArithmeticalHierarchySemantic.
     forall k (p : vec nat k -> Prop), isΣsem 1 p -> isΠsem 1 (fun v => ~ (p v)).
   Proof.
     intros k p H.
-    dependent destruction H.
-    erewrite PredExt. 2: apply int_notEx_Allnot.
-    change (isΠsem 1 (fun v : vec nat k => forall x : nat, (fun v => ~ p0 v )(x :: v))).
-    apply isΠsemS.
-    now apply Σ0sem_notΠ0_int.
+    dependent destruction H; cbn in *.
+    econstructor. eapply Σ0sem_notΠ0_int. eassumption.
+    cbn. firstorder.
   Qed.
 
   Lemma Π1sem_notΣ1_MP :
@@ -531,26 +554,15 @@ Section ArithmeticalHierarchySemantic.
     unfold Markov. intros Markov k p H.
     dependent destruction H.
     dependent destruction H.
-    replace (fun v : vec nat k => ~ (forall x : nat, f (x :: v) = true)) with (fun v : vec nat k => exists x : nat, (fun v => (if f v then false else true) = true)(x :: v)).
-    - change (isΣsem 1 (fun v : vec nat k => exists x : nat, (fun v => (if f v then false else true) = true)(x :: v))). apply isΣsemS, isΠsem0.
-    - apply PredExt. intros v. split.
-      + intros [x H] nA. specialize (nA x). rewrite nA in H. discriminate.
-      + intros nA. apply Markov. intros H. apply nA. intros x. specialize (H x). now destruct f.
+    cbn in *.
+    eapply PredExt.
+    2:{ intros. etransitivity. rewrite H0. setoid_rewrite H. reflexivity. instantiate (1 := fun v => ~ (forall x : nat, f (x :: v) = true)). reflexivity. }
+    eapply PredExt.
+    - instantiate (1 := fun v : vec nat k => exists x : nat, (fun v => (if f v then false else true) = true)(x :: v)). apply isΣsemS, isΠsem0.
+    - intros v. split.
+      + intros nA. apply Markov. intros Hx. apply nA. intros x. specialize (Hx x). now destruct f.
+      + intros [x Hx] nA. specialize (nA x). rewrite nA in Hx. discriminate.
   Qed.
-
-  Lemma Π1sem_notΣ1_MP_inv :
-    (forall k (p : vec nat k -> Prop), isΠsem 1 p -> isΣsem 1 (fun v => ~ (p v))) -> Markov.
-  Proof.
-    intros H f nA.
-      specialize (H 0 (fun v => forall x, (fun v => (fun v => if f (Vector.hd v) then false else true) v = true) (x::v)) ltac:(apply isΠsemS, isΣsem0)).
-      cbn in H. repeat dependent destruction H.
-      assert ((fun (_:vec nat 0) => ~ (forall x : nat, (if f x then false else true) = true))(Vector.nil nat)) as H. {
-        intros nA'. apply nA. intros x. specialize (nA' x). now destruct f.
-      }
-      rewrite H0 in H. destruct H as [x Hx]. rewrite <- Hx in H0.
-      rewrite <- Hx.
-      exists x. destruct f eqn:eqf; [easy|].
-  Abort.
 
   Lemma equiv_DN_sdec : 
     (forall k (p : vec nat k -> Prop), semi_decidable p -> semi_decidable (fun v => ~~p v))
@@ -571,21 +583,22 @@ Section ArithmeticalHierarchySemantic.
         enough (forall v, f v = true <-> ~f v = false) as eq by (setoid_rewrite eq; firstorder).
         intros v. now destruct f.
       }
-      setoid_rewrite eq in Hf'. apply PredExt in Hf' as ->.
-      change (isΣsem 1 (fun v => exists x, (fun v => f' (Vector.tl v) (Vector.hd v) = true) (x::v))).
-      apply isΣsemS, isΠsem0.
+      setoid_rewrite eq in Hf'.
+      eapply PredExt. instantiate (1 := (fun v => exists x, (fun v => f' (Vector.tl v) (Vector.hd v) = true) (x::v))).
+      apply isΣsemS, isΠsem0. intros. cbn in *.
+      rewrite H0. setoid_rewrite H. firstorder.
     - intros H k p [f Hf]. unfold semi_decidable, semi_decider in *.
       assert (isΠsem 1 (fun v => ~p v)) as HΠ. {
-        assert (forall x, ~p x <-> forall n, ~f x n = true) as ->%PredExt by firstorder.
+        eapply PredExt. instantiate (1 := fun x => forall n, ~f x n = true). 2: firstorder.
         change (isΠsem 1 (fun v => forall x, (fun v => f (Vector.tl v) (Vector.hd v) <> true) (x::v))).
         apply isΠsemS.
-        enough (forall v, f (Vector.tl v) (Vector.hd v) <> true <-> (fun v => if f (Vector.tl v) (Vector.hd v) then false else true) v = true) as ->%PredExt by apply isΣsem0.
-        intros v. now destruct f.
+        econstructor. instantiate (1 := fun v => if f (Vector.tl v) (Vector.hd v) then false else true).
+        firstorder; now destruct f.        
       }
       specialize (H _ _ HΠ). repeat dependent destruction H.
       exists (fun v x => f0 (x::v)). intros v.
       change ((fun v : vec nat k => ~ ~ p v) v <-> (fun v : vec nat k => exists x : nat, f0 (x :: v) = true) v).
-      now rewrite H0.
+      cbn in *. firstorder.
   Qed.
 
   Lemma equiv_sdec_functions :
@@ -647,10 +660,10 @@ Section ArithmeticalHierarchySemantic.
   Lemma DNE_equiv_S n :
     DNE_Σ n <-> DNE_Π (S n).
   Proof.
-    induction n; split; intros dne k p Hp v Hv; depelim Hp; try rename p0 into p.
-    - intros x. depelim H. destruct (f (x :: v)) eqn:E; try firstorder congruence.
+    induction n; split; intros dne k p Hp v Hv; depelim Hp; try rename p0 into p; cbn in *.
+    - depelim H; cbn in *. apply H0. intros x. destruct (f (x :: v)) eqn:E; try firstorder congruence.
     - destruct (f v) eqn:E; try firstorder congruence.
-    - intros x. eapply dne. eauto. firstorder.
+    - depelim H; cbn in *. eapply H1. intros x. eapply dne. eauto. firstorder.
     - eapply dne with (x := v); eauto.
       eapply isΣΠn_In_ΠΣSn. econstructor; eauto.
   Qed.
@@ -664,31 +677,32 @@ Section ArithmeticalHierarchySemantic.
   Qed.
 
   Lemma negΣinΠsem:
-     (forall n k (p: vec nat k -> Prop), isΣsem n p -> DNE_Π n -> isΠsem n (fun v => ~(p v)))
-  /\ (forall n k (p: vec nat k -> Prop), isΠsem n p -> DNE_Σ n -> isΣsem n (fun v => ~(p v))).
+    (forall n k (p: vec nat k -> Prop), isΣsem n p -> DNE_Π n -> isΠsem n (fun v => ~(p v)))
+    /\ (forall n k (p: vec nat k -> Prop), isΠsem n p -> DNE_Σ n -> isΣsem n (fun v => ~(p v))).
   Proof.
     apply isΣsem_isΠsem_mutind.
-    - intros. apply Σ0sem_notΠ0_int. constructor.
-    - intros n k p H IH DN.
-      erewrite PredExt.
+    - intros. apply Σ0sem_notΠ0_int. econstructor. eassumption.
+    - intros n k p p' H IH H' DN.
+      eapply PredExt.
       + eapply isΠsemS. apply IH.
-        intros n' q Hq. eapply isΣΠn_In_ΠΣSn in Hq. eapply DN; eauto.
+        intros n' q Hq. eapply isΣΠn_In_ΠΣSn in Hq. eapply DN; eauto. 
       + intros v. split.
-        * intros nE. intros x c. apply nE. eexists. apply c.
-        * intros A [x nP]. now apply (A x).
-    - intros. apply Σ0sem_notΠ0_int. constructor.
-    - intros n k p H IH DN.
-      forward IH.
-      { intros n' q Hq. eapply isΣΠn_In_ΠΣSn in Hq. eapply DN; eauto. }
-      erewrite PredExt.
+        * intros nE. intros x c. apply nE. eapply H'. eexists. apply c.
+        * intros A [x nP] % H'. now apply (A x).
+    - intros. apply Σ0sem_notΠ0_int. econstructor. eassumption.
+    - intros n k p p' H IH H' DN.
+      eapply PredExt.
       + eapply isΣsemS. apply IH.
+        intros n' q Hq. eapply isΣΠn_In_ΠΣSn in Hq. eapply DN; eauto. 
       + intros v. split.
         * intros nA. eapply DN with (x := v).
-          1:now eapply @isΣsemS with (p := fun x => ~ p x).
-          intros ?. eapply nA. intros x. eapply DN.
+          econstructor. eapply IH.
+          { intros ? ? ?. eapply DN. eapply isΣΠn_In_ΠΣSn in H0. eauto. }
+          cbn. reflexivity.
+          intros ?. eapply nA. eapply H'. intros x. eapply DN.
           1:now eapply isΣΠn_In_ΣΠSn with (l := 1).
           firstorder. 
-        * intros [x nP] A. now apply nP.
+        * intros [x nP] A. eapply H' in A. eapply nP, A.
   Qed.
 
   Lemma LEM_Σ_to_LEM_Π n :
