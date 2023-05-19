@@ -12,8 +12,8 @@
 - Maintainer:
   - Yannick Forster ([**@yforster**](https://github.com/yfrster))
 - License: [MIT License](LICENSE)
-- Compatible Coq versions: 8.15.2
-- Additional dependencies: 
+- Compatible Coq versions: 8.17.0
+- Additional dependencies:
   - the [`stdpp` library](https://gitlab.mpi-sws.org/iris/stdpp)
   - optionally, the [Coq Library of Undecidability Proofs](https://github.com/uds-psl/coq-library-undecidability)
 - Coq namespace: `SyntheticComputability`
@@ -24,6 +24,8 @@
   - [Synthetic Kolmogorov Complexity in Coq](https://drops.dagstuhl.de/opus/volltexte/2022/16721/) doi:[10.4230/LIPIcs.ITP.2022.12](https://doi.org/10.4230/LIPIcs.ITP.2022.12)
   - [Constructive and Synthetic Reducibility Degrees: Post's Problem for Many-One and Truth-Table Reducibility in Coq](https://doi.org/10.4230/LIPIcs.CSL.2023.21) doi:[10.4230/LIPIcs.CSL.2023.21](https://doi.org/10.4230/LIPIcs.CSL.2023.21)
   - [A Computational Cantor-Bernstein and Myhill's Isomorphism Theorem in Constructive Type Theory (Proof Pearl)](https://hal.inria.fr/hal-03891390/file/myhill-cantor-cpp23.pdf) doi:[10.1145/3573105.3575690](https://doi.org/10.1145/3573105.3575690)
+  <!-- - [Synthetic Oracle Computability and Turing Reducibility in Coq] -->
+  <!-- - [Synthetic Versions of the Kleene-Post and Post’s Theorem in CIC] -->
 
 ## Description
 
@@ -41,7 +43,7 @@ This library contains results on synthetic computability theory.
 opam switch create coq-synthetic-computability --packages=ocaml-variants.4.14.0+options,ocaml-option-flambda
 eval $(opam env)
 opam repo add coq-released https://coq.inria.fr/opam/released
-opam install coq.8.15.2 coq-stdpp.1.7.0
+opam install coq.8.17 coq-stdpp.1.8.0
 make
 make install
 ```
@@ -49,9 +51,8 @@ make install
 To build the part of the development relying on models of computation, in addition you have to 
 
 ```sh
-opam pin add coq-library-undecidability.dev+8.15 "https://github.com/uds-psl/coq-library-undecidability.git#coq-8.15"
+opam install coq-library-undecidability.1.1+8.17
 make models
 make install-models
-
 ```
 

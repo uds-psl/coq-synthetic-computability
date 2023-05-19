@@ -11,7 +11,7 @@ Import ListNotations ListAutomationNotations EmbedNatNotations.
 
 Definition L_nat := (fix f n := match n with 0 => [0] | S n0 => f n0 ++ [S n0] end).
 
-Instance L_T_nat_computable : computable L_nat.
+Global Instance L_T_nat_computable : computable L_nat.
 Proof.
   unfold L_nat. cbn.
   extract.
@@ -25,12 +25,12 @@ Fixpoint list_enumerator_term (n : nat) : list term :=
 
 Definition app' '(s,t) := L.app s t.
 
-Instance app'_computable : computable app'.
+Global Instance app'_computable : computable app'.
 Proof.
   extract.
 Qed.  
 
-Instance list_enumerator_term_computable : computable list_enumerator_term.
+Global Instance list_enumerator_term_computable : computable list_enumerator_term.
 Proof.
   change (computable (fix FFF (n : nat) : list term :=
   match n with
@@ -45,7 +45,7 @@ Qed.
 Definition unembed' := (fix F (k : nat) := 
   match k with 0 => (0,0) | S n => match fst (F n) with 0 => (S (snd (F n)), 0) | S x => (x, S (snd (F n))) end end).
 
-Instance unembed_computable : computable unembed.
+Global Instance unembed_computable : computable unembed.
 Proof.
   eapply computableExt with (x := unembed'). 2:extract.
   intros n. cbn. induction n; cbn.
@@ -65,12 +65,12 @@ Fixpoint sum n : nat :=
 Definition encode '(x, y) : nat :=
   y + sum (y + x).
 
-Instance sum_computable : computable sum.
+Global Instance sum_computable : computable sum.
 Proof.
   extract.
 Qed.
 
-Instance embed_computable : computable embed.
+Global Instance embed_computable : computable embed.
 Proof.
   change (computable encode). extract.
 Qed.
@@ -206,7 +206,7 @@ Qed.
 Definition CT_L := CT_for T_L.
 
 Import partial.implementation.
-Existing Instance  monotonic_functions.
+Global Existing Instance  monotonic_functions.
 
 Lemma monotonic_T_L c x : monotonic (T_L c x).
 Proof.

@@ -1,4 +1,4 @@
-From SyntheticComputability Require Import partial.
+From SyntheticComputability Require Import partial Dec.
 From stdpp Require Import list.
 Import PartialTactics.
 
@@ -1221,7 +1221,7 @@ Proof.
       eexists. eapply interrogation_plus. eauto.
       cbn. psimpl.
       eapply (f_equal length) in E, E'. rewrite !skipn_length in E, E'. cbn in *. lia.
-    + eapply nat_le_sum in H0 as (k & ->).
+    + eapply Nat.le_sum in H0 as (k & ->).
       eexists. eapply interrogation_plus. eauto.
       destruct k; cbn. psimpl. rewrite app_nil_r. eauto.
       cbn. psimpl. psimpl.
@@ -1261,7 +1261,7 @@ Proof.
   intros Hter He.
   destruct (partial_total _ _ _ Hter) as [g Hg].
   exists g. intros x. red. rewrite <- He. specialize (Hg x).
-  destruct (g x); firstorder. eapply hasvalue_det; eauto.
+  destruct (g x); firstorder. eapply hasvalue_det; eauto. congruence.
 Qed.
 
 From SyntheticComputability Require Import principles Pigeonhole.
@@ -1278,7 +1278,7 @@ Proof.
   intros x. eapply (H x true).
   unshelve epose proof (HF' _) as hF'.
   + intros x b. rewrite <- ret_hasvalue_iff.
-    specialize (Hf x). clear - Hf. destruct b, (f x); firstorder.
+    specialize (Hf x). clear - Hf. destruct b, (f x); firstorder congruence.
   + eapply partial_decidable. 2:{ intros x. apply hF'. }
     intros. eapply (MP_to_MP_partial mp). intros Hx.
     ccase (p x) as [Hp | Hp].
@@ -1527,8 +1527,8 @@ Proof.
       eapply reflects_iff. unfold reflects. unfold reflects in *.
       rewrite Hf, <- HL.
       reflexivity.
-      eapply Forall2_fmap_r, Forall2_flip, Forall2_impl. eauto.
-      intros. cbn in *. destruct y; firstorder congruence.
+      eapply Forall2_fmap_r, Forall2_flip, Forall2_impl. 2: eauto.
+      intros. cbn in *. eapply reflects_iff. eauto.
 Qed.
 
 (** The halting problem is Turing reducible to its (hypersimple) index set, distinguishing Turing reducibility from truth-table reducibility  *)
@@ -1588,7 +1588,7 @@ Proof.
       cprove exists x'. split. eauto. firstorder.
     + cprove exists x. split. rewrite E. eauto. intros.
       cstart. intros Hx. apply Hf. exists y. split; eauto. lia.
-      Unshelve. eapply nat_le_dec.
+      Unshelve. eapply Nat.le_dec.
 Qed.
 
 Lemma non_finite_to_least {p : nat -> Prop} (f : nat -> nat) :

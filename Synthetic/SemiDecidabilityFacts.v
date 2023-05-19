@@ -1,12 +1,12 @@
 Require Import List Morphisms Lia.
-Require Import SyntheticComputability.Synthetic.DecidabilityFacts SyntheticComputability.Synthetic.EnumerabilityFacts SyntheticComputability.Shared.partial SyntheticComputability.Shared.embed_nat SyntheticComputability.Shared.FinitenessFacts.
+Require Import SyntheticComputability.Synthetic.DecidabilityFacts SyntheticComputability.Synthetic.EnumerabilityFacts SyntheticComputability.Shared.partial SyntheticComputability.Shared.embed_nat SyntheticComputability.Shared.FinitenessFacts SyntheticComputability.Shared.Dec.
 Export EmbedNatNotations.
 
 (** ** Semi-decidability  *)
 
 Definition equiv_sdec {X} := fun (f g : X -> nat -> bool) => forall x, (exists n, f x n = true) <-> exists n, g x n = true.
 
-Instance Proper_semi_decider {X} :
+#[export] Instance Proper_semi_decider {X} :
   Proper (@equiv_sdec X ==> pointwise_relation X iff ==> iff ) (@semi_decider X).
 Proof.
   intros f g H1 p q H2. red in H1, H2.
@@ -16,7 +16,7 @@ Proof.
   - now rewrite H2, H, H1.
 Qed.
 
-Instance Proper_semi_decidable {X} :
+#[export] Instance Proper_semi_decidable {X} :
   Proper (pointwise_relation X iff ==> iff) (@semi_decidable X).
 Proof.
   intros p q H2.

@@ -143,7 +143,7 @@ induction l as [ | x l IH].
   + exists l'. now econstructor.
 Qed.
 
-Instance dec_lt {n m} : Dec.dec (n < m).
+#[export] Instance dec_lt {n m} : Dec.dec (n < m).
 Proof.
   eapply Compare_dec.lt_dec.
 Qed.

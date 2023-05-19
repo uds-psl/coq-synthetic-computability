@@ -1,7 +1,7 @@
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Import stdpp.list stdpp.list_numbers.
-From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.SemiDecidabilityFacts Synthetic.EnumerabilityFacts reductions partial Axioms.Equivalence  principles Shared.Dec.
+From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.SemiDecidabilityFacts Synthetic.EnumerabilityFacts ListEnumerabilityFacts reductions partial Axioms.Equivalence  principles Shared.Dec.
 Require Import ssreflect Nat.
 Require Import SyntheticComputability.Shared.FilterFacts.
 
@@ -39,7 +39,7 @@ Lemma lookup_map X Y {l : list X} n y (f : X -> Y) :
   map f l !! n = Some y <-> exists x, l !! n = Some x /\ y = f x.
 Proof.
   induction l in n |- *; cbn in *.
-  - split. congruence. move => [? []]. congruence.
+  - split. destruct n; cbn; congruence. move => [? []]. destruct n; cbn; congruence.
   - destruct n.
     + cbn. split.
       * move => [] <-. eauto.
@@ -167,8 +167,8 @@ Proof.
   eapply Hclos. 2:eapply Hinhab. now econstructor.
 Qed.
 
-Hint Immediate tree_is_tree.
-Hint Extern 2 => eapply tree_nil : core.
+#[export] Hint Immediate tree_is_tree.
+#[export] Hint Extern 2 => eapply tree_nil : core.
 
 Record Kleene_tree :=
   {
@@ -205,7 +205,7 @@ Proof.
   split.
   destruct T as [T [? ? ?]]; cbn. clear tree_inhab0.
   - intros H l ?. eapply H. lia.
-  - intros H l [d [l1 [l2 [-> [Hl1 Hl2]]]] % length_inv] % nat_le_sum.
+  - intros H l [d [l1 [l2 [-> [Hl1 Hl2]]]] % length_inv] % Nat.le_sum.
     intros Hl. eapply tree_p in Hl. 2:eapply T. 2:eexists; reflexivity.
     eapply H; eauto.
 Qed.
@@ -422,7 +422,7 @@ Program Definition tree_from (f : nat -> bool) := (@Build_tree (fun l => forallb
 Next Obligation.
   econstructor.
     + now exists [].
-    + intros l1 l2 [k ->] % prefix_length % nat_le_sum.
+    + intros l1 l2 [k ->] % prefix_length % Nat.le_sum.
       now rewrite seq_app forallb_app andb_true_iff.
     + eapply decidable_iff. econstructor. intros x. hnf. decide equality.
 Qed.
@@ -855,7 +855,7 @@ Proof.
   exists n. intros a Ha Hta.
   eapply inf_to_longest in Hta; eauto.
   eapply Hn, tree_p. eauto. 2:eassumption.
-  eapply nat_le_sum in Ha as (k & ->).
+  eapply Nat.le_sum in Ha as (k & ->).
   rewrite seq_app map_app. eexists; eauto.
 Qed.
 

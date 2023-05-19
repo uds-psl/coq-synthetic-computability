@@ -1,7 +1,7 @@
 (** * Arithmetical Hierarchy *)
 (** ** Arithmetical Hierarchy in First-Order Arithmetic *)
 
-From Undecidability.FOL Require Import Syntax FullTarski.
+From Undecidability Require Import Syntax FullFacts.
 Require Import Lia Vector Fin List.
 Import Vector.VectorNotations.
 From SyntheticComputability Require Import PrenexNormalForm.
@@ -232,7 +232,7 @@ Section ArithmeticalHierarchySyntactic.
             * inversion H0.
           + dependent destruction iΣ.
             * inversion H.
-            * injection H. intros <-%Eqdep.EqdepTheory.inj_pair2.
+            * injection H. intros <-%inj_pair2_eq_dec.
               specialize (IHPNF iΣ (S k)) as [ff [ψ [iΠ r]]].
               exists ff. exists (∀ ψ). split; [now constructor|].
               intros v. cbn. split.
@@ -240,11 +240,13 @@ Section ArithmeticalHierarchySyntactic.
                 apply r. rewrite <- eq. intros sϕ. apply nE. now exists x.
               -- intros A [x E]. specialize (A x). replace (x .: vec_to_env v) with (vec_to_env (x :: v)) in * by reflexivity.
                 now apply r in A.
-            * injection H0. intros <-%Eqdep.EqdepTheory.inj_pair2.
+              -- eapply DiscreteEnumerable.dec_falsity.
+            * injection H0. intros <-%inj_pair2_eq_dec.
               exists falsity_on, (∀ ¬ turnFalsityOn ϕ). split. { apply isΠall, isΠnoQuant. repeat constructor. rewrite <- turnFalsityOn_noQuant. now dependent destruction H. }
               intros v. cbn. split.
               -- intros nE x sϕ. apply nE. exists x. now apply turnFalsityOn_eqiv.
               -- intros A [x E]. specialize (A x). now apply turnFalsityOn_eqiv in E.
+              -- eapply DiscreteEnumerable.dec_falsity.
       Qed.
 
   Definition DN := forall p, ~~p -> p.

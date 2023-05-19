@@ -1,7 +1,7 @@
 From Coq.Logic Require Import ConstructiveEpsilon.
 Require Import Lia Nat.
 From stdpp Require Import numbers list list_numbers.
-From SyntheticComputability Require Import SemiDecidabilityFacts DecidabilityFacts EnumerabilityFacts reductions Axioms.Equivalence halting FinChoice.
+From SyntheticComputability Require Import SemiDecidabilityFacts DecidabilityFacts EnumerabilityFacts ListEnumerabilityFacts reductions Axioms.Equivalence halting FinChoice Dec.
 
 (** * CT in relation to other axioms  *)
 
@@ -99,6 +99,8 @@ Qed.
 
 Section CT_wrong.
 
+  Context {Part : partiality}.
+
   Variable ϕ : nat -> nat -> nat -> option nat.
   Variable Hϕ : forall c x, monotonic (ϕ c x).
 
@@ -123,7 +125,7 @@ Section CT_wrong.
       eapply monotonic_agnostic; eauto.
     - unfold reflects. intuition try congruence.
       assert (f = fun x => 0) as -> by now apply fext.
-      congruence. 
+      congruence.
   Qed.
 
 End CT_wrong.
@@ -261,7 +263,7 @@ Proof.
   exists (fun f => Nat.eqb (F f) (F (fun _ => false))).
   intros f. unfold compl, K_nat_bool. red. rewrite <- forall_neg_exists_iff.
   destruct (Nat.eqb_spec (F f) (F (fun _ => false))); rewrite <- HF.
-  all: firstorder.
+  all: firstorder congruence.
 Qed.
 
 Definition LLPO := forall f g : nat -> bool, ((exists n, f n = true) -> (exists n, g n = true)) \/ ((exists n, g n = true) -> (exists n, f n = true)).
@@ -489,7 +491,7 @@ Proof.
   intros xm P.
   destruct (xm P) as [H | H].
   - exists (fun _ => true). firstorder. econstructor.
-  - exists (fun _ => false). firstorder.
+  - exists (fun _ => false). firstorder congruence.
 Qed.
 
 Lemma KS_LPO_to_LEM :
@@ -637,7 +639,7 @@ Proof.
   intros H f Hf.
   destruct (H (fun _ => exists n, f n = true)) as [d Hd].
   - exists (fun _ => f). now intros x.
-  - exists (fun _ _ => false). firstorder.
+  - exists (fun _ _ => false). firstorder congruence.
   - destruct (decider_decide Hd x0); tauto.
 Qed.
 
@@ -979,7 +981,7 @@ Proof.
   - exists f. intros n. destruct (Hf n) as [[H ->] | [H ->]]; firstorder congruence. congruence.
 Qed.
 
-Lemma AC_0_0_LPO_incompat'  :
+Lemma AC_0_0_LPO_incompat' {Part : partiality} :
   AUC_on nat bool -> WLPO -> EPF_bool -> forall p : nat -> Prop,
     semi_decidable p -> decidable (compl p).
 Proof.
@@ -987,7 +989,7 @@ Proof.
   eapply AUC_to_dec; eauto.
 Qed.
 
-Lemma AC_0_0_LPO_incompat :
+Lemma AC_0_0_LPO_incompat {Part : partiality} :
   AUC_on nat bool -> WLPO -> EPF_bool -> False.
 Proof.
   intros C LPO EPF_bool.
@@ -1013,7 +1015,7 @@ Proof.
   + intros H2. f_equal. eapply Fext. intros x. rewrite H2. reflexivity.
 Qed.
 
-Lemma AC_1_0_Fext_incompat :
+Lemma AC_1_0_Fext_incompat {Part : partiality} :
   AC_1_0 -> Fext -> SCT -> False.
 Proof.
   intros C funext ct.

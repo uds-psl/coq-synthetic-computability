@@ -1,4 +1,4 @@
-From SyntheticComputability Require Import Equivalence EA equiv_on DecidabilityFacts SemiDecidabilityFacts Definitions reductions EnumerabilityFacts ReducibilityTransport.
+From SyntheticComputability Require Import Equivalence EA equiv_on DecidabilityFacts SemiDecidabilityFacts Definitions reductions EnumerabilityFacts ReducibilityTransport Dec.
 
 Import EmbedNatNotations.
 

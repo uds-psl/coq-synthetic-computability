@@ -115,7 +115,7 @@ Qed.
 Definition unembed' := (fix F (k : nat) := 
   match k with 0 => (0,0) | S n => match fst (F n) with 0 => (S (snd (F n)), 0) | S x => (x, S (snd (F n))) end end).
 
-Instance unembed_computable : computable unembed.
+Global Instance unembed_computable : computable unembed.
 Proof.
   eapply computableExt with (x := unembed'). 2:extract.
   intros n. cbn. induction n; cbn.
@@ -144,8 +144,10 @@ Proof.
       * f_equal. eapply enc_extinj.
         destruct Hn as [Hn _]. rewrite <- Hn. symmetry.
         now Lsimpl.
-      * edestruct Omega_diverge with (t := enc x).
-        enough (lam (omega omega) (lam # 0) == Omega) as <- by eassumption.
+      * destruct (proc_enc x) as [H1 [t Ht]].
+        edestruct Omega_diverges with (s := t).
+        enough (lam (omega omega) (lam # 0) == Omega) as <-. rewrite <- Ht.
+        destruct Hn. rewrite H0. reflexivity.
         unfold Omega. clear Hn. now Lsimpl.
   - intros (t & Ht & H).
     exists (fun nm => match unembed nm with (n,m) => match eva n (t (enc m)) with Some v =>
@@ -216,14 +218,14 @@ End L_enum_rec.
 
 Definition opt_to_list n := match nat_enum n with Some x => [x] | None => [] end.
 
-Instance term_opt_to_list : computable opt_to_list.
+Global Instance term_opt_to_list : computable opt_to_list.
 Proof.
   extract.
 Qed.
   
 Definition L_nat := cumul (opt_to_list).
 
-Instance term_L_nat : computable L_nat.
+Global Instance term_L_nat : computable L_nat.
 Proof.
   unfold L_nat. unfold cumul.
   extract.
@@ -250,7 +252,7 @@ Definition F' := (fix F (n : nat) : nat := match n with
                                                            | S n0 => S n0 + F n0
                                                            end).
 
-Instance term_F' : computable F'.
+Global Instance term_F' : computable F'.
 Proof.
   extract.
 Qed.
@@ -263,18 +265,18 @@ Definition F'' := (fix F (n0 : nat) : nat * nat := match n0 with
                                                                end
                                              end).
 
-Instance term_F'' : computable F''.
+Global Instance term_F'' : computable F''.
 Proof.
   extract.
 Qed.
 
-Instance term_embed_nat : computable embed.
+Global Instance term_embed_nat : computable embed.
 Proof.
   change (computable (fun '(x, y) => y + F' (y + x))).
   extract.
 Qed.
 
-Instance term_unembed_nat : computable unembed.
+Global Instance term_unembed_nat : computable unembed.
 Proof.
   unfold unembed.
   change (computable F'').
@@ -343,7 +345,7 @@ Qed.
 
 Definition F1 {X} (T : nat -> list X) :=  (fun n => let (n, m) := unembed n in nth_error (T n) m).
 
-Instance term_F1 {X} {H : encodable X} :  @computable ((nat -> list X) -> nat -> option X) ((! nat ~> ! list X) ~> ! nat ~> ! option X) (@F1 X).
+Global Instance term_F1 {X} {H : encodable X} :  @computable ((nat -> list X) -> nat -> option X) ((! nat ~> ! list X) ~> ! nat ~> ! option X) (@F1 X).
 Proof.
   extract.  
 Qed.

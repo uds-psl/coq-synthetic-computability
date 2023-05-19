@@ -1,5 +1,5 @@
-From Undecidability.FOL Require Export Syntax Syntax_facts.
-From Undecidability.FOL Require Export FullTarski FullTarski_facts.
+From Undecidability.FOL Require Export Facts.
+From Undecidability.FOL Require Export FullFacts.
 
 Import Vector.VectorNotations.
 Require Import List.

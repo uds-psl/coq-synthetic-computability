@@ -8,7 +8,7 @@ From SyntheticComputability.Shared Require Import mu_nat equiv_on.
 Lemma reflects_iff (b : bool) P :
   (if b then P else ~ P) <-> reflects b P.
 Proof.
-  destruct b; firstorder.
+  destruct b; firstorder congruence.
 Qed.
 
 Lemma reflects_true P :
@@ -67,7 +67,7 @@ Qed.
 
 (** Proper lemmas *)
 
-Instance Proper_decider {X} :
+#[export] Instance Proper_decider {X} :
   Proper (pointwise_relation X (@eq bool) ==> pointwise_relation X iff ==> iff ) (@decider X).
 Proof.
   intros f g H1 p q H2. red in H1, H2.
@@ -77,7 +77,7 @@ Proof.
   - now rewrite H2, H, H1.
 Qed.
 
-Instance Proper_decidable {X} :
+#[export] Instance Proper_decidable {X} :
   Proper (pointwise_relation X iff ==> iff) (@decidable X).
 Proof.
   intros p q H2.

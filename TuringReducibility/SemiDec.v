@@ -112,7 +112,7 @@ Proof.
     - reflexivity.
   }
   clear H0.
-  destruct (nat_le_dec m n).
+  destruct (Nat.le_dec m n).
   - revert Hi2 Hend Hlen Hleast. revert ans tqs. pattern m, n. revert m l.
     eapply Nat.left_induction.
     + exact _.
@@ -218,7 +218,7 @@ Proof.
     - reflexivity.
   }
   clear H0.
-  destruct (nat_le_dec m n).
+  destruct (Nat.le_dec m n).
   - revert Hi2 Hend Hlen Hleast. revert ans tqs. pattern m, n. revert m l.
     eapply Nat.left_induction.
     + exact _.

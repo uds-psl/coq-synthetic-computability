@@ -1,11 +1,11 @@
 From SyntheticComputability.Synthetic Require Import DecidabilityFacts.
-From SyntheticComputability.Shared Require Export embed_nat equiv_on partial mu_nat.
+From SyntheticComputability.Shared Require Export embed_nat equiv_on partial mu_nat Dec.
 Require Import List Morphisms Lia.
 Export EmbedNatNotations.
 
 (** ** Enumerability  *)
 
-Instance Proper_enumerator {X} :
+#[export] Instance Proper_enumerator {X} :
   Proper (@equiv_rel _ (equiv_ran) ==> pointwise_relation X iff ==> iff ) (@enumerator X).
 Proof.
   intros f g H1 p q H2. red in H1, H2.
@@ -15,7 +15,7 @@ Proof.
   - now rewrite H2, H, H1.
 Qed.
 
-Instance Proper_enumerable {X} :
+#[export] Instance Proper_enumerable {X} :
   Proper (pointwise_relation X iff ==> iff) (@enumerable X).
 Proof.
   intros p q H2.
@@ -546,12 +546,12 @@ Lemma enumerator_enumerable {X} {f} :
 Proof.
   intros H. exists f. eapply H.
 Qed.
-Hint Resolve enumerator_enumerable : core.
+#[export] Hint Resolve enumerator_enumerable : core.
 
-Existing Instance enumeratorᵗ_prod.
-Existing Instance enumeratorᵗ_option.
-Existing Instance enumeratorᵗ_bool.
-Existing Instance enumeratorᵗ_nat.
+#[export] Existing Instance enumeratorᵗ_prod.
+#[export] Existing Instance enumeratorᵗ_option.
+#[export] Existing Instance enumeratorᵗ_bool.
+#[export] Existing Instance enumeratorᵗ_nat.
 
 Lemma enumerable_graph' (f : nat -> nat) :
   enumerable (fun p => exists x, p = ⟨ x, f x ⟩).

@@ -161,8 +161,8 @@ Axiom tonat_ofnat : forall n, tonat (ofnat n) = n.
 Axiom length_log : forall n, length (ofnat n) <= Nat.log2 n.
 Axiom length_mono : forall x y, x <= y -> length (ofnat x) <= length (ofnat y).
 
-Hint Rewrite ofnat_tonat tonat_ofnat : length.
-Hint Rewrite List.app_length : length.
+#[export] Hint Rewrite ofnat_tonat tonat_ofnat : length.
+#[export] Hint Rewrite List.app_length : length.
 
 Notation "| n |" := (length (ofnat n)) (at level 10).
 
@@ -187,13 +187,13 @@ Proof.
 Qed.
 
 Axiom Part : partiality.
-Existing Instance Part.
+#[export] Existing Instance Part.
 Axiom ϕ : nat -> nat ↛ nat.
 
 Notation "x ▷ y" := (@hasvalue Part nat x y) (at level 50).
 Definition C := the_least (fun x s => exists c y, s = |c| + |y| /\ ϕ c y ▷ x).
 
-Instance equiv_part {A} : equiv_on (part A) := {| equiv_rel := @partial.equiv _ A |}.
+#[export] Instance equiv_part {A} : equiv_on (part A) := {| equiv_rel := @partial.equiv _ A |}.
 
 Definition universal u := forall c, exists x, forall y, ϕ c y ≡{_} (ϕ u ⟨x,y⟩).
 
@@ -207,7 +207,7 @@ Proof.
   intros H c'. red in H. setoid_rewrite <- H. exists c'. reflexivity.
 Qed.
 
-Hint Rewrite List.app_nil_l @list.nil_length : length.
+#[export] Hint Rewrite List.app_nil_l @list.nil_length : length.
 
 Set Default Goal Selector "!".
 
@@ -407,6 +407,7 @@ Proof.
   - eauto.
   - intros Hl2 Hel. cbn. econstructor. 2:eapply IHNoDup; eauto.
     + intros [ | ] % in_app_iff; firstorder.
+    + firstorder.
 Qed.
 
 Lemma NoDup_map {X Y} (f : X -> Y) l :

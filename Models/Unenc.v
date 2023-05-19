@@ -2,7 +2,7 @@ From Undecidability.L Require Import Functions.Encoding Datatypes.LOptions Datat
 
 Print nat_unenc.
 
-Instance term_nat_unenc : computable nat_unenc.
+Global Instance term_nat_unenc : computable nat_unenc.
 Proof.
   extract.
 Qed.

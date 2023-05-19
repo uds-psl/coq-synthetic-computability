@@ -1,4 +1,4 @@
-Require SyntheticComputability.Shared.Dec SyntheticComputability.Shared.ListAutomation.
+Require Import SyntheticComputability.Shared.Dec SyntheticComputability.Shared.ListAutomation.
 Require Import Setoid Morphisms.
 Require Import SyntheticComputability.Synthetic.Definitions Lia List NPeano.
 From SyntheticComputability.Shared Require Import mu_nat equiv_on Pigeonhole Dec partial.
@@ -246,7 +246,7 @@ Fact finite_vector X n :
 Proof.
   intros [l H]. induction n as [ | n [l' IH]].
   - exists [Vector.nil X]. 
-    now eapply Vector.case0.
+    eapply Vector.case0; cbn; eauto.
   - exists (map (fun '(x, v) => Vector.cons _ x _ v) (list_prod l l')).
     intros v. eapply (Vector.caseS' v). clear v. intros x v.
     eapply in_map_iff. exists (x, v). rewrite in_prod_iff. eauto.

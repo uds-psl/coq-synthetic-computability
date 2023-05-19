@@ -1,4 +1,4 @@
-From SyntheticComputability Require Import DecidabilityFacts EnumerabilityFacts SemiDecidabilityFacts ListEnumerabilityFacts Axioms.Equivalence embed_nat reductions partial.
+From SyntheticComputability Require Import DecidabilityFacts EnumerabilityFacts SemiDecidabilityFacts ListEnumerabilityFacts Axioms.Equivalence embed_nat reductions partial Dec.
 
 Require Import SyntheticComputability.Synthetic.EnumerabilityFacts.
 
@@ -13,7 +13,7 @@ Proof.
   - intros. eapply enumerable_semi_decidable; eauto.
 Qed.
 
-Lemma EPF_SCT_halting :
+Lemma EPF_SCT_halting {Part : partiality} :
   EPF_bool + SCT -> exists K : nat -> Prop, semi_decidable K /\ ~ semi_decidable (compl K) /\ ~ decidable K /\ ~ decidable (compl K).
 Proof.
   intros [H | H].
@@ -58,7 +58,7 @@ Proof.
 Qed.
 
 
-Lemma K_nat_bool_undec :
+Lemma K_nat_bool_undec {Part : partiality}  :
   EPF_bool + SCT -> ~ decidable (compl K_nat_bool).
 Proof.
   intros [K (SK & _ & _ & HK)] % EPF_SCT_halting Hd.
@@ -68,7 +68,7 @@ Proof.
   - eauto.
 Qed.  
 
-Lemma K_nat_undec :
+Lemma K_nat_undec {Part : partiality} :
   EPF_bool + SCT -> ~ decidable (fun f => forall n : nat, f n = 0).
 Proof.
   intros [K (SK & _ & _ & HK)] % EPF_SCT_halting Hd.

@@ -32,7 +32,7 @@ Proof.
     + reflexivity.
     + econstructor. intros [] % IH2. 2:eauto. lia.
     + intros m [-> | [H4 H5] % IH2]; split; eauto.
-      rewrite numbers.Nat_iter_S in *. lia.
+      rewrite numbers.Nat.iter_succ in *. lia.
 Qed.
 
 Lemma cantor_infinite_exceeds (p q : nat -> Prop) :

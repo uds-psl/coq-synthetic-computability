@@ -1,4 +1,4 @@
-From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.SemiDecidabilityFacts reductions partial embed_nat.
+From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.SemiDecidabilityFacts reductions partial embed_nat Dec.
 Require Import Setoid Program Lia.
 
 From SyntheticComputability.Axioms Require Export CT SCT EA EPF.
@@ -229,6 +229,7 @@ Module R_spec.
 Require Import List.
 Import ListNotations.
 Import implementation.
+Local Existing Instance monotonic_functions.
 
 Definition I (f : nat -> nat) (n : nat) : bool :=
   nth n (flat_map (fun n => List.repeat false n ++ [true]) (map f (seq 0 (1 + n)))) false.
@@ -239,7 +240,7 @@ Fixpoint R (f : nat -> part bool) (x : nat) : part nat :=
   | S x => bind (mu f) (fun n => R (fun m => f (m + S n)) x)
   end.
 
-Lemma R_spec0:
+Lemma R_spec0 :
   forall (g : nat ↛ bool) (f : nat -> nat),
     (forall x : nat, g x =! I f x) -> hasvalue (mu g) (f 0).
 Proof.
@@ -423,7 +424,7 @@ Proof.
     rewrite Hn in H0. eauto.
 Qed.
 
-Theorem equivalence : 
+Theorem equivalence `{partiality} : 
   ((∑ ϕ, CT_for ϕ /\ SMN_for ϕ) -> SCT) *
   (SCT -> EPF) *
   (EPF -> EA) *

@@ -22,6 +22,7 @@ Proof.
   - eauto.
   - intros Hl2 Hel. cbn. econstructor. 2:eapply IHNoDup; eauto.
     + intros [ | ] % in_app_iff; firstorder.
+    + firstorder.
 Qed.
 
 Lemma NoDup_map {X Y} (f : X -> Y) l :
@@ -179,8 +180,8 @@ Axiom ofnat_tonat : forall l, ofnat (tonat l) = l.
 Axiom tonat_ofnat : forall n, tonat (ofnat n) = n.
 Axiom length_log : forall n, length (ofnat n) <= Nat.log2 n.
 
-Hint Rewrite ofnat_tonat tonat_ofnat : length.
-Hint Rewrite List.app_length : length.
+#[export] Hint Rewrite ofnat_tonat tonat_ofnat : length.
+#[export] Hint Rewrite List.app_length : length.
 
 Notation "| n |" := (length (ofnat n)) (at level 10).
 
@@ -205,11 +206,11 @@ Proof.
 Qed.
 
 Axiom Part : partiality.
-Existing Instance Part.
+#[export] Existing Instance Part.
 
 Notation "x ▷ y" := (@hasvalue Part nat x y) (at level 50).
 
-Instance equiv_part {A} : equiv_on (part A) := {| equiv_rel := @partial.equiv _ A |}.
+#[export] Instance equiv_part {A} : equiv_on (part A) := {| equiv_rel := @partial.equiv _ A |}.
 
 Lemma MP_choice (R : nat -> nat -> Prop) : MP -> enumerable (fun '(x,y) => R x y) ->
   (forall x, ~~ exists y, R x y) -> exists f, forall x, R x (f x).
@@ -264,7 +265,7 @@ Proof.
     exists snd. firstorder.
 Qed.
 
-Hint Rewrite List.app_nil_l @list.nil_length : length.
+#[export] Hint Rewrite List.app_nil_l @list.nil_length : length.
 
 Section Kolmogorov.
 
@@ -784,7 +785,7 @@ Module universal.
       else
         (0, 0).
 
-    Hint Rewrite repeat_length : list.
+    #[export] Hint Rewrite repeat_length : list.
 
     Lemma info_spec : forall x y, invert ⟨⟨info x, x⟩, y⟩ = (x, y).
     Proof.

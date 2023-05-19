@@ -1,4 +1,4 @@
-From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.SemiDecidabilityFacts reductions embed_nat.
+From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.MoreEnumerabilityFacts Synthetic.SemiDecidabilityFacts reductions embed_nat Dec.
 Require Import Setoid Program Lia.
 
 Definition EA := ∑ ψ : nat -> (nat -> option nat),
@@ -118,7 +118,7 @@ Proof.
     + exists (fun '(x, y) => if R x is Some l then (l,y) else (x0, y)).
       intros [x y]. cbn.
       destruct (R x); reflexivity.
-    + eauto.
+    + eauto. 
     + eapply discrete_prod. eapply datatype_discrete. now exists I, R.
       eapply discrete_nat.
   - exists (fun l => c (I l)). intros. 
@@ -133,7 +133,7 @@ Proof.
   - exact nil.
   - eapply enumerable_discrete_datatype.
     eapply discrete_list, discrete_nat.
-    eauto.
+    red; eexists; exact _.
   - exists c. firstorder.
 Qed.
 
@@ -142,7 +142,7 @@ Proof.
   eapply EAS_list. 
   eapply decidable_enumerable. 2:eauto.
   eapply decidable_iff. econstructor.
-  intros [x y]. cbn. eapply ListAutomation.list_in_dec. exact _.
+  intros [x y]. cbn. eapply ListAutomation.list_in_dec. intros. eapply nat_eq_dec.
 Qed.
 
 Notation π1 := (fun! ⟨x, y⟩ => x).

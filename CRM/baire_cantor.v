@@ -1,5 +1,5 @@
 Require Import stdpp.list stdpp.list_numbers.
-From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts reductions partial Axioms.Equivalence principles kleenetree Synthetic.MoreEnumerabilityFacts mu_nat Shared.Dec.
+From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts ListEnumerabilityFacts reductions partial Axioms.Equivalence principles kleenetree Synthetic.MoreEnumerabilityFacts mu_nat Shared.Dec.
 Require Import ssreflect Nat.
 
 (** ** Continuity  *)
@@ -285,7 +285,7 @@ Lemma drop_lookup_iff {X} l i (x : X) :
 Proof.
   induction l in i, x |- *.
   - cbn. split.
-    + congruence.
+    + destruct i; cbn; congruence.
     + move => [l' H].
       destruct i; inv H.
   - destruct i.
@@ -386,7 +386,7 @@ Proof.
       * pose (k := (length (F' g 0 (S (S n))))).
         pose proof (F_inj_help H k) as Heq.
         pose proof (F'_eq_lt (o := 0) IH) as Hpref.
-        assert (S n < k) as [k' Hsum] % nat_le_sum. {
+        assert (S n < k) as [k' Hsum] % Nat.le_sum. {
           subst k.
           pose proof (F'_length g 0 ( S (S n))); lia.
         }
@@ -418,7 +418,7 @@ Proof.
       * pose (k := (length (F' f 0 (S (S n))))).
         pose proof (F_inj_help H k) as Heq.
         pose proof (F'_eq_lt (o := 0) IH) as Hpref.
-        assert (S n < k) as [k' Hsum] % nat_le_sum. {
+        assert (S n < k) as [k' Hsum] % Nat.le_sum. {
           subst k.
           pose proof (F'_length f 0 ( S (S n))); lia.
         }
@@ -535,8 +535,8 @@ Proof.
   induction m in o, g |- *; cbn.
   - reflexivity.
   - rewrite !app_length IHm.
-    f_equal.
-    now rewrite !G_inv Nat_iter_S_r.
+    f_equal. 
+    now rewrite !G_inv Nat.iter_succ_r.
 Qed.
 
 Lemma nxt_iter:
@@ -545,7 +545,7 @@ Proof.
   move => g m n.
   induction m in g, n |- *.
   - cbn. now rewrite <- plus_n_O.
-  - rewrite Nat_iter_S_r IHm. rewrite <- F'_length_g.
+  - rewrite Nat.iter_succ_r IHm. rewrite <- F'_length_g.
     replace (S m) with (m + 1) by lia.
     rewrite F'_offset /nxt app_length. cbn.
     f_equal. rewrite G_inv. cbn. lia.
@@ -627,7 +627,7 @@ Proof.
   cbn in *.
   destruct (lt_eq_lt_dec (length l1) (length l2)) as [[Hlt | Heq] | Hgt].
   + eapply leaf_prefix; eauto.
-    rewrite H2 H4. eapply nat_le_sum in Hlt as [k Hk].
+    rewrite H2 H4. eapply Nat.le_sum in Hlt as [k Hk].
     rewrite Hk.
     replace (S (length l1) + k) with (length l1 + S k) by lia. rewrite seq_app.
     rewrite map_app. eapply prefix_app_r.
@@ -636,7 +636,7 @@ Proof.
   + rewrite H2 H4 Heq.
     eapply map_ext_in. move => a / in_seq [] ? ?. eapply Hg. lia.
   + symmetry. eapply leaf_prefix; eauto.
-    rewrite H2 H4. eapply nat_le_sum in Hgt as [k Hk].
+    rewrite H2 H4. eapply Nat.le_sum in Hgt as [k Hk].
     rewrite Hk.
     replace (S (length l2) + k) with (length l2 + S k) by lia. rewrite seq_app.
     rewrite map_app. eapply prefix_app_r.
@@ -661,7 +661,7 @@ Qed.
   destruct x.
   - cbn in *. clear IHx.
     rewrite <- plus_n_O in Hg. now eapply F_find_pref_ext.
-  - rewrite !Nat_iter_S_r. eapply IHx. lia.
+  - rewrite !Nat.iter_succ_r. eapply IHx. lia.
     move => a Ha.
     unfold nxt.
     pose proof (IHx 0) as E1. cbn in E1. erewrite E1. instantiate (1 := g2). 2:lia.
@@ -673,7 +673,7 @@ Qed.
     replace (x + 2) with (2 + x) by lia.
     replace (x + 1) with (1 + x) by lia.
     cbn [plus].
-    now rewrite !Nat_iter_S_r.
+    now rewrite !Nat.iter_succ_r.
   Qed.
 
 Lemma continuous_G : modulus (fun g x => seq 0 (sum_list (map (fun n => length (proj1_sig (F_find_pref (PeanoNat.Nat.iter n nxt g)))) (seq 0 (S x))))) G.
@@ -727,7 +727,7 @@ Proof.
     intros ? ? % in_seq. f_equal.
     eapply help. intros.
     eapply H. split. lia.
-    destruct H0 as [_ [? H0] % nat_le_sum].
+    destruct H0 as [_ [? H0] % Nat.le_sum].
     cbn in H0. inv H0.
     replace (S (a + x0)) with (S a + x0) by lia.
     rewrite seq_app map_app app_sum_list_with. lia.

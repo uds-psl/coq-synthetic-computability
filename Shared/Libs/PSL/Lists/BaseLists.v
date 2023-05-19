@@ -6,9 +6,9 @@ Notation "A <<= B" := (incl A B) (at level 70).
 Notation "| A |" := (length A) (at level 65).
 Definition equi X (A B : list X) : Prop := incl A B /\ incl B A.
 Notation "A === B" := (equi A B) (at level 70).
-Hint Unfold equi : core.
+Global Hint Unfold equi : core.
 
-Hint Extern 4 => 
+Global Hint Extern 4 => 
 match goal with
 |[ H: ?x el nil |- _ ] => destruct H
 end : core.
@@ -17,8 +17,8 @@ end : core.
 
 (* Register additional simplification rules with autorewrite / simpl_list *)
 (* Print Rewrite HintDb list. *)
-Hint Rewrite <- app_assoc : list.
-Hint Rewrite rev_app_distr map_app prod_length : list.
+Global Hint Rewrite <- app_assoc : list.
+Global Hint Rewrite rev_app_distr map_app prod_length : list.
 
 Lemma list_cycle  (X : Type) (A : list X) x :
   x::A <> A.
@@ -30,7 +30,7 @@ Qed.
 
 (* *** Decisions for lists *)
 
-Instance list_in_dec X (x : X) (A : list X) :  
+Global Instance list_in_dec X (x : X) (A : list X) :  
   eq_dec X -> dec (x el A).
 Proof.
   intros D. apply in_dec. exact D.
@@ -48,7 +48,7 @@ Qed.
 
 Arguments cfind {X} A p {p_dec}.
 
-Instance list_forall_dec X A (p : X -> Prop) :
+Global Instance list_forall_dec X A (p : X -> Prop) :
   (forall x, dec (p x)) -> dec (forall x, x el A -> p x).
 Proof.
   intros p_dec.
@@ -57,13 +57,13 @@ Proof.
   - left. intros x E. apply find_none with (x := x) in Eq. apply dec_DN; auto. auto.
 Qed.
 
-Instance list_exists_dec X A (p : X -> Prop) :
+Global Instance list_exists_dec X A (p : X -> Prop) :
   (forall x, dec (p x)) -> dec (exists x, x el A /\ p x).
 Proof.
   intros p_dec.
   destruct (find (fun x => Dec (p x)) A) eqn:Eq. (* New: eta expansion needed *)
   - apply find_some in Eq as [H0 H1 %Dec_true]. firstorder. (* New: Need firstorder here *)
-  - right. intros [x [E F]]. apply find_none with (x := x) in Eq; auto. eauto. (* New: Why can't auto solve this? *)
+  - right. intros [x [E F]]. apply find_none with (x := x) in Eq; auto. 
 Qed.
 
 Lemma list_exists_DM X A  (p : X -> Prop) : 
@@ -108,7 +108,7 @@ We use the following lemmas from Coq's standard library List.
 - [in_map_iff :  y el map f A <-> exists x, f x = y /\ x el A]
 *)
 
-Hint Resolve in_eq in_nil in_cons in_or_app : core.
+Global Hint Resolve in_eq in_nil in_cons in_or_app : core.
 
 Section Membership.
   Variable X : Type.
@@ -194,7 +194,7 @@ Section Membership.
 
 End Membership.
 
-Hint Resolve disjoint_nil disjoint_nil' : core.
+Global Hint Resolve disjoint_nil disjoint_nil' : core.
 
 (* *** Inclusion
 
@@ -207,14 +207,14 @@ We use the following lemmas from Coq's standard library List.
 - [incl_app : A <<= C -> B <<= C -> A++B <<= C]
 *)
 
-Hint Resolve incl_refl incl_tl incl_cons incl_appl incl_appr incl_app : core.
+Global Hint Resolve incl_refl incl_tl incl_cons incl_appl incl_appr incl_app : core.
 
 Lemma incl_nil X (A : list X) :
   nil <<= A.
 
 Proof. intros x []. Qed.
 
-Hint Resolve incl_nil : core.
+Global Hint Resolve incl_nil : core.
 
 Lemma incl_map X Y A B (f : X -> Y) :
   A <<= B -> map f A <<= map f B.
@@ -284,55 +284,55 @@ Definition inclp (X : Type) (A : list X) (p : X -> Prop) : Prop :=
 
 (* *** Setoid rewriting with list inclusion and list equivalence *)
 
-Instance incl_preorder X : 
+Global Instance incl_preorder X : 
   PreOrder (@incl X).
 Proof. 
   constructor; hnf; unfold incl; auto. 
 Qed.
 
-Instance equi_Equivalence X : 
+Global Instance equi_Equivalence X : 
   Equivalence (@equi X).
 Proof. 
   constructor; hnf; firstorder. 
 Qed.
 
-Instance incl_equi_proper X : 
+Global Instance incl_equi_proper X : 
   Proper (@equi X ==> @equi X ==> iff) (@incl X).
 Proof. 
   hnf. intros A B D. hnf. firstorder. 
 Qed.
 
-Instance cons_incl_proper X x : 
+Global Instance cons_incl_proper X x : 
   Proper (@incl X ==> @incl X) (@cons X x).
 Proof.
   hnf. apply incl_shift.
 Qed.
 
-Instance cons_equi_proper X x : 
+Global Instance cons_equi_proper X x : 
   Proper (@equi X ==> @equi X) (@cons X x).
 Proof. 
   hnf. firstorder.
 Qed.
 
-Instance in_incl_proper X x : 
+Global Instance in_incl_proper X x : 
   Proper (@incl X ==> Basics.impl) (@In X x).
 Proof.
   intros A B D. hnf. auto.
 Qed.
 
-Instance in_equi_proper X x : 
+Global Instance in_equi_proper X x : 
   Proper (@equi X ==> iff) (@In X x).
 Proof. 
   intros A B D. firstorder. 
 Qed.
 
-Instance app_incl_proper X : 
+Global Instance app_incl_proper X : 
   Proper (@incl X ==> @incl X ==> @incl X) (@app X).
 Proof. 
   intros A B D A' B' E. auto.
 Qed.
 
-Instance app_equi_proper X : 
+Global Instance app_equi_proper X : 
   Proper (@equi X ==> @equi X ==> @equi X) (@app X).
 Proof. 
   hnf. intros A B D. hnf. intros A' B' E.
@@ -547,7 +547,7 @@ Proof.
   - now apply map_eq_cons' in H as (l1&l2&->&->%HInj&->%IH).
 Qed.
 
-Instance map_ext_proper A B: Proper (@ pointwise_relation A B (@eq B) ==> (@eq (list A)) ==> (@eq (list B))) (@map A B).
+Global Instance map_ext_proper A B: Proper (@ pointwise_relation A B (@eq B) ==> (@eq (list A)) ==> (@eq (list B))) (@map A B).
 Proof.
   intros f f' Hf a ? <-. induction a;cbn;congruence.
 Qed.

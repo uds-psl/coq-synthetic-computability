@@ -237,7 +237,7 @@ Section Inf.
   Proof.
     revert x.
     induction n as [n IH] using Wf_nat.lt_wf_ind. intros x He.
-    decide _; try eassumption. exfalso.
+    decide (x el LL (S n)); try eassumption. exfalso.
     assert (H : ~ x el LL n).
     { intros H. apply n0. apply (cum_ge' LL_cum H). auto. }
     apply nxt_le_f in H as [n'[H1 H2] ].

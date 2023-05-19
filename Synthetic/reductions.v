@@ -41,7 +41,7 @@ Notation "P ⪯ₜᴛ Q" := (red_tTuring P Q) (at level 50).
 
 (** ** Many-one reducibility *)
 
-Instance red_m_reflexive {X} : Reflexive (@red_m X X).
+#[export] Instance red_m_reflexive {X} : Reflexive (@red_m X X).
 Proof.
   exists (fun x => x). firstorder.
 Qed.
@@ -178,7 +178,7 @@ Qed.
 
 (** ** One-one reducibility *)
 
-Instance red_1_reflexive {X} : Reflexive (@red_o X X).
+#[export] Instance red_1_reflexive {X} : Reflexive (@red_o X X).
 Proof.
   exists (fun x => x). firstorder.
 Qed.
@@ -290,7 +290,7 @@ Local Notation "( a ,, b )" := (existT a b).
 Local Notation "( a ).1" := (projT1 a).
 Local Notation "( a ).2" := (projT2 a).
 
-Instance red_tt_reflexive {X} : Reflexive (@red_tt X X).
+#[export] Instance red_tt_reflexive {X} : Reflexive (@red_tt X X).
 Proof.
   move => p.
   eexists (fun x => ([x],, @mk_tt (fun L => match L with [b] => b | _ => true end ) _)).
@@ -595,7 +595,7 @@ Qed.
 
 (** ** Total Turing reducibility  *)
 
-Instance red_tT_reflexive {X} : Reflexive (@red_tTuring X X).
+#[export] Instance red_tT_reflexive {X} : Reflexive (@red_tTuring X X).
 Proof.
   move => p.
   exists (fun d => d). firstorder.

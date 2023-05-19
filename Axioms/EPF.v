@@ -49,7 +49,7 @@ Proof.
     destruct seval; congruence.
 Qed.
 
-Lemma EPF_iff_nonparametric :
+Lemma EPF_iff_nonparametric {Part : partiality} :
   EPF ↔ EPF_nonparam.    
 Proof.
   split.

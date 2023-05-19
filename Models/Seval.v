@@ -1,5 +1,7 @@
 From Undecidability.L Require Export Util.L_facts.
 From Undecidability.L Require Export Seval.
+From Undecidability Require Export Dec.
+
 (* 
 Require Import Coq.Logic.ConstructiveEpsilon. 
 
@@ -234,16 +236,20 @@ Proof.
   eapply stepn_spec. exact _.
 Qed.
 
+From SyntheticComputability Require Import ListAutomation BaseLists.
+From Undecidability Require Import EqDec L_facts.
+
 Lemma informative_eval2 s : (exists t, eval s t) -> {t | eval s t}.
 Proof.
   intros H.
   edestruct cChoice with (P:=fun n => exists t, t el stepn n s /\ lambda t).
   -intros.
-   decide (exists t, t el stepn n s /\ lambda t). all:eauto.
+   assert (dec (exists t, t el stepn n s /\ lambda t)). eapply list_exists_dec. eapply lambda_dec. all:eauto.
   -destruct H as (?&H&?). eapply star_pow in H as [? H].
    eapply stepn_spec in H. eauto.
   -apply list_cc in e. 2:eauto.
    destruct e as (?&H'&?). unfold eval. apply stepn_spec,pow_star in H'. eauto.
+   eapply lambda_dec. 
 Qed.
 
 Lemma informative_seval s t: eval s t -> {l | seval l s t}.
@@ -260,11 +266,11 @@ Proof.
 Qed. 
 
 
-Lemma informative_evalIn s t: eval s t -> {l | s ⇓(l) t}.
-Proof.
-  intros H'. specialize (informative_eval H') as (l&H).
-  destruct H'. firstorder.
-Qed.
+(* Lemma informative_evalIn s t: eval s t -> {l | s ⇓(l) t}. *)
+(* Proof. *)
+(*   intros H'. specialize (informative_eval H') as (l&H). *)
+(*   destruct H'. firstorder. eauto.  *)
+
 
 Lemma seval_rect (P : nat -> term -> term -> Type)
   (HR : forall (n : nat) (s : term), P n (lam s) (lam s))

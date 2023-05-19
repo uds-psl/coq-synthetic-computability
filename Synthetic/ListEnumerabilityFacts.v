@@ -7,7 +7,7 @@ Import ListNotations EmbedNatNotations.
 
 Definition cumulative {X} (L: nat -> list X) :=
   forall n, exists A, L (S n) = L n ++ A.
-Hint Extern 0 (cumulative _) => intros ?; cbn; eauto : core.
+#[export] Hint Extern 0 (cumulative _) => intros ?; cbn; eauto : core.
 
 Lemma cum_ge {X} {L: nat -> list X} {n m} :
   cumulative L -> m >= n -> exists A, L m = L n ++ A.
@@ -169,7 +169,7 @@ Proof.
   intros H. eapply to_cumul_spec. eauto.
 Qed.
 
-Hint Resolve cumul_In In_cumul : core.
+#[export] Hint Resolve cumul_In In_cumul : core.
 
 Lemma list_enumerator_to_cumul {X} {p : X -> Prop} {L} :
   list_enumerator L p -> list_enumerator (to_cumul L) p. 
@@ -242,8 +242,8 @@ Definition L_T {X : Type} {f : nat -> list X} {H : list_enumeratorᵗ f X} : nat
 Defined.
 Arguments L_T _ {_ _} _, {_ _ _}.
 
-Hint Unfold L_T : core.
-Hint Resolve cumul_In : core.
+#[export] Hint Unfold L_T : core.
+#[export] Hint Resolve cumul_In : core.
 
 Existing Class list_enumeratorᵗ'.
 
@@ -252,15 +252,15 @@ Proof.
   now eapply cumul_specᵗ.
 Defined.
 
-Existing Instance enumeratorᵗ_list.
+#[export] Existing Instance enumeratorᵗ_list.
 
-Instance enumeratorᵗ_to_list {X} {f} :
+#[export] Instance enumeratorᵗ_to_list {X} {f} :
   list_enumeratorᵗ f X -> enumeratorᵗ (fun n => let (n, m) := unembed n in nth_error (f n) m) X | 100.
 Proof.
   intros H x. eapply list_enumerator_to_enumerator in H. exact H.
 Qed.
 
-Instance enumeratorᵗ_of_list {X} {f} :
+#[export] Instance enumeratorᵗ_of_list {X} {f} :
   enumeratorᵗ f X -> list_enumeratorᵗ (fun n => match f n with Some x => [x] | None => [] end) X | 100.
 Proof.
   intros H x. eapply enumerator_to_list_enumerator. eauto.
@@ -275,9 +275,9 @@ Defined. *)
 
 (** Compatibility  *)
 
-Hint Unfold enumerable list_enumerable : core.
+#[export] Hint Unfold enumerable list_enumerable : core.
 
-Hint Resolve enumerable_list_enumerable
+#[export] Hint Resolve enumerable_list_enumerable
      list_enumerable_enumerable : core.
 
 Lemma enumerable_enum {X} {p : X -> Prop} :
@@ -312,5 +312,4 @@ Qed.
 
 (* Definition tight_retract X Y := exists I R, retraction I R X Y. *)
 (* Definition countable X := retract X nat. *)
-
 

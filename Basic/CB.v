@@ -144,7 +144,7 @@ Section get_better.
 
 End get_better.
 
-Hint Resolve occ_spec e_spec.
+#[export] Hint Resolve occ_spec e_spec.
 
 Notation injective f := (forall x1 x2, f x1 = f x2 -> x1 = x2).
 

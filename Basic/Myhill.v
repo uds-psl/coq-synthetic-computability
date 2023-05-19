@@ -81,10 +81,10 @@ Section fixes.
   Variable eX : eq_dec X.
   Variable eY : eq_dec Y.
 
-  Equations γ (C : list (X * Y)) : X -> X by wf (length C) lt := 
+  Equations γ (C : list (X * Y)) (x : X) : X by wf (length C) lt := 
     γ C x with Dec (In2 (f x) C) => {
       | left H with In2_compute _ _ H => {
-          | exist _ x' H_ :=  γ (remove (eq_dec_pair eX eY) (x', f x) C) x'
+          | exist _ x' H_ := @γ (remove (eq_dec_pair eX eY) (x', f x) C) x'
           };
       | right _ := x
     }.

@@ -1,4 +1,3 @@
-
 From SyntheticComputability.Shared Require Import FinitenessFacts.
 Require Import List.
 
@@ -12,7 +11,7 @@ Proof.
   - exists nil. econstructor.
   - destruct (HP a) as [b H]. 1:firstorder.
     destruct IHL as [L2' IH].
-    + eauto.
+    + firstorder.
     + exists (b :: L2'). econstructor; eauto.
 Qed.
 
@@ -25,8 +24,8 @@ Proof.
   induction L as [ | x L].
   - exists (fun _ => y0). firstorder.
   - destruct IHL as [f Hf].
-    + eauto.
-    + destruct (Htot x) as [y Hy]; [ auto | ].
+    + firstorder.
+    + destruct (Htot x) as [y Hy]; [ firstorder | ].
       exists (fun x' => if D x x' then y else f x').
       intros x0 [-> | H].
       * destruct (D x0 x0); tauto.

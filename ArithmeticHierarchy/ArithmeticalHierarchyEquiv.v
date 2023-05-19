@@ -1,7 +1,6 @@
 (** ** Equivalence of Both Definitions *)
 
-From Undecidability.FOL Require Import Syntax.
-From Undecidability.FOL Require Import FullTarski.
+From Undecidability.FOL Require Import Facts FullFacts.
 Require Import Lia Vector Fin List.
 Import Vector.VectorNotations.
 From SyntheticComputability Require Import PrenexNormalForm.
@@ -47,31 +46,35 @@ Section ArithmeticalHierarchyEquiv.
      ) as H. {
         split.
         all: intros n k p [ff [ϕ [Σi r]]].
-        all: rewrite (PredExt r).
+        all: eapply PredExt. 2,4: eapply r.
         all: eapply H; eauto.
       }
     apply isΣ_syn_isΠ_syn_mutind.
     - intros ff n ϕ nQ k.
-      rewrite PredExt with (g := fun v => (fun v => if (noQuant_dec nQ (vec_to_env v)) then true else false) v = true).
+      unshelve eapply PredExt. exact (fun v => (fun v => if (noQuant_dec nQ (vec_to_env v)) then true else false) v = true).
       + apply isΣΠsem0.
-      + intros v. now destruct noQuant_dec.
+      + intros v. cbn. now destruct noQuant_dec.
     - intros ff n ϕ iΣ IH k.
       specialize (IH (S k)).
       dependent destruction IH.
       change (isΣsem (S n) (fun v : vec nat k => exists d, (fun v => (vec_to_env v) ⊨ ϕ)(d::v))).
-      rewrite H0. now eapply isΣsemTwoEx.
+      cbn in H0.
+      eapply PredExt. 2:{ intros. etransitivity. setoid_rewrite H0. reflexivity. instantiate (1 := fun v => (exists d x : nat, p (x :: d :: v))). reflexivity. }
+      now eapply isΣsemTwoEx.
     - intros ff n ϕ iΠ IH k.
       change (isΣsem (S n) (fun v : vec nat k => exists d, (fun v => (vec_to_env v) ⊨ ϕ)(d::v))).
       eapply isΣsemS. now apply IH.
     - intros ff n ϕ nQ k.
-      rewrite PredExt with (g := fun v => (fun v => if (noQuant_dec nQ (vec_to_env v)) then true else false) v = true).
+      unshelve eapply PredExt. exact (fun v => (fun v => if (noQuant_dec nQ (vec_to_env v)) then true else false) v = true).
       + apply isΣΠsem0.
-      + intros v. now destruct noQuant_dec.
+      + intros v. cbn. now destruct noQuant_dec.
     - intros ff n ϕ iΠ IH k.
       specialize (IH (S k)).
       dependent destruction IH.
       change (isΠsem (S n) (fun v : vec nat k => forall d, (fun v => (vec_to_env v) ⊨ ϕ)(d::v))).
-      rewrite H0. now apply isΠsemTwoAll.
+      cbn in H0.
+      eapply PredExt. 2:{ intros. etransitivity. setoid_rewrite H0. reflexivity. refine (iff_refl _). }
+      now apply isΠsemTwoAll.
     - intros ff n ϕ iΣ IH k.
       change (isΠsem (S n) (fun v : vec nat k => forall d, (fun v => (vec_to_env v) ⊨ ϕ)(d::v))).
       eapply isΠsemS. now apply IH.
@@ -87,9 +90,9 @@ Section ArithmeticalHierarchyEquiv.
     unfold decΣ1syn, decΔ1syn.
     split.
     - intros decΣ1syn k f. split; [apply decΣ1syn|].
-      rewrite PredExt with (g := fun v => (fun v => if f v then false else true) v <> true) by (now intros; cbn; destruct f).
+      unshelve eapply extensional_Πsyn. exact (fun v => (fun v => if f v then false else true) v <> true). now intros; cbn; destruct f; firstorder.
       apply Σ1syn_notΠ1_int, decΣ1syn.
-    - intros H k f. apply H.
+    - intros H k f. apply H. 
   Qed.
 
   Lemma decΣ1syn_incl_1 :
@@ -106,11 +109,11 @@ Section ArithmeticalHierarchyEquiv.
       - destruct HΣ as [ff [φ [Hφ Hr]]].
         exists ff, (∃φ). split.
         + now constructor 2.
-        + intros v. unfold reflecting in Hr. now setoid_rewrite Hr.
+        + intros v. unfold reflecting in Hr. cbn in *. rewrite H0. setoid_rewrite H. now setoid_rewrite Hr. 
       - destruct HΠ as [ff [φ [Hφ Hr]]].
         exists ff, (∀φ). split.
         + now constructor 2.
-        + intros v. unfold reflecting in Hr. now setoid_rewrite Hr.
+        + intros v. unfold reflecting in Hr. cbn in *. rewrite H0. setoid_rewrite H. now setoid_rewrite Hr. 
     } {
       intros H k f. apply H. apply isΣΠsem0.
     }
@@ -123,16 +126,16 @@ Section ArithmeticalHierarchyEquiv.
   Proof.
     intros HdecΔ1%decΣ1syn_incl_1.
     apply isΣsem_isΠsem_mutind; try lia.
-    - intros [] k p H IH eq. { apply HdecΔ1. now apply isΣsemS. }
+    - intros [] k p' p H IH Heq eq. { intros. apply HdecΔ1. econstructor. 2: eassumption. eauto. }
       destruct (IH ltac:(lia)) as [ff [ϕ [IH1 IH2]]].
       exists ff, (∃ ϕ). split.
       + now apply isΠex.
-      + revert IH2. clear. firstorder.
-    - intros [] k p H IH eq. { apply HdecΔ1. now apply isΠsemS. }
+      + revert IH2. unfold reflecting. setoid_rewrite Heq. clear. firstorder.
+    - intros [] k p' p H IH Heq eq. { intros. apply HdecΔ1. econstructor. 2: eassumption. eauto. }
       destruct (IH ltac:(lia)) as [ff [ϕ [IH1 IH2]]].
       exists ff, (∀ ϕ). split.
       + now apply isΣall.
-      + revert IH2. clear. firstorder.
+      + revert IH2. unfold reflecting. setoid_rewrite Heq. clear. firstorder.
   Qed.
 
   End ArithmeticalHierarchyEquiv.

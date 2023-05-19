@@ -1,7 +1,7 @@
 (** * Post's Theorem *)
 
 From SyntheticComputability.Shared Require Import embed_nat.
-From SyntheticComputability Require Import TuringReducibility.OracleComputability TuringJump ArithmeticalHierarchySemantic SemiDec reductions.
+From SyntheticComputability Require Import TuringReducibility.OracleComputability TuringJump ArithmeticalHierarchySemantic SemiDec reductions Dec.
 Require Import Lia List Vector PeanoNat.
 Import Vector.VectorNotations.
 Local Notation vec := Vector.t.
@@ -172,7 +172,6 @@ Section PostsTheorem.
             4: refine (fun v => ~ p' (List.nth (hd v) (nat_to_list_vec (S k) (fst (unembed (hd (tl v))))) (42 :: const 42 k))).
             3:{ red. exists (fun v => embed (hd v, snd (unembed (hd (tl v)))) :: v).
                 red. firstorder; cbn -[unembed embed] in *; try rewrite !embedP in *; eauto.
-                rewrite embedP in H1. eauto.
             }
             eapply isΣΠn_In_ΠΣSn. eapply isΣsem_m_red_closed with (q := p'). eauto.
             exists (fun v => (List.nth (hd v) (nat_to_list_vec (S k) (fst (unembed (hd (tl v))))) (42 :: const 42 k))).

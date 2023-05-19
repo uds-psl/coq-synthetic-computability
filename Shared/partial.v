@@ -66,7 +66,7 @@ Definition total {X Y} (R : X -> Y -> Prop) :=
 Record FunRel X Y := {the_rel :> X -> Y -> Prop ; the_func_proof : functional the_rel}.
 Arguments the_rel {_ _}.
 
-Instance part_equiv_Equivalence `{partiality} {A} :
+#[export] Instance part_equiv_Equivalence `{partiality} {A} :
   Equivalence (@equiv _ A).
 Proof.
   firstorder.
@@ -557,7 +557,7 @@ Module implementation.
           unshelve epose proof (monotonic_agnostic _ H3 H1). eapply spec_fun. congruence.
   Qed.
 
-  Instance monotonic_functions : partiality.
+  #[local] Instance monotonic_functions : partiality.
   Proof.
     unshelve econstructor.
     - exact part.
