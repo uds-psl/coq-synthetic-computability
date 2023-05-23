@@ -24,7 +24,7 @@ jobs:
       - name: Install OCaml
         uses: avsm/setup-ocaml@v2
         with:
-          ocaml-compiler: ocaml-variants.4.14.0
+          ocaml-compiler: 4.14
 
       - name: Checkout code
         uses: actions/checkout@v2
