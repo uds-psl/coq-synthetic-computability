@@ -118,7 +118,6 @@ Module Ξ.
   Definition ξ' : nat -> nat -> tree nat bool unit :=
       (fun ic x l => let (i, c) := unembed ic in ξ c (embed (i, x)) l).
 
-
   Fact ξ'_parametric :
     forall f : nat -> nat -> tree nat bool unit, exists γ, forall j l i o, ξ' (γ j) i l =! o <-> f j i l =! o.
   Proof.
@@ -135,41 +134,30 @@ Module Ξ.
     now exists (γ 27).
   Qed.
 
-  Lemma Ξ_spec (c : nat) :
-    { F : (nat -> bool -> Prop) -> nat -> Prop | forall R x, F R x <-> (exists (qs : list _) (ans : list _), interrogation (ξ' c x) R qs ans /\ ξ' c x ans =! inr tt)}.
+  Definition rel {I A Q} (τ : I -> list A ↛ (Q + unit)) R x :=
+    exists qs ans, interrogation (τ x) R qs ans /\ (τ x) ans =! inr tt.
+
+  Definition Ξ c R x := rel (ξ' c) R x.
+
+  Fact computable :
+    OracleComputable (fun R '(c,x) (o : unit) => Ξ c R x).
   Proof.
-    pose (τ := ξ' c).
-    exists (fun R i => (exists (qs : list _) (ans : list _), interrogation (τ i) R qs ans /\ τ i ans =! inr tt)).
+    exists (fun '(c,x) => ξ' c x). intros R [c x] [].
     reflexivity.
   Qed.
 
-  Definition Ξ c := proj1_sig (Ξ_spec c).
-
-  Fact computable :
-    OracleComputable (fun R '(c,i) (o : unit) => Ξ c R i).
+  Fact parametric (τ : nat -> nat -> list bool ↛ (nat + unit)) :
+    exists γ, forall j R x, Ξ (γ j) R x <-> rel (τ j) R x.
   Proof.
-    exists (fun '(c,i) => ξ' c i). intros R [c i] [].
-    unfold Ξ. destruct Ξ_spec as [F H]; cbn in *.
-    eapply H.
-  Qed.
-
-  Notation oracle_machine Q A I O := {F : (Q -> A -> Prop) -> I -> O -> Prop & {τ | forall R i o, F R i o <-> (exists (qs : list _) (ans : list _), interrogation (τ i) R qs ans /\ τ i ans =! inr o)}}.
-
-  Fact parametric (f : nat -> oracle_machine nat bool nat unit) :
-    exists γ, forall j R x, Ξ (γ j) R x <-> projT1 (f j) R x tt.
-  Proof.
-    destruct (ξ'_parametric (fun c => proj1_sig (projT2 (f c)))) as [γ Hγ].
+    destruct (ξ'_parametric τ) as [γ Hγ].
     exists γ. intros j.
-    unfold Ξ. destruct (Ξ_spec (γ j)) as [om' eq].
-    intros f' x. specialize (Hγ j).
+    intros. unfold Ξ, rel.
+    specialize (Hγ j).
     cbn.
-    rewrite eq. symmetry.
-    rewrite (proj2_sig (projT2 (f j))).
-    setoid_rewrite Hγ.
-    destruct (f j) as [? []]; cbn in *.
+    setoid_rewrite Hγ. firstorder.
+    exists x0, x1. split; eauto. eapply interrogation_ext. 2: reflexivity. 2: eassumption.
     firstorder.
-    exists x2, x3. split; eauto. eapply interrogation_ext; eauto.
-    exists x2, x3. split; eauto. eapply interrogation_ext. 3: eauto. 2: eauto.
+    exists x0, x1. split; eauto. eapply interrogation_ext. 2: reflexivity. 2: eauto.
     firstorder.
   Qed.
 
@@ -178,21 +166,13 @@ Module Ξ.
   Proof.
     destruct H as [τ Hτ].
     unshelve edestruct (@parametric) as [γ Hγ].
-    - intros _. exists F. exists τ. eauto.
-    - now exists (γ 27).
-  Qed.
-
-  Lemma parametric_jump' c x :
-    ∑ τ : nat -> (list bool) ↛ (nat + unit),
-        forall (R : nat -> bool -> Prop) (i : nat) o, Ξ c R x <-> (exists (qs : list nat) (ans : list bool), interrogation (τ i) R qs ans /\ τ i ans =! inr o).
-  Proof.
-    unfold Ξ. destruct (Ξ_spec c) as [F HF]. cbn.
-    exists (fun _ => ξ' c x). intros ? ? []. eapply HF.
+    - intros _. exact τ. 
+    - exists (γ 27). intros. rewrite Hτ Hγ. reflexivity.
   Qed.
 
 End Ξ.
 
-Opaque Ξ.Ξ.
+(* Opaque Ξ.Ξ. *)
 Notation Ξ := Ξ.Ξ.
 
 Notation oracle_semi_decidable := OracleSemiDecidable.
@@ -210,7 +190,7 @@ Section jump.
       2: eapply Ξ.computable. 2: cbn.
       eapply computable_ident. cbn.
       intros ? ? []; firstorder subst.
-      assumption.
+      firstorder.
     - unfold J. reflexivity.
   Qed.
 
@@ -233,21 +213,11 @@ Section jump.
     intros c. unfold J, 𝒥. now rewrite embedP.
   Qed.
 
-  Notation oracle_machine Q A I O := {F : (Q -> A -> Prop) -> I -> O -> Prop & {τ | forall R i o, F R i o <-> (exists (qs : list _) (ans : list _), interrogation (τ i) R qs ans /\ τ i ans =! inr o)}}.
-
-  Definition parametric_jump : nat -> oracle_machine nat bool nat unit.
-  Proof.
-    intros ⟨c, x⟩.
-    exists (fun R _ o => Ξ c R x).
-    eapply Ξ.parametric_jump'.
-  Defined.
-
   Lemma red_𝒥_J_self Q : 
     𝒥 Q ⪯ₘ J Q.
   Proof.
-    destruct (Ξ.parametric parametric_jump) as [γ Hγ].
-    exists γ. unfold J, 𝒥. intros ⟨c, x⟩.
-    erewrite Hγ. unfold parametric_jump. rewrite E. cbn.
+    destruct (Ξ.parametric (fun! ⟨c,x⟩ => fun _ => Ξ.ξ' c x)) as [γ Hγ].
+    exists γ. unfold J, 𝒥. red. setoid_rewrite Hγ. intros ⟨c, x⟩.
     reflexivity. 
   Qed.
 
@@ -255,7 +225,7 @@ Section jump.
     oracle_semi_decidable Q P <-> P ⪯ₘ (J Q).
   Proof.
     split.
-    - intros [om [Hom H]]. apply red_m_transitive with (𝒥 Q). 2: apply red_𝒥_J_self.
+    - intros [F [Hom H]]. apply red_m_transitive with (𝒥 Q). 2: apply red_𝒥_J_self.
       specialize (Ξ.surjective Hom) as [c Hc].
       unfold 𝒥.
       exists (fun x => embed (c, x)).
@@ -271,7 +241,7 @@ Section jump.
         2: eapply Ξ.computable.
         2: cbn.
         eapply computable_ident.
-        intros ? ? []. firstorder subst. auto.
+        intros ? ? []. firstorder subst. firstorder.
       + reflexivity.
   Qed.
 
