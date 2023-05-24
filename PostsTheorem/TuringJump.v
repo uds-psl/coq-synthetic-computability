@@ -282,10 +282,10 @@ Section jump.
     p ⪯ₘ q -> p ⪯ᴛ q.
   Proof.
     intros [f Hf].
-    eexists. split.
-    eapply computable_precompose with (g := f).
-    eapply computable_id. cbn.
-    intros ? []; firstorder.
+    exists (fun R x b => R (f x) b). split.
+    - eapply computable_precompose with (g := f).
+      eapply computable_id.
+    - cbn. intros ? []; firstorder.
   Qed.
 
   Lemma red_T_imp_red_T_jumps  (P : nat -> Prop) (Q : nat -> Prop): 
@@ -293,6 +293,32 @@ Section jump.
   Proof.
     intros rT. apply red_m_impl_red_T, red_m_iff_semidec_jump.
     eapply Turing_transports_sdec; [apply semidecidable_J|apply rT].
+  Qed.
+
+  Lemma oracle_semi_decidable_refl X (Q : X -> Prop) :
+    oracle_semi_decidable Q Q.
+  Proof.
+    eexists.
+    split.
+    eapply computable_bind. eapply computable_id.
+    eapply computable_if with (test := snd).
+    eapply computable_ret with (v := tt).
+    eapply computable_nothing. 
+    cbn. split.
+    - exists true. firstorder.
+    - intros [[]]; firstorder.
+  Qed.
+
+  Lemma jump_gt Q :
+    Q ⪯ₘ J Q /\ (stable (J Q) -> ~ J Q ⪯ᴛ Q).
+  Proof.
+    split.
+    - eapply red_m_iff_semidec_jump, oracle_semi_decidable_refl.
+    - intros Hs H.
+      assert (compl (J Q) ⪯ᴛ Q). 
+      eapply Turing_transitive. eapply compl_Turing_red. eauto. eauto.
+      eapply Turing_transports_sdec in H0. 2: eapply oracle_semi_decidable_refl.
+      eapply not_semidecidable_compl_J; eassumption.
   Qed.
 
 End jump.
