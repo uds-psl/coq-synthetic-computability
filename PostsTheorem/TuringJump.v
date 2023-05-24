@@ -206,6 +206,27 @@ Section jump.
 
   Definition 𝒥 Q := fun! ⟨c, x⟩ =>  Ξ c (char_rel Q) x.
 
+  Lemma jump_gt Q :
+    Q ⪯ₘ 𝒥 Q /\ (~ compl (J Q) ⪯ᴛ Q).
+  Proof.
+    split.
+    - assert (OracleComputable (fun R (x : nat) (o : unit) => R x true))
+               as [c Hc] % Ξ.surjective.
+      { eapply OracleComputable_ext.
+        eapply computable_bind. eapply computable_id.
+        eapply computable_if with (test := snd).
+        eapply computable_ret with (v := tt).
+        eapply computable_nothing.
+        cbn; split.
+        - intros [[]]; firstorder.
+        - destruct o. exists true; firstorder.
+      }
+      exists (fun x => ⟨c,x⟩). intros x. unfold 𝒥. rewrite embedP.
+      specialize (Hc (char_rel Q)). cbn in Hc. firstorder.
+    - intros H % Turing_to_sdec.
+      eapply not_semidecidable_compl_J; eassumption.
+  Qed.
+
   Lemma J_self_𝒥_m_red:
     forall Q, (J Q) ⪯ₘ (𝒥 Q).
   Proof.
@@ -293,32 +314,6 @@ Section jump.
   Proof.
     intros rT. apply red_m_impl_red_T, red_m_iff_semidec_jump.
     eapply Turing_transports_sdec; [apply semidecidable_J|apply rT].
-  Qed.
-
-  Lemma oracle_semi_decidable_refl X (Q : X -> Prop) :
-    oracle_semi_decidable Q Q.
-  Proof.
-    eexists.
-    split.
-    eapply computable_bind. eapply computable_id.
-    eapply computable_if with (test := snd).
-    eapply computable_ret with (v := tt).
-    eapply computable_nothing. 
-    cbn. split.
-    - exists true. firstorder.
-    - intros [[]]; firstorder.
-  Qed.
-
-  Lemma jump_gt Q :
-    Q ⪯ₘ J Q /\ (stable (J Q) -> ~ J Q ⪯ᴛ Q).
-  Proof.
-    split.
-    - eapply red_m_iff_semidec_jump, oracle_semi_decidable_refl.
-    - intros Hs H.
-      assert (compl (J Q) ⪯ᴛ Q). 
-      eapply Turing_transitive. eapply compl_Turing_red. eauto. eauto.
-      eapply Turing_transports_sdec in H0. 2: eapply oracle_semi_decidable_refl.
-      eapply not_semidecidable_compl_J; eassumption.
   Qed.
 
 End jump.
