@@ -1286,91 +1286,46 @@ Proof.
     -- eapply Hx. exists false. eapply hF'. now eapply (H _ false).
 Qed.
 
-Record oracle (X : Type) : Type :=
-  {
-  S0 : X -> Prop;
-  S1 : X -> Prop;
-  H_oracle : forall x, S0 x -> S1 x -> False
-  }.
-Arguments S0 {_} _.
-Arguments S1 {_} _.
-
-Program Definition char_oracle {X} (p : X -> Prop) :=
-  {| S0 := p ; S1 := fun x => ~ p x ; H_oracle := ltac:(abstract firstorder) |}.
-
-From SyntheticComputability Require Import Dec.
-
-Section equivalence.
-
-  Variable X : Type.
-  Variable eX : eq_dec X.
-  Implicit Type o : oracle X.
-  Implicit Type R : partial.FunRel X bool.
-
-  Program Definition of_o (o : oracle X) :=
-    @Build_FunRel _ _ (fun x b => if (b : bool) then S0 o x else S1 o x) _.
-  Next Obligation.
-    destruct o; intros ? [] [] ? ?; cbn in *; firstorder.
-  Qed.
-
-  Lemma of_o_enumerator o f0 f1 :
-    enumerator f0 (S0 o) -> enumerator f1 (S1 o) ->
-    pcomputes (fun x => bind (mu_tot (fun n => Dec (f0 n = Some x) || Dec (f1 n = Some x)))
-                          (fun n => if Dec (f0 n = Some x) then ret true else ret false)) (of_o o).
-  Proof.
-    intros H0 H1 x b. split.
-    - intros (? & [] % mu_tot_hasvalue & ?) % bind_hasvalue.
-      unfold Dec in *.
-      do 2 destruct Dec.option_eq_dec; cbn in *; eapply ret_hasvalue_inv in H3 as <-.
-      + cbn. eapply H0. eauto.
-      + cbn. eapply H0. eauto.
-      + cbn. eapply H1. eauto.
-      + congruence.
-    - intros Ho. destruct b; cbn in *.
-      + eapply H0 in Ho as [n Ho].
-        assert ((λ n : nat, Dec (f0 n = Some x) || Dec (f1 n = Some x) : bool) n = true) as [n' Hn] % mu_tot_ter by (destruct Dec; firstorder).
-        pose proof Hn as [Hn' _] % mu_tot_hasvalue.
-        eapply bind_hasvalue.
-        eexists; split; eauto.
-        destruct (Dec (f0 n' = Some x)). eapply ret_hasvalue.
-        cbn in Hn'. destruct Dec; cbn in *; try congruence.
-        edestruct H_oracle.
-        eapply H0. eauto. eapply H1; eauto.
-      + eapply H1 in Ho as [n Ho].
-        assert ((λ n : nat, Dec (f0 n = Some x) || Dec (f1 n = Some x) : bool) n = true) as [n' Hn] % mu_tot_ter. {
-          do 2 destruct Dec; cbn; firstorder. }
-        pose proof Hn as [Hn' _] % mu_tot_hasvalue.
-        eapply bind_hasvalue.
-        eexists; split; eauto.
-        destruct (Dec (f0 n' = Some x)). 2:eapply ret_hasvalue.
-        cbn in Hn'.  edestruct H_oracle.
-        eapply H0. eauto. eapply H1; eauto.
-  Qed.
-
-  Lemma of_o_char (q : X -> Prop) :
-    forall x y, of_o (char_oracle q) x y <-> char_rel q x y.
-  Proof.
-    firstorder.
-  Qed.
-
-End equivalence.
-
-Lemma bienumerable_Turing {X Y} (p : X -> Prop) (q : Y -> Prop) :
+Lemma bisemidecidable_Turing {X Y} (p : X -> Prop) (q : Y -> Prop) :
   eq_dec X ->
-  enumerable p -> enumerable (fun x => ~ p x) ->
+  semi_decidable p -> semi_decidable (fun x => ~ p x) ->
   p ⪯ᴛ q.
 Proof.
   intros HX [f Hf] [g Hg].
   exists (fun R => char_rel p). split. 2: reflexivity.
   exists (fun x _ =>
-       bind (mu_tot (fun n => Dec (f n = Some x) || Dec (g n = Some x)))
-                          (fun n => if Dec (f n = Some x) then ret (inr true) else ret (inr false))).
-  - intros.
-    rewrite <- of_o_char; eauto.
-    pose proof (of_o_enumerator _ HX (char_oracle p) _ _ Hf Hg). unfold pcomputes in H.
-    rewrite <- H. split. intros.
-    + exists [], []. split. econstructor. psimpl. destruct Dec; psimpl.
-    + intros (_ & _ & _ & HH). psimpl. destruct Dec; psimpl.
+       bind (mu_tot (fun n => f x n || g x n))
+                          (fun n => ret (inr (f x n)))).
+  split.
+  - intros H. exists [], []. split. econstructor.
+    destruct o.
+    + eapply Hf in H as [n].
+      destruct (mu_tot_ter (f := fun n => f x n || g x n) (n := n)) as [m Hm]. 1: now rewrite H.
+      psimpl. eapply mu_tot_hasvalue in Hm as [Hm _].
+      destruct (f x m); try now psimpl.
+      cbn in *. exfalso. eapply Hg; eauto. eapply Hf; eauto.
+    + eapply Hg in H as [n].
+      destruct (mu_tot_ter (f := fun n => f x n || g x n) (n := n)) as [m Hm]. 1: rewrite H;
+      rewrite orb_true_iff; eauto.
+      psimpl. eapply mu_tot_hasvalue in Hm as [Hm _].
+      destruct (f x m) eqn:E; try now psimpl.
+      cbn in *. exfalso. eapply Hg; eauto. eapply Hf; eauto.
+  -  intros (_ & _ & _ & HH). psimpl. destruct (f x x0) eqn:E; psimpl.
+     + eapply Hf. eauto.
+     + eapply Hg. eapply mu_tot_hasvalue in H as [Hm _].
+       rewrite E in Hm. eauto.
+Qed.
+
+From SyntheticComputability Require Import reductions.
+
+Lemma red_m_impl_red_T {X Y} (p : X -> Prop) (q : Y -> Prop) :
+  p ⪯ₘ q -> p ⪯ᴛ q.
+Proof.
+  intros [f Hf].
+  exists (fun R x b => R (f x) b). split.
+  - eapply computable_precompose with (g := f).
+    eapply computable_id.
+  - cbn. intros ? []; firstorder.
 Qed.
 
 Lemma decidable_Turing_MP :
@@ -1378,9 +1333,9 @@ Lemma decidable_Turing_MP :
   MP.
 Proof.
   intros H. eapply (Post_nempty_to_MP 0).
-  intros p ? % halting.semi_decidable_enumerable_iff_nat ? % halting.semi_decidable_enumerable_iff_nat.
+  intros p ? ?.
   eapply H with (q := fun x => True).
-  eapply bienumerable_Turing; eauto.
+  eapply bisemidecidable_Turing; eauto.
   exists (fun _ => true). cbv. firstorder.
 Qed.
 

@@ -299,16 +299,6 @@ Section jump.
 
   Notation "P ⪯ᴛ Q" := (red_Turing P Q) (at level 50).
 
-  Lemma red_m_impl_red_T {X Y} (p : X -> Prop) (q : Y -> Prop) :
-    p ⪯ₘ q -> p ⪯ᴛ q.
-  Proof.
-    intros [f Hf].
-    exists (fun R x b => R (f x) b). split.
-    - eapply computable_precompose with (g := f).
-      eapply computable_id.
-    - cbn. intros ? []; firstorder.
-  Qed.
-
   Lemma red_T_imp_red_T_jumps  (P : nat -> Prop) (Q : nat -> Prop): 
     P ⪯ᴛ Q -> (J P) ⪯ᴛ (J Q).
   Proof.
