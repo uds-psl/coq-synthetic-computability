@@ -1,39 +1,72 @@
-name: Test compilation
+name: Main workflow
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+
+permissions: read-all
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
     strategy:
-      matrix:
-        target: [ opam ]
+    	fail-fast: false
+    	matrix:
+    	  os:
+    	    - ubuntu-latest
+    	  ocaml-compiler:
+    	    - "4.14"
+
+    runs-on: ${{ matrix.os }}
 
     steps:
+      - name: Checkout tree
+        uses: actions/checkout@v3
 
-      - name: Try to restore opam cache
-        id: opam-cache
-        uses: actions/cache@v2
+      - name: Set-up OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v2
         with:
-          path: "~/.opam"
-          key: opam-PT-${{github.base_ref}}-${{github.ref}} 
-          restore-keys: |
-            opam-PT--refs/heads/${{github.base_ref}}
-
-      - name: Install OCaml
-        uses: avsm/setup-ocaml@v2
-        with:
-          ocaml-compiler: 4.14
-
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
       - run: opam repo add coq-released https://coq.inria.fr/opam/released
-      - run: opam install coq-equations.1.3+8.17 coq-stdpp.1.8.0 coq-library-undecidability.1.1+8.17
+      - run: opam install coq-equations.1.3+8.17 coq-stdpp.1.8.0 
       - run: opam exec -- make -j 2
 
-      - run: opam install coq-library-undecidability.1.1+8.17
-      - run: opam exec -- make models -j 2
+# name: Test compilation
+
+# on: [push, pull_request]
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+
+#     strategy:
+#       matrix:
+#         target: [ opam ]
+
+#     steps:
+
+#       - name: Try to restore opam cache
+#         id: opam-cache
+#         uses: actions/cache@v2
+#         with:
+#           path: "~/.opam"
+#           key: opam-PT-${{github.base_ref}}-${{github.ref}} 
+#           restore-keys: |
+#             opam-PT--refs/heads/${{github.base_ref}}
+
+#       - name: Install OCaml
+#         uses: avsm/setup-ocaml@v2
+#         with:
+#           ocaml-compiler: 4.14
+
+#       - name: Checkout code
+#         uses: actions/checkout@v2
+#         with:
+#           fetch-depth: 1
+
+#       - run: opam switch 
+#       - run: opam install coq-equations.1.3+8.17 coq-stdpp.1.8.0 coq-library-undecidability.1.1+8.17
+#       - run: opam exec -- make -j 2
+
+#       - run: opam install coq-library-undecidability.1.1+8.17
+#       - run: opam exec -- make models -j 2

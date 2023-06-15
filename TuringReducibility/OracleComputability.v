@@ -966,15 +966,15 @@ Proof.
 Qed.
 
 (** Computability of sequential execution (bind)  *)
-Lemma computable_bind A Q Y Z I (F1: Rel Q A -> _ -> _ -> Prop) F2 :
+Lemma computable_bind A Q O' O I (F1: Rel Q A -> I -> O' -> Prop) F2 :
   OracleComputable (I := I) F1 ->
-  OracleComputable (O := Z) F2 ->
-  OracleComputable (fun f x z => exists y : Y, F1 f x y /\ F2 f (x, y) z).
+  OracleComputable (O := O) F2 ->
+  OracleComputable (fun f x z => exists y : O', F1 f x y /\ F2 f (x, y) z).
 Proof using.
   intros [tau1 H1] [tau2 H2].
   eapply eOracleComputable_equiv.
   eapply sOracleComputable_equiv.
-  exists (option (Y * nat)), None.
+  exists (option (O' * nat)), None.
   unshelve eexists.
   { intros r b l.
     refine (match b with Some (y, n) => bind (tau2 (r, y) (drop n l)) (fun res => match res with inl q => ret (inl (Some (y, n), Some q)) | inr o => ret (inr o) end)
