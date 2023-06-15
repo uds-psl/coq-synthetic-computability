@@ -1,11 +1,3 @@
-(* 
-  Author(s):
-    Felix Jahn (1)
-    Yannick Forster (1)
-  Affiliation(s):
-    (1) Saarland University, Saarbrücken, Germany
-*)
-
 Require Export SyntheticComputability.Axioms.EA.
 Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.FinitenessFacts.

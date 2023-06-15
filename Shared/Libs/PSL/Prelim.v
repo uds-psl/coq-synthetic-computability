@@ -1,10 +1,3 @@
-(* * Base Library for ICL
-
-   - Version: 3 October 2016
-   - Author: Gert Smolka, Saarland University
-   - Acknowlegments: Sigurd Schneider, Dominik Kirst, Yannick Forster, Fabian Kunze, Maximilian Wuttke
- *)
-
 Require Export Bool Lia List Setoid Morphisms.
 From SyntheticComputability.Shared.Libs.PSL Require Export Tactics.
 

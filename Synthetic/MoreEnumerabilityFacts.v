@@ -1,11 +1,3 @@
-(* 
-  Autor(s):
-    Yannick Forster (1)
-    Dominik Kirst (1), contributed the code in section Inf
-  Affiliation(s):
-    (1) Saarland University, Saarbrücken, Germany
-*)
-
 From SyntheticComputability.Synthetic Require Import DecidabilityFacts EnumerabilityFacts ListEnumerabilityFacts.
 From SyntheticComputability.Shared Require Import ListAutomation Dec.
 Require Import List Lia.
