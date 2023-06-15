@@ -842,6 +842,71 @@ Proof.
       destruct qs0, ans0; cbn in *; try congruence; psimpl.
 Qed.
 
+Goal OracleComputable (fun R (i : nat) o => exists a : nat, R i a /\ R a o).
+Proof.
+  exists (fun i ans => match ans with
+               | [] => ret (inl i)
+               | [a] => ret (inl a)
+               | _ :: o :: _ => ret (inr o)
+               end).
+  intros R i o. split.
+  - intros (a & H1 & H2).
+    exists (i :: a :: nil). exists (a :: o :: nil).
+    split. 2: psimpl.
+    eapply interrogation_cons; psimpl.
+    eapply interrogation_cons; psimpl.
+  - intros (qs & ans & H1 & H2).
+    inversion H1; subst; clear H1; psimpl.
+    inversion H; subst; clear H; psimpl.
+    destruct ans as [ | ? [] ]; cbn in *; psimpl.
+Qed.
+
+Goal OracleComputable (fun R i o => o = true /\ forall x, x < i -> R x true).
+Proof.
+  exists (fun i ans => if in_dec bool_eq_dec false ans then
+                 undef else
+                 if lt_dec (length ans) i then
+                   ret (inl (length ans)) else
+                   ret (inr true)).
+  intros R i o. split.
+  - intros [H1 H2]. subst.
+    exists (seq 0 i). exists (repeat true i).
+    rewrite !repeat_length. split.
+    2:{ destruct in_dec; psimpl.
+        + eapply repeat_spec in i0; congruence.
+        + destruct lt_dec; try lia. psimpl.
+    }
+    generalize (le_refl i).
+    generalize i at 1 6 7.
+    induction i0 in i, H2 |- *.
+    + cbn. econstructor.
+    + rewrite seq_S. replace (S i0) with (i0 + 1) by lia.
+      rewrite repeat_app. cbn. econstructor.
+      * eapply  IHi0. firstorder. lia.
+      * destruct in_dec.
+        -- eapply repeat_spec in i1; congruence.
+        -- rewrite repeat_length. destruct lt_dec; try lia.
+           psimpl.
+      * eapply H2. lia.
+  - intros (qs & ans & H1 & H2).
+    destruct in_dec; psimpl.
+    destruct lt_dec; psimpl. split. eauto.
+    assert (i <= length ans) as Hlen by lia. clear n0.
+    intros.
+    assert (x < length ans) by lia. clear Hlen H.
+    induction H1.
+    + intros; cbn in *. lia.
+    + intros; cbn in *.
+      destruct in_dec; psimpl.
+      destruct lt_dec; psimpl.
+      rewrite app_length in *. cbn in *.
+      assert (x = length ans \/ x < length ans) as [H3 | H3] by lia.
+      * subst.
+        destruct a; eauto.
+        destruct n. eapply in_app_iff; cbn; eauto.
+      * eapply IHinterrogation; eauto.
+Qed.
+
 (** Computability of unbounded search -- note that R has to return false and cannot be undefined before finding n *)
 Lemma computable_search I :
   OracleComputable (fun R (i : I) n => R (i, n) true /\ forall m, m < n -> R (i, m) false).
