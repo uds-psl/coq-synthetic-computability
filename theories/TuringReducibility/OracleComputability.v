@@ -290,6 +290,51 @@ Proof.
     all: firstorder.
 Qed.
 
+Lemma counterex {P : partiality} :
+  modulus_continuous (fun (R : nat -> bool -> Prop) (i o : nat) => exists q, R q true) /\
+   ~ OracleComputable (fun (R : nat -> bool -> Prop) (i o : nat) => exists q, R q true).
+Proof.
+  split.
+  - intros R _ _ [q Hq]. exists [q]. firstorder subst. eauto.
+  - intros [tau H].
+    destruct (H (fun _ _ => True) 0 0) as [H1 _].
+    unshelve epose proof (H1 _). now exists 0.
+    clear H1. destruct H0 as (qs & ans & H1 & H2).
+    destruct qs.
+    + inversion H1. subst. 
+      destruct (H (fun _ _ => False) 0 0) as [_ Hf].
+      unshelve epose proof (Hf _). exists [], [].
+      split. econstructor. eauto. firstorder.
+      eapply (f_equal length) in H0. rewrite app_length in H0. cbn in *. lia.
+    + destruct ans.
+      inversion H1.
+      eapply (f_equal length) in H3. rewrite app_length in H3. cbn in *. lia.
+      eapply interrogation_app_inv with (q1 := [n]) (a1 := [b]) in H1 as [].
+      2:{ eapply interrogation_length in H1. cbn in *. lia. }
+      inversion H0.
+      eapply (f_equal length) in H3. rewrite app_length in H3. cbn in *.
+      eapply (f_equal length) in H4. rewrite app_length in H4. cbn in *.
+      destruct qs0, ans0; cbn in *; try lia.
+      rename q into q0.
+      destruct (H (fun q _ => if nat_eq_dec q q0 then False else True) 0 0) as [(? & ? & ? & ?) _].
+      { exists (S q0). destruct nat_eq_dec; eauto. lia. }
+      destruct x0.
+      * enough (inl q0 = inr 0) by congruence.
+        eapply hasvalue_det; eauto.
+      * destruct x.
+        inversion H8.
+        eapply (f_equal length) in H10. rewrite app_length in H10. cbn in *. lia.
+        eapply interrogation_app_inv with (q1 := [n0]) (a1 := [b0]) in H8 as [].
+        2:{ eapply interrogation_length in H8. cbn in *. lia. }
+        inversion H8.
+        eapply (f_equal length) in H11. rewrite app_length in H11. cbn in *.
+        eapply (f_equal length) in H12. rewrite app_length in H12. cbn in *.
+        destruct qs0, ans0; cbn in *; try lia.
+        eapply hasvalue_det in H6. 2: eapply H14.
+        assert (q = q0) by congruence.
+        subst. destruct nat_eq_dec; eauto.
+Qed.
+
 (** *** Interrogations with accumulator argument E  *)
 
 Definition etree E Q A O := E -> list A ↛ (E * Q + O).
@@ -1733,3 +1778,4 @@ End HS.
 End part.
 
 Notation "P ⪯ᴛ Q" := (red_Turing P Q) (at level 50).
+
