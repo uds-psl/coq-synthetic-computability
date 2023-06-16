@@ -988,8 +988,8 @@ Proof using.
     exists y. rename R into f. rename x into i.
     enough (n <= length ans /\ interrogation (tau1 i) f (take n qs) (take n ans) ∧ tau1 i (take n ans) =! inr y /\  interrogation (tau2 (i, y)) f (drop n qs) (drop n ans))
       by firstorder. clear H.
-    generalize (eq_refl (@None (prod Y nat))).
-    revert H1. generalize (@None (prod Y nat)) at 2 3. intros none H1 Heqnone.
+    generalize (eq_refl (@None (prod O' nat))).
+    revert H1. generalize (@None (prod O' nat)) at 2 3. intros none H1 Heqnone.
     change (match Some (y,n) with Some (y, n) =>
                                     n ≤ length ans ∧
                                       interrogation (tau1 i) f (take n qs) (take n ans) ∧ tau1 i (take n ans) =! inr y /\  interrogation (tau2 (i, y)) f (drop n qs) (drop n ans)
@@ -1704,7 +1704,7 @@ Section HS.
     }
 
     eapply OracleComputable_ext.
-    eapply computable_bind with (Y := nat).
+    eapply computable_bind with (O' := nat).
     refine (computable_comp _ (nat * nat) _ _ _ _ _ _ _ _).
     2: eapply computable_search. 3: cbn.
     eapply computable_bind.

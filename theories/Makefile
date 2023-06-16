@@ -4,7 +4,7 @@ all: Makefile.coq
 
 html: all Makefile.coq
 	@+$(MAKE) -f Makefile.coq html
-	mv html/*.html website
+	mv html/*.html ../website
 	rm -rf html
 
 clean: Makefile.coq
