@@ -290,7 +290,7 @@ Proof.
     all: firstorder.
 Qed.
 
-Lemma counterex {P : partiality} :
+Lemma counterex :
   modulus_continuous (fun (R : nat -> bool -> Prop) (i o : nat) => exists q, R q true) /\
    ~ OracleComputable (fun (R : nat -> bool -> Prop) (i o : nat) => exists q, R q true).
 Proof.
