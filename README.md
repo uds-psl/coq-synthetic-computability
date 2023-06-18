@@ -17,6 +17,7 @@ opam switch create coq-synthetic-computability --packages=ocaml-variants.4.14.0+
 eval $(opam env)
 opam repo add coq-released https://coq.inria.fr/opam/released
 opam install coq.8.17 coq-stdpp.1.8.0
+cd theories
 make
 make install
 ```
