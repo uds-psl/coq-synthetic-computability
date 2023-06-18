@@ -1,5 +1,7 @@
 # Oracle Computability and Turing Reducibility in the Calculus of Inductive Constructions
 
+Putting the paper at the root of this directory enables the hyperlinks to Coq code in the paper.
+
 ## Meta
 
 - License: [MIT License](LICENSE)
