@@ -53,8 +53,7 @@ make install
 To build the part of the development relying on models of computation, in addition you have to 
 
 ```sh
-opam pin add coq-library-undecidability.dev+8.17 "https://github.com/uds-psl/coq-library-undecidability.git#coq-8.17"
+opam install coq-library-undecidability.1.1+8.17
 make models
 make install-models
-
 ```
