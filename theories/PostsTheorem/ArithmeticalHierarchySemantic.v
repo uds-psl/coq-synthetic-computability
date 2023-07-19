@@ -613,7 +613,7 @@ Section ArithmeticalHierarchySemantic.
   Goal 
     (forall k alpha, exists beta, forall (x : vec nat k), ~ (forall (n : nat), alpha x n = false) <-> (exists (n : nat), beta x n = true))
     <->
-    (forall k (p : vec nat k -> Prop), isΠsem 1 p -> isΣsem 1 (fun v => ~ (p v))).
+      (forall k (p : vec nat k -> Prop), isΠsem 1 p -> isΣsem 1 (fun v => ~ (p v))).
   Proof. rewrite equiv_sdec_functions. apply equiv_DN_sdec. Qed.
 
   Definition stable {X} (p : X -> Prop) := forall x, ~~ p x -> p x.
@@ -664,8 +664,7 @@ Section ArithmeticalHierarchySemantic.
     1:now eapply isΣΠn_In_ΣΠSn with (l := 1).
   Qed.
 
-  Lemma negΣinΠsem:
-    (forall n k (p: vec nat k -> Prop), isΣsem n p -> DNE_Π n -> isΠsem n (fun v => ~(p v)))
+  Lemma negΣinΠsem: (forall n k (p: vec nat k -> Prop), isΣsem n p -> DNE_Π n -> isΠsem n (fun v => ~(p v)))
     /\ (forall n k (p: vec nat k -> Prop), isΠsem n p -> DNE_Σ n -> isΣsem n (fun v => ~(p v))).
   Proof.
     apply isΣsem_isΠsem_mutind.
@@ -686,6 +685,53 @@ Section ArithmeticalHierarchySemantic.
         firstorder. 
       * clear - H'. firstorder.
   Qed.
+
+  Definition ArithmeticHierarchyNegation n :=
+    (forall k (p: vec nat k -> Prop), isΣsem n p -> isΠsem n (fun v => ~(p v)))
+    /\ (forall k (p: vec nat k -> Prop), isΠsem n p -> isΣsem n (fun v => ~(p v))).
+
+  Lemma DN_implies_ArithmeticHierarchyNegation n :
+    DNE_Σ n -> ArithmeticHierarchyNegation n.
+  Proof.
+    intros. split; intros; eapply negΣinΠsem; eauto using DNEimpl.
+  Qed.
+
+  Definition ArithmeticHierarchyDoubleNegation n :=
+    (forall k (p: vec nat k -> Prop), isΣsem n p -> isΣsem n (fun v => ~~(p v)))
+    /\ (forall k (p: vec nat k -> Prop), isΠsem n p -> isΠsem n (fun v => ~~(p v))).
+
+  Lemma Negation_to_DoubleNegation n :
+    ArithmeticHierarchyNegation n -> ArithmeticHierarchyDoubleNegation n.
+  Proof.
+    intros H. firstorder.
+  Qed.
+
+  (* Lemma Negation_to_DoubleNegation_ n : *)
+  (*   ArithmeticHierarchyDoubleNegation n -> ArithmeticHierarchyNegation n. *)
+  (* Proof. *)
+  (*   intros H. *)
+  (*   red. *)
+  (*   enough ((forall n (k : nat) (p : vec nat k -> Prop), isΣsem n p -> ArithmeticHierarchyDoubleNegation n -> isΠsem n (fun v : vec nat k => ~ p v)) /\ *)
+  (*             (forall n (k : nat) (p : vec nat k -> Prop), isΠsem n p -> ArithmeticHierarchyDoubleNegation n -> isΣsem n (fun v : vec nat k => ~ p v))) by firstorder. *)
+  (*   clear H n. apply isΣsem_isΠsem_mutind. *)
+  (*   - intros. apply Σ0sem_notΠ0_int. econstructor. eassumption. *)
+  (*   - intros n k p p' H IH H' DN. *)
+  (*     econstructor. apply IH. admit. *)
+  (*     cbn. clear - H'. firstorder. *)
+  (*   - intros. apply Σ0sem_notΠ0_int. econstructor. eassumption. *)
+  (*   - intros n k p p' H IH H' DN. *)
+  (*     econstructor. eapply IH. admit. *)
+  (*     cbn. *)
+  (*     intros v. cbn. split. *)
+  (*     * intros nA. eapply DN with (x := v). *)
+  (*       econstructor. eapply IH. *)
+  (*       1: now eapply DNEimpl, DNE_equiv_S, DNEimpl. *)
+  (*       cbn. reflexivity. *)
+  (*       intros ?. eapply nA. eapply H'. intros x. eapply DN. *)
+  (*       1:now eapply isΣΠn_In_ΣΠSn with (l := 1). *)
+  (*       firstorder.  *)
+  (*     * clear - H'. firstorder. *)
+  (* Qed. *)
 
   Lemma LEM_Σ_to_LEM_Π n :
     LEM_Σ n ->
