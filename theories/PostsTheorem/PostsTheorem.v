@@ -256,12 +256,7 @@ Section PostsTheorem.
   Lemma jump_Σn_complete_redT n (DN : LEM_Σ n) :
     forall k (p : vec nat k -> Prop), isΣsem n p -> p ⪯ᴛ (­{0}^(n)).
   Proof.
-    intros k p H. destruct n.
-    - dependent destruction H.
-      eexists. split.
-      eapply computable_function with (f := f).
-      cbn. intros x []. cbn in *. firstorder. cbn in *. rewrite H. destruct (f x); firstorder congruence.
-    - apply red_m_impl_red_T. eapply jump_Σn_complete; eauto.
+    intros. apply red_m_impl_red_T. eapply jump_Σn_complete; eauto.
   Qed.
 
   Lemma Σ_semi_decidable_jump {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :
