@@ -706,32 +706,33 @@ Section ArithmeticalHierarchySemantic.
     intros H. firstorder.
   Qed.
 
-  (* Lemma Negation_to_DoubleNegation_ n : *)
-  (*   ArithmeticHierarchyDoubleNegation n -> ArithmeticHierarchyNegation n. *)
-  (* Proof. *)
-  (*   intros H. *)
-  (*   red. *)
-  (*   enough ((forall n (k : nat) (p : vec nat k -> Prop), isΣsem n p -> ArithmeticHierarchyDoubleNegation n -> isΠsem n (fun v : vec nat k => ~ p v)) /\ *)
-  (*             (forall n (k : nat) (p : vec nat k -> Prop), isΠsem n p -> ArithmeticHierarchyDoubleNegation n -> isΣsem n (fun v : vec nat k => ~ p v))) by firstorder. *)
-  (*   clear H n. apply isΣsem_isΠsem_mutind. *)
-  (*   - intros. apply Σ0sem_notΠ0_int. econstructor. eassumption. *)
-  (*   - intros n k p p' H IH H' DN. *)
-  (*     econstructor. apply IH. admit. *)
-  (*     cbn. clear - H'. firstorder. *)
-  (*   - intros. apply Σ0sem_notΠ0_int. econstructor. eassumption. *)
-  (*   - intros n k p p' H IH H' DN. *)
-  (*     econstructor. eapply IH. admit. *)
-  (*     cbn. *)
-  (*     intros v. cbn. split. *)
-  (*     * intros nA. eapply DN with (x := v). *)
-  (*       econstructor. eapply IH. *)
-  (*       1: now eapply DNEimpl, DNE_equiv_S, DNEimpl. *)
-  (*       cbn. reflexivity. *)
-  (*       intros ?. eapply nA. eapply H'. intros x. eapply DN. *)
-  (*       1:now eapply isΣΠn_In_ΣΠSn with (l := 1). *)
-  (*       firstorder.  *)
-  (*     * clear - H'. firstorder. *)
-  (* Qed. *)
+  Lemma DoubleNegation_to_Negation n :
+    (forall m, m <= n -> ArithmeticHierarchyDoubleNegation m) ->
+    DNE_Π n ->
+    ArithmeticHierarchyNegation n.
+  Proof.
+    enough ((forall n (k : nat) (p : vec nat k -> Prop), isΣsem n p -> DNE_Π n -> (forall m, m <= n -> ArithmeticHierarchyDoubleNegation m) -> isΠsem n (fun v : vec nat k => ~ p v)) /\
+              (forall n (k : nat) (p : vec nat k -> Prop), isΠsem n p -> DNE_Π n -> (forall m, m <= n -> ArithmeticHierarchyDoubleNegation m) ->isΣsem n (fun v : vec nat k => ~ p v))) by firstorder.
+    clear n. apply isΣsem_isΠsem_mutind.
+    - intros. apply Σ0sem_notΠ0_int. econstructor. eassumption.
+    - intros n k p p' H IH H' DN HH.
+      econstructor. apply IH.
+      + now eapply DNEimpl, DNE_equiv_S.
+      + intros. eapply HH. lia.
+      + cbn. clear - H'. firstorder.
+    - intros. apply Σ0sem_notΠ0_int. econstructor. eassumption.
+    - intros n k p p' H IH H' DN HH.
+      eapply PredExt with (p := fun v => ~~ exists x, ~p' (x :: v)).
+      2:{ intros. rewrite H'. split. 2:firstorder.
+          intros ? ?.  eapply H0.
+          intros. eapply DNE_equiv_S; eauto.
+      }
+      eapply HH. lia.
+      econstructor. eapply IH.
+      + now eapply DNEimpl, DNE_equiv_S.
+      + intros. eapply HH. lia.
+      + cbn. reflexivity.
+  Qed.
 
   Lemma LEM_Σ_to_LEM_Π n :
     LEM_Σ n ->
