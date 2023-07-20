@@ -309,7 +309,7 @@ Section jump.
 End jump.
 
 Notation "A '´'" := (J A) (at level 20, format "A ´").
-Notation "­∅" := (fun _:nat => False).
+Notation "­{0}" := (fun x:nat => x=0).
 
 Fixpoint jump_n Q n :=
   match n with
