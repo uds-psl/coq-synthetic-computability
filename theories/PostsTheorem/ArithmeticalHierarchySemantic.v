@@ -645,6 +645,13 @@ Section ArithmeticalHierarchySemantic.
     firstorder.
   Qed.
 
+  Lemma LEM_Π_to_DNE_Π n :
+    LEM_Π n ->
+    DNE_Π n.
+  Proof.
+    firstorder.
+  Qed.
+
   Lemma DNE_equiv_S n :
     DNE_Σ n <-> DNE_Π (S n).
   Proof.
@@ -684,6 +691,38 @@ Section ArithmeticalHierarchySemantic.
         1:now eapply isΣΠn_In_ΣΠSn with (l := 1).
         firstorder. 
       * clear - H'. firstorder.
+  Qed.
+
+  Lemma LEM_Σ_to_LEM_Π n :
+    LEM_Σ n ->
+    LEM_Π n.
+  Proof.
+    intros lem k p Hp v.
+    eapply negΣinΠsem in Hp as H.
+    2:{ eapply LEM_Σ_to_DNE_Σ. assumption. }
+    eapply lem in H. red in H.
+    destruct (H v).
+    - tauto.
+    - left.
+      eapply DNEimpl. 2: exact Hp.
+      eapply LEM_Σ_to_DNE_Σ. assumption. 
+      assumption.
+  Qed.
+
+  Lemma LEM_Π_Sn_to_LEM_Σ_n n :
+    LEM_Π (S n) -> LEM_Σ n.
+  Proof.
+    intros H ? ? ?.
+    eapply H. now eapply isΣΠn_In_ΠΣSn.
+  Qed.
+
+  Goal DNE_Π 1.
+  Proof.
+    intros k p H x. depelim H. depelim H.
+    cbn in *. rewrite H0. setoid_rewrite H.
+    firstorder. destruct (f (x0 :: x)) eqn:E; eauto.
+    contradiction H1. intros HE.
+    rewrite HE in E. congruence.
   Qed.
 
   Definition ArithmeticHierarchyNegation n :=
@@ -734,30 +773,107 @@ Section ArithmeticalHierarchySemantic.
       + cbn. reflexivity.
   Qed.
 
-  Lemma LEM_Σ_to_LEM_Π n :
-    LEM_Σ n ->
-    LEM_Π n.
+  Lemma isΣsem_or_closed n :
+    (forall k (p: vec nat k -> Prop), isΣsem n p -> forall (q : vec nat k -> Prop), isΣsem n q -> LEM_Π (pred n) -> isΣsem n (fun v => p v \/ q v))
+/\  (forall k (p: vec nat k -> Prop), isΠsem n p -> forall (q : vec nat k -> Prop), isΠsem n q -> LEM_Π n -> isΠsem n (fun v => p v \/ q v)).
   Proof.
-    intros lem k p Hp v.
-    eapply negΣinΠsem in Hp as H.
-    2:{ eapply LEM_Σ_to_DNE_Σ. assumption. }
-    eapply lem in H. red in H.
-    destruct (H v).
-    - tauto.
-    - left.
-      eapply DNEimpl. 2: exact Hp.
-      eapply LEM_Σ_to_DNE_Σ. assumption. 
-      assumption.
+    induction n as [|n IH].
+    - split.
+      + intros k p Hp q Hq LEM. dependent destruction Hp. dependent destruction Hq.
+        unshelve eapply PredExt. exact (fun v => f0 v || f v = true). 2: cbn; intros; rewrite orb_true_iff; firstorder.
+        apply isΣsem0.
+      + intros k p Hp q Hq LEM. dependent destruction Hp. dependent destruction Hq.
+        unshelve eapply PredExt. exact (fun v => f0 v || f v = true). 2: cbn; intros; rewrite orb_true_iff; firstorder.
+        apply isΠsem0.
+    - split; intros k p Hp q Hq LEM; dependent destruction Hp; dependent destruction Hq.
+      + cbn in *. rename p0 into p'.
+        rename p1 into q'.
+        unshelve eapply PredExt.
+        exact (fun v => exists y x : nat, (fun v => p' (Vector.hd v:: Vector.tl (Vector.tl v)) \/ q' (Vector.hd (Vector.tl v)::Vector.tl (Vector.tl v))) (x::y::v)).
+        2:{ cbn in *. intros. rewrite H0, H2. clear. firstorder. }
+        apply isΣsemTwoEx. apply IH.
+        * eapply isΣsem_m_red_closed. { apply H. }
+          now exists (fun v => (Vector.hd v :: Vector.tl (Vector.tl v))). 
+        * eapply isΣsem_m_red_closed. { apply H1. }
+          now exists (fun v => Vector.hd (Vector.tl v) :: Vector.tl (Vector.tl v)).
+        * auto. (* intros ? ? ?. eapply LEM. eapply isΣΠn_In_ΣΠSn with (l := 1). eauto. *)
+      + unshelve eapply PredExt.
+        exact (fun v => forall y x : nat, (fun v => p0 (Vector.hd v:: Vector.tl (Vector.tl v)) \/ p1 (Vector.hd (Vector.tl v)::Vector.tl (Vector.tl v))) (x::y::v)).
+        2:{ cbn in *. intros. rewrite H0, H2. split. { clear. firstorder. }
+            intros.
+            edestruct LEM with (x := v).
+            - eapply isΠsemA. eapply isΣΠn_In_ΠΣSn. exact H.
+            - eauto.
+            - edestruct LEM with (x := v).
+              + eapply isΠsemA. eapply isΣΠn_In_ΠΣSn. exact H1.
+              + eauto.
+              + cbn in *. exfalso. eapply H4. intros.
+                edestruct LEM with (x := x :: v); eauto.
+                { eapply isΣΠn_In_ΠΣSn. eauto. }
+                exfalso.
+                eapply H5. intros y.
+                edestruct LEM with (x := y :: v); eauto.
+                { eapply isΣΠn_In_ΠΣSn. eauto. }
+                firstorder.
+        }
+        apply isΠsemTwoAll. apply IH.
+        * eapply isΣsem_m_red_closed. { apply H. }
+          now exists (fun v => (Vector.hd v :: Vector.tl (Vector.tl v))). 
+        * eapply isΣsem_m_red_closed. { apply H1. }
+          now exists (fun v => Vector.hd (Vector.tl v) :: Vector.tl (Vector.tl v)).
+        * destruct n; cbn in *.
+          -- intros ? ? HH v. depelim HH. cbn in H3. rewrite H3. destruct (f v); firstorder congruence.
+          -- intros ? ? ?. eapply LEM. eapply isΣΠn_In_ΣΠSn with (l := 2). eauto.
   Qed.
 
-  Goal DNE_Π 1.
+  Lemma DNE_Σ_Sn_to_LEM_Δ_n n :
+    DNE_Σ n -> LEM_Δ n.
   Proof.
-    intros k p H x. depelim H. depelim H.
-    cbn in *. rewrite H0. setoid_rewrite H.
-    firstorder. destruct (f (x0 :: x)) eqn:E; eauto.
-    contradiction H1. intros HE.
-    rewrite HE in E. congruence.
+    intros H ? ? ? ? v.
+    depelim H0.
+    - rewrite H0. destruct (f v); firstorder congruence.
+    - depelim H2. cbn in *.
+  (*     enough (~~ ((forall x, p0 (x :: v)) \/ forall y, ~ p (y :: v))). *)
+  (*     { pose proof (DNE_Σ_Sn_to_DNE_Π_or_n H). *)
+  (*       eapply (H5 k (fun v => p' v) (fun v => ~ p' v)); try tauto. *)
+  (*       - econstructor. 2: eassumption. eauto. *)
+  (*       - eapply DN_implies_ArithmeticHierarchyNegation. eauto. *)
+  (*         econstructor; eassumption. *)
+  (*     } *)
+  (*     intros ?. eapply H4. right. intros ? ?. *)
+  (*     eapply H4. left. eapply H3. eapply H1. eauto. *)
+  (* Qed. *)
+  Admitted.
+
+  Lemma DNE_Σ_Sn_to_LEM_Σ_n n :
+    DNE_Σ (S n) -> LEM_Σ n.
+  Proof.
+    intros DNE % DNE_Σ_Sn_to_LEM_Δ_n k p H v.
+    eapply DNE.
+    - now eapply isΣΠn_In_ΣΠSn with (l := 1).
+    - now eapply isΣΠn_In_ΠΣSn.
   Qed.
+
+  (* Lemma DNE_Σ_Sn_to_LEM_Π_n n : *)
+  (*   DNE_Σ (S n) -> LEM_Π n. *)
+  (* Proof. *)
+  (*   intros DNE k p H v. *)
+  (*   unshelve eapply (DNE k (fun v => p v \/ ~ p v) _ v). 2: tauto. *)
+  (*   eapply isΣsem_or_closed. *)
+  (* Admitted. *)
+
+  (* Lemma DNE_Σ_Sn_to_LEM_Σ_n' n : *)
+  (*   DNE_Σ (S n) -> LEM_Σ n. *)
+  (* Proof. *)
+  (*   intros DNE k p H v. *)
+  (*   unshelve eapply (DNE k (fun v => p v \/ ~ p v) _ v). 2: tauto. *)
+  (*   eapply isΣsem_or_closed. *)
+  (*   - now eapply isΣΠn_In_ΣΠSn with (l := 1). *)
+  (*   - eapply DN_implies_ArithmeticHierarchyNegation. *)
+  (*     + eassumption. *)
+  (*     + now eapply isΣΠn_In_ΠΣSn. *)
+  (*   - cbn. now eapply DNE_Σ_Sn_to_LEM_Π_n. *)
+  (* Qed. *)
 
 End ArithmeticalHierarchySemantic.
 
