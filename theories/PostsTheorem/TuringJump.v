@@ -110,46 +110,56 @@ Module Ξ.
   Definition θ := proj1_sig EPF_assm.
   Definition EPF := proj2_sig EPF_assm.
 
-  Variable ξ : nat -> nat -> tree nat bool unit.
+  Variable iota1 : (nat * list bool) -> nat.
+  Variable iota2 : (nat + unit) -> nat.
+  Variable rho1 : nat -> nat * list bool.
+  Variable rho2 : nat -> nat + unit.
 
-  Axiom ξ_surjective :
-    forall τ : nat -> tree nat bool unit, exists c, forall l i o, ξ c i l =! o <-> τ i l =! o.
+  Variable bij1 : forall y, (rho1 (iota1 y) = y).
+  Variable bij2 : forall y, (rho2 (iota2 y) = y).
 
-  Definition ξ' : nat -> nat -> tree nat bool unit :=
-      (fun ic x l => let (i, c) := unembed ic in ξ c (embed (i, x)) l).
+  Definition ξ : nat -> nat -> tree nat bool unit :=
+    fun c x l => bind (θ c (iota1 (x, l))) (fun v => ret (rho2 v)).
 
-  Fact ξ'_parametric :
-    forall f : nat -> nat -> tree nat bool unit, exists γ, forall j l i o, ξ' (γ j) i l =! o <-> f j i l =! o.
+  Lemma ξ_parametric :
+    forall τ : nat -> nat -> tree nat bool unit, exists γ, forall n l i o, ξ (γ n) i l =! o <-> τ n i l =! o.
   Proof.
-    intros f. unfold ξ'.
-    destruct (ξ_surjective (fun ji l => let (j, i) := unembed ji in f j i l)) as [c Hc].
-    exists (fun i => embed(i, c)). intros i. rewrite embedP.
-    intros r n ?. rewrite Hc. now rewrite embedP.
+    intros τ.
+    destruct (EPF (fun n x => let (i,l) := rho1 x in bind (τ n i l) (fun v => ret (iota2 v)))) as [γ H].
+    cbn in *. exists γ. intros. cbn in *. unfold partial.equiv in *.
+    unfold ξ. rewrite bind_hasvalue.
+    setoid_rewrite H.
+    setoid_rewrite bij1.
+    setoid_rewrite bind_hasvalue.
+    setoid_rewrite <- ret_hasvalue_iff.
+    firstorder subst.
+    now rewrite bij2.
+    repeat eexists. eauto. eapply bij2.
   Qed.
 
-  Fact ξ'_surjective (τ : nat -> tree nat bool unit) :
-    exists j, forall l i o, ξ' j i l =! o <-> τ i l =! o.
+  Fact ξ_surjective (τ : nat -> tree nat bool unit) :
+    exists j, forall l i o, ξ j i l =! o <-> τ i l =! o.
   Proof.
-    destruct (ξ'_parametric (fun _ => τ)) as [γ Hγ].
-    now exists (γ 27).
+    destruct (ξ_parametric (fun _ => τ)) as [γ Hγ].
+    now exists (γ 42).
   Qed.
 
   Definition rel {I A Q} (τ : I -> list A ↛ (Q + unit)) R x :=
     exists qs ans, interrogation (τ x) R qs ans /\ (τ x) ans =! inr tt.
 
-  Definition Ξ c R x := rel (ξ' c) R x.
+  Definition Ξ c R x := rel (ξ c) R x.
 
   Fact computable :
     OracleComputable (fun R '(c,x) (o : unit) => Ξ c R x).
   Proof.
-    exists (fun '(c,x) => ξ' c x). intros R [c x] [].
+    exists (fun '(c,x) => ξ c x). intros R [c x] [].
     reflexivity.
   Qed.
 
   Fact parametric (τ : nat -> nat -> list bool ↛ (nat + unit)) :
     exists γ, forall j R x, Ξ (γ j) R x <-> rel (τ j) R x.
   Proof.
-    destruct (ξ'_parametric τ) as [γ Hγ].
+    destruct (ξ_parametric τ) as [γ Hγ].
     exists γ. intros j.
     intros. unfold Ξ, rel.
     specialize (Hγ j).
@@ -237,7 +247,7 @@ Section jump.
   Lemma red_𝒥_J_self Q : 
     𝒥 Q ⪯ₘ J Q.
   Proof.
-    destruct (Ξ.parametric (fun! ⟨c,x⟩ => fun _ => Ξ.ξ' c x)) as [γ Hγ].
+    destruct (Ξ.parametric (fun! ⟨c,x⟩ => fun _ => Ξ.ξ c x)) as [γ Hγ].
     exists γ. unfold J, 𝒥. red. setoid_rewrite Hγ. intros ⟨c, x⟩.
     reflexivity. 
   Qed.
