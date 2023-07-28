@@ -706,11 +706,32 @@ Proof.
 Qed.
 
 Lemma sOracleComputable_equiv Q A I O F :
-  sOracleComputable F -> @eOracleComputable Q A I O F.
+  sOracleComputable F <-> @eOracleComputable Q A I O F.
 Proof.
-  intros (E & e & tau & Ht). exists E. exists e.
-  setoid_rewrite Ht. clear Ht.
-  eapply sinterrogation_equiv.
+  split.
+  - intros (E & e & tau & Ht). exists E. exists e.
+    setoid_rewrite Ht. clear Ht.
+    eapply sinterrogation_equiv.
+  - intros (E & e & tau & Ht).
+    exists E, e.
+    exists (fun i s l => bind (tau i s l) (fun x => match x with
+                                         | Ask (s', q) => ret (Ask (s', Some q))
+                                         | Output o => ret (Output o)
+                                         end)).
+    intros. rewrite Ht. clear. split.
+    + intros (qs & ans & e' & H1 & H2).
+      exists qs, ans, e'. split. 2: psimpl.
+      clear - H1. induction H1.
+      * econstructor.
+      * econstructor 3; eauto. psimpl.
+    + intros (qs & ans & e' & H1 & H2).
+      exists qs, ans, e'. split. 2: psimpl.
+      clear - H1. induction H1; psimpl.
+      * econstructor.
+      * destruct x0 as [ [] | ]; psimpl.
+      * econstructor; eauto.
+        destruct x0 as [ [] | ]; psimpl.
+      * destruct x0 as [ [] | ]; psimpl.
 Qed.
 
 (** ** Trees give rise to partial functions *)
