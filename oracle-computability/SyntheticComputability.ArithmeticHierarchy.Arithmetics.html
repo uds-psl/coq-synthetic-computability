@@ -1,0 +1,98 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<link href="coqdocjs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="config.js"></script>
+<script type="text/javascript" src="coqdocjs.js"></script>
+</head>
+
+<body onload="document.getElementById('content').focus()">
+  <div id="header">
+    <span class="left">
+      <span class="modulename"> <script> document.write(document.title) </script> </span>
+    </span>
+
+    <span class="button" id="toggle-proofs"></span>
+
+    <span class="right">
+      <a href="../">Project Page</a>
+      <a href="./indexpage.html"> Index </a>
+      <a href="./toc.html"> Table of Contents </a>
+    </span>
+</div>
+    <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
+    <div id="main">
+<h1 class="libtitle">Library SyntheticComputability.ArithmeticHierarchy.Arithmetics</h1>
+
+<div class="code">
+<span class="id" title="keyword">From</span> <span class="id" title="var">Undecidability.FOL</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <span class="id" title="library">Facts</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">Undecidability.FOL</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <span class="id" title="library">FullFacts</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Vectors.Vector.html#VectorNotations"><span class="id" title="module">Vector.VectorNotations</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Lists.List.html#"><span class="id" title="library">List</span></a>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <a id="PA_funcs" class="idref" href="#PA_funcs"><span class="id" title="inductive">PA_funcs</span></a> : <span class="id" title="keyword">Type</span> :=<br/>
+&nbsp;&nbsp;<a id="Zero" class="idref" href="#Zero"><span class="id" title="constructor">Zero</span></a> : <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_funcs:1"><span class="id" title="inductive">PA_funcs</span></a><br/>
+| <a id="Succ" class="idref" href="#Succ"><span class="id" title="constructor">Succ</span></a> : <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_funcs:1"><span class="id" title="inductive">PA_funcs</span></a><br/>
+| <a id="Plus" class="idref" href="#Plus"><span class="id" title="constructor">Plus</span></a> : <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_funcs:1"><span class="id" title="inductive">PA_funcs</span></a><br/>
+| <a id="Mult" class="idref" href="#Mult"><span class="id" title="constructor">Mult</span></a> : <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_funcs:1"><span class="id" title="inductive">PA_funcs</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="PA_funcs_ar" class="idref" href="#PA_funcs_ar"><span class="id" title="definition">PA_funcs_ar</span></a> (<a id="f:3" class="idref" href="#f:3"><span class="id" title="binder">f</span></a> : <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_funcs"><span class="id" title="inductive">PA_funcs</span></a> ) :=<br/>
+<span class="id" title="keyword">match</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#f:3"><span class="id" title="variable">f</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;| <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#Zero"><span class="id" title="constructor">Zero</span></a> =&gt; 0<br/>
+&nbsp;| <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#Succ"><span class="id" title="constructor">Succ</span></a> =&gt; 1<br/>
+&nbsp;| <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#Plus"><span class="id" title="constructor">Plus</span></a> =&gt; 2<br/>
+&nbsp;| <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#Mult"><span class="id" title="constructor">Mult</span></a> =&gt; 2<br/>
+&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Inductive</span> <a id="PA_preds" class="idref" href="#PA_preds"><span class="id" title="inductive">PA_preds</span></a> : <span class="id" title="keyword">Type</span> :=<br/>
+&nbsp;&nbsp;<a id="Eq" class="idref" href="#Eq"><span class="id" title="constructor">Eq</span></a> : <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_preds:5"><span class="id" title="inductive">PA_preds</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="PA_preds_ar" class="idref" href="#PA_preds_ar"><span class="id" title="definition">PA_preds_ar</span></a> (<a id="P:7" class="idref" href="#P:7"><span class="id" title="binder">P</span></a> : <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_preds"><span class="id" title="inductive">PA_preds</span></a>) :=<br/>
+<span class="id" title="keyword">match</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#P:7"><span class="id" title="variable">P</span></a> <span class="id" title="keyword">with</span><br/>
+&nbsp;| <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#Eq"><span class="id" title="constructor">Eq</span></a> =&gt; 2<br/>
+<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="keyword">Instance</span> <a id="PA_funcs_signature" class="idref" href="#PA_funcs_signature"><span class="id" title="instance">PA_funcs_signature</span></a> : <span class="id" title="class">funcs_signature</span> :=<br/>
+{| <span class="id" title="method">syms</span> := <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_funcs"><span class="id" title="inductive">PA_funcs</span></a> ; <span class="id" title="method">ar_syms</span> := <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_funcs_ar"><span class="id" title="definition">PA_funcs_ar</span></a> |}.<br/>
+
+<br/>
+#[<span class="id" title="var">global</span>]<br/>
+<span class="id" title="keyword">Instance</span> <a id="PA_preds_signature" class="idref" href="#PA_preds_signature"><span class="id" title="instance">PA_preds_signature</span></a> : <span class="id" title="class">preds_signature</span> :=<br/>
+{| <span class="id" title="method">preds</span> := <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_preds"><span class="id" title="inductive">PA_preds</span></a> ; <span class="id" title="method">ar_preds</span> := <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_preds_ar"><span class="id" title="definition">PA_preds_ar</span></a> |}.<br/>
+
+<br/>
+<span class="id" title="keyword">Declare Scope</span> <span class="id" title="var">PA_Notation</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">PA_Notation</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> <a id="::PA_Notation:'zero'" class="idref" href="#::PA_Notation:'zero'"><span class="id" title="notation">&quot;</span></a>'zero'" := (@<span class="id" title="constructor">func</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_funcs_signature"><span class="id" title="instance">PA_funcs_signature</span></a> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#Zero"><span class="id" title="constructor">Zero</span></a> (<a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Vectors.VectorDef.html#4591d6c2b36fedc12d5b1c142546a37e"><span class="id" title="notation">[]</span></a>)) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 1) : <span class="id" title="var">PA_Notation</span>.<br/>
+<span class="id" title="keyword">Notation</span> <a id="de47509952930f77b394d8e4c77086a7" class="idref" href="#de47509952930f77b394d8e4c77086a7"><span class="id" title="notation">&quot;</span></a>'σ' x" := (@<span class="id" title="constructor">func</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_funcs_signature"><span class="id" title="instance">PA_funcs_signature</span></a> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#Succ"><span class="id" title="constructor">Succ</span></a> (<a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Vectors.VectorDef.html#06a81d089cb210523d05cd9d098003fa"><span class="id" title="notation">[</span></a><span class="id" title="var">x</span><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Vectors.VectorDef.html#06a81d089cb210523d05cd9d098003fa"><span class="id" title="notation">]</span></a>)) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 32) : <span class="id" title="var">PA_Notation</span>.<br/>
+<span class="id" title="keyword">Notation</span> <a id="c8c0f91a08bc49f12a45378068a08281" class="idref" href="#c8c0f91a08bc49f12a45378068a08281"><span class="id" title="notation">&quot;</span></a>x '⊕' y" := (@<span class="id" title="constructor">func</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_funcs_signature"><span class="id" title="instance">PA_funcs_signature</span></a> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#Plus"><span class="id" title="constructor">Plus</span></a> (<a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Vectors.VectorDef.html#48c8ce35afc5c902143c59f20156f923"><span class="id" title="notation">[</span></a><span class="id" title="var">x</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Vectors.VectorDef.html#48c8ce35afc5c902143c59f20156f923"><span class="id" title="notation">;</span></a> <span class="id" title="var">y</span><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Vectors.VectorDef.html#48c8ce35afc5c902143c59f20156f923"><span class="id" title="notation">]</span></a>) ) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 39) : <span class="id" title="var">PA_Notation</span>.<br/>
+<span class="id" title="keyword">Notation</span> <a id="476dd058c975ea6542a388d90207077a" class="idref" href="#476dd058c975ea6542a388d90207077a"><span class="id" title="notation">&quot;</span></a>x '⊗' y" := (@<span class="id" title="constructor">func</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_funcs_signature"><span class="id" title="instance">PA_funcs_signature</span></a> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#Mult"><span class="id" title="constructor">Mult</span></a> (<a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Vectors.VectorDef.html#48c8ce35afc5c902143c59f20156f923"><span class="id" title="notation">[</span></a><span class="id" title="var">x</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Vectors.VectorDef.html#48c8ce35afc5c902143c59f20156f923"><span class="id" title="notation">;</span></a> <span class="id" title="var">y</span><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Vectors.VectorDef.html#48c8ce35afc5c902143c59f20156f923"><span class="id" title="notation">]</span></a>) ) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 38) : <span class="id" title="var">PA_Notation</span>.<br/>
+<span class="id" title="keyword">Notation</span> <a id="244ba54632d11a47f278c430ba4e3c71" class="idref" href="#244ba54632d11a47f278c430ba4e3c71"><span class="id" title="notation">&quot;</span></a>x '==' y" := (@<span class="id" title="constructor">atom</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_funcs_signature"><span class="id" title="instance">PA_funcs_signature</span></a> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#PA_preds_signature"><span class="id" title="instance">PA_preds_signature</span></a> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#Eq"><span class="id" title="constructor">Eq</span></a> (<a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Vectors.VectorDef.html#48c8ce35afc5c902143c59f20156f923"><span class="id" title="notation">[</span></a><span class="id" title="var">x</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Vectors.VectorDef.html#48c8ce35afc5c902143c59f20156f923"><span class="id" title="notation">;</span></a> <span class="id" title="var">y</span><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Vectors.VectorDef.html#48c8ce35afc5c902143c59f20156f923"><span class="id" title="notation">]</span></a>)) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 40) : <span class="id" title="var">PA_Notation</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> <a id="bb8d9050f9df35c0476eae46ff96b3be" class="idref" href="#bb8d9050f9df35c0476eae46ff96b3be"><span class="id" title="notation">&quot;</span></a>A → B" := (@<span class="id" title="constructor">bin</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> <span class="id" title="definition">full_operators</span> <span class="id" title="var">_</span> <span class="id" title="constructor">Impl</span> <span class="id" title="var">A</span> <span class="id" title="var">B</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 43, <span class="id" title="tactic">right</span> <span class="id" title="keyword">associativity</span>).<br/>
+<span class="id" title="keyword">Notation</span> <a id="947f603ecdca4e2f9617465122395790" class="idref" href="#947f603ecdca4e2f9617465122395790"><span class="id" title="notation">&quot;</span></a>A ↔ B" := (<span class="id" title="notation">(</span><span class="id" title="var">A</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#bb8d9050f9df35c0476eae46ff96b3be"><span class="id" title="notation">→</span></a> <span class="id" title="var">B</span><span class="id" title="notation">)</span> <span class="id" title="notation">∧</span> <span class="id" title="notation">(</span><span class="id" title="var">B</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.Arithmetics.html#bb8d9050f9df35c0476eae46ff96b3be"><span class="id" title="notation">→</span></a> <span class="id" title="var">A</span><span class="id" title="notation">)</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 43).<br/>
+</div>
+</div>
+<div id="footer">
+  Generated by <a href="http://coq.inria.fr/">coqdoc</a> and improved with <a href="https://github.com/tebbi/coqdocjs">CoqdocJS</a>
+</div>
+</div>
+</body>
+
+</html>
