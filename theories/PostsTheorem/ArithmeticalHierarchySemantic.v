@@ -685,13 +685,50 @@ Section ArithmeticalHierarchySemantic.
     eapply H. now eapply isΣΠn_In_ΠΣSn.
   Qed.
 
-  Goal DNE_Π 1.
+  From SyntheticComputability Require Import principles.
+
+  Lemma level1 :
+    DNE_Σ 0
+    /\ (LEM_Σ 1 <-> LPO)
+    /\ (DNE_Σ 1 <-> MP)
+    /\ (LEM_Π 1 <-> WLPO)
+    /\ DNE_Π 1.
   Proof.
-    intros k p H x. depelim H. depelim H.
-    cbn in *. rewrite H0. setoid_rewrite H.
-    firstorder. destruct (f (x0 :: x)) eqn:E; eauto.
-    contradiction H1. intros HE.
-    rewrite HE in E. congruence.
+    repeat split.
+    - intros k p H v. depelim H. cbn in H.
+      rewrite H. destruct (f v); firstorder congruence.
+    - intros H f. destruct (H 0 (fun _ => exists n, f n = true)) as [ | ];
+        firstorder.
+      eapply (isΣsemS (p := fun v => f (Vector.hd v) = true)).
+      eapply isΠsem0. exact Vector.nil.
+    - intros H k p Hp v. depelim Hp. depelim H0.
+      cbn in *. rewrite H1. setoid_rewrite H0.
+      destruct (H (fun x => f (x :: v))); firstorder.
+    - intros H f. eapply (H 0 (fun _ => exists n, f n = true)).
+      eapply (isΣsemS (p := fun v => f (Vector.hd v) = true)).
+      eapply isΠsem0. exact Vector.nil.
+    - intros H k p Hp v. depelim Hp. depelim H0.
+      cbn in *. rewrite H1. setoid_rewrite H0.
+      eapply (H (fun x => f (x :: v))).
+    - intros H f. destruct (H 0 (fun _ => forall n, f n = false)) as [ | ];
+        firstorder.
+      eapply (isΠsemS (p := fun v => f (Vector.hd v) = false)).
+      eapply isΣsem0_ with (f := fun v => negb (f (Vector.hd v))).
+      intros. destruct (f (Vector.hd v)); cbn; firstorder congruence.
+      exact Vector.nil.
+    - intros H k p Hp v. depelim Hp. depelim H0.
+      cbn in *. rewrite H1. setoid_rewrite H0.
+      red in H. destruct (H (fun x => negb (f (x :: v)))).
+      + left. intros. specialize (H2 x).
+        destruct (f (x :: v)); cbn in *; congruence.
+      + right. intros ?. eapply H2. intros x.
+        specialize (H3 x).
+        destruct (f (x :: v)); cbn in *; congruence.
+    - intros k p H x. depelim H. depelim H.
+      cbn in *. rewrite H0. setoid_rewrite H.
+      firstorder. destruct (f (x0 :: x)) eqn:E; eauto.
+      contradiction H1. intros HE.
+      rewrite HE in E. congruence.
   Qed.
 
   Definition ArithmeticHierarchyNegation n :=
