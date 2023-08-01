@@ -12,6 +12,8 @@ Require Import Equations.Prop.DepElim.
 
 Section PostsTheorem.
 
+  Context {Part : partiality}.
+
   Variable vec_to_nat : forall k, vec nat k -> nat.
   Variable nat_to_vec : forall k, nat -> vec nat k.
   Variable vec_nat_inv : forall k v, nat_to_vec k (vec_to_nat v) = v.
@@ -82,6 +84,7 @@ Section PostsTheorem.
     - apply red_m_impl_red_T, jumpNKspec.
   Qed.
 
+  (** # <a id="Sigma_semi_decidable_in_Pi1" /> #*)
   Lemma Σ_semi_decidable_in_Π1 {k} (p: (vec nat k) -> Prop) n : LEM_Π n ->
       isΣsem (S n) p -> exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p.
   Proof.
@@ -105,6 +108,7 @@ Section PostsTheorem.
     intros ? ? []; cbn; firstorder.
   Qed.
 
+  (** # <a id="Sigma_semi_decidable_in_Pi2" /> #*)
   Lemma Σ_semi_decidable_in_Π2 {k} (p: (vec nat k) -> Prop) n (DN : DNE_Σ n):
     (exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p) -> isΣsem (S n) p.
   Proof.
@@ -247,7 +251,7 @@ Section PostsTheorem.
       exists (fun v => if f v then 0 else 1). red.
       intros v. specialize (H v). destruct (f v); firstorder congruence.
     - intros k p [p' [Σp' Sp']]%Σ_semi_decidable_in_Σ.
-      apply (@red_m_iff_semidec_jump_vec vec_to_nat nat_to_vec vec_nat_inv).
+      apply (@red_m_iff_semidec_jump_vec _ vec_to_nat nat_to_vec vec_nat_inv).
       eapply (Turing_transports_sdec Sp').
       apply red_m_impl_red_T. eapply IH; eauto.
       all: intros n' q Hq; eapply DN; now eapply isΣΠn_In_ΣΠSn with (l := 1). 

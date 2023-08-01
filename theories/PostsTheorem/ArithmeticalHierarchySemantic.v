@@ -95,6 +95,7 @@ Section ArithmeticalHierarchySemantic.
     - intros. econstructor. eapply H. reflexivity. firstorder.
   Qed.
 
+  (** # <a id="semi_dec_iff_Sigma1" /> #*)
   Lemma semi_dec_iff_Σ1 {k} (p : vec nat k -> Prop):
     semi_decidable p <-> isΣsem 1 p.
   Proof.
@@ -123,6 +124,7 @@ Section ArithmeticalHierarchySemantic.
         apply isΠsemS. apply IHn.
   Qed.
 
+  (** # <a id="isSigman_In_SigmaSn" /> #*)
   Lemma isΣΠn_In_ΣΠSn l :
     (forall n k (p: vec nat k -> Prop), isΣsem n p -> isΣsem (l + n) p)
 /\  (forall n k (p: vec nat k -> Prop), isΠsem n p -> isΠsem (l + n) p).
@@ -133,6 +135,7 @@ Section ArithmeticalHierarchySemantic.
     all: cbn; econstructor; eauto.
   Qed.
 
+  (** # <a id="isSigmasem_m_red_closed" /> #*)
   Lemma isΣsem_m_red_closed : 
     (forall n k (q: vec nat k -> Prop), isΣsem n q -> forall k' (p : vec nat k' -> Prop), p ⪯ₘ q -> isΣsem n p)
 /\  (forall n k (q: vec nat k -> Prop), isΠsem n q -> forall k' (p : vec nat k' -> Prop), p ⪯ₘ q -> isΠsem n p).
@@ -155,7 +158,8 @@ Section ArithmeticalHierarchySemantic.
         intros x. eapply iff_refl.
       + firstorder.
   Qed.
-  
+
+  (** # <a id="isSigmasemTwoEx" /> #*)
   Lemma isΣsemTwoEx k n (p : vec nat (S (S k)) -> Prop):
     isΠsem n p -> isΣsem (S n) (fun v => exists y x : nat, p (x :: y :: v)).
   Proof.
@@ -174,6 +178,7 @@ Section ArithmeticalHierarchySemantic.
       now rewrite eqhd, eqtl, eq in Hp.
   Qed.
 
+  (** # <a id="isSigmasemE" /> #*)
   Lemma isΣsemE k n (p : vec nat (S k) -> Prop):
     isΣsem (S n) p -> isΣsem (S n) (fun v => exists x : nat, p (x :: v)).
   Proof.
@@ -207,6 +212,7 @@ Section ArithmeticalHierarchySemantic.
     eapply PredExt. eapply isΠsemTwoAll. eauto. firstorder.
   Qed.
 
+  (** # <a id="isSigman_In_PiSn" /> #*)
   Lemma isΣΠn_In_ΠΣSn :
     (forall n k (p: vec nat k -> Prop), isΣsem n p -> isΠsem (S n) p)
 /\  (forall n k (p: vec nat k -> Prop), isΠsem n p -> isΣsem (S n) p).
@@ -219,7 +225,8 @@ Section ArithmeticalHierarchySemantic.
       2: { exists (fun v => Vector.tl v). intros v. split; intros pv; apply pv. }
       apply isΣsemS in H. eapply PredExt. 1: apply H. firstorder.
   Qed.
-  
+
+  (** # <a id="isSigmasem_and_closed" /> #*)
   Lemma isΣsem_and_closed n :
     (forall k (p: vec nat k -> Prop), isΣsem n p -> forall (q : vec nat k -> Prop), isΣsem n q -> isΣsem n (fun v => p v /\ q v))
 /\  (forall k (p: vec nat k -> Prop), isΠsem n p -> forall (q : vec nat k -> Prop), isΠsem n q -> isΠsem n (fun v => p v /\ q v)).
@@ -263,6 +270,7 @@ Section ArithmeticalHierarchySemantic.
   Variable list_vec_nat_inv : forall k v, nat_to_list_vec k (list_vec_to_nat v) = v.
   Variable nat_list_vec_inv : forall k n, list_vec_to_nat (nat_to_list_vec k n) = n.
 
+  (** # <a id="isSigmasem_if_closed" /> #*)
   Lemma isΣsem_if_closed n :
     (forall k (p: vec nat k -> Prop), isΣsem n p -> forall (q : vec nat k -> Prop) (f : nat -> bool), isΣsem n q -> isΣsem n (fun v => if f (Vector.hd v) then p (Vector.tl v) else q (Vector.tl v)))
 /\  (forall k (p: vec nat k -> Prop), isΠsem n p -> forall (q : vec nat k -> Prop) (f : nat -> bool), isΠsem n q -> isΠsem n (fun v => if f (Vector.hd v) then p (Vector.tl v) else q (Vector.tl v))). 
@@ -292,6 +300,7 @@ Section ArithmeticalHierarchySemantic.
         firstorder. cbn. destruct f; firstorder. cbn in *. destruct f; firstorder.
   Qed.
 
+  (** # <a id="isSigmaPiball" /> #*)
   Lemma isΣΠball n :
     (forall k (p : vec nat (S k) -> Prop), isΣsem n p -> isΣsem n (fun v => forall l, l < (Vector.hd v) -> p (l::(Vector.tl v))))
 /\  (forall k (p : vec nat (S k) -> Prop), isΠsem n p -> isΠsem n (fun v => forall l, l < (Vector.hd v) -> p (l::(Vector.tl v)))).
@@ -570,7 +579,7 @@ Section ArithmeticalHierarchySemantic.
       split. all: intros nA A; apply nA; intros n; specialize (A n); now destruct f.
   Qed.
 
-  Goal 
+  Lemma anonymisedMPiff :
     (forall k alpha, exists beta, forall (x : vec nat k), ~ (forall (n : nat), alpha x n = false) <-> (exists (n : nat), beta x n = true))
     <->
       (forall k (p : vec nat k -> Prop), isΠsem 1 p -> isΣsem 1 (fun v => ~ (p v))).
@@ -733,6 +742,7 @@ Section ArithmeticalHierarchySemantic.
       + cbn. reflexivity.
   Qed.
 
+  (** # <a id="isSigmasem_or_closed" /> #*)
   Lemma isΣsem_or_closed n :
     (forall k (p: vec nat k -> Prop), isΣsem n p -> forall (q : vec nat k -> Prop), isΣsem n q -> isΣsem n (fun v => p v \/ q v)).
   Proof.
@@ -772,6 +782,7 @@ Section ArithmeticalHierarchySemantic.
 
   Definition DNE_Πdisj := fun n : nat => forall (k : nat) (p1 p2 : vec nat k -> Prop), isΠsem n p1 -> isΠsem n p2 -> stable (fun v => p1 v \/ p2 v).
 
+  (** # <a id="isPisem_or_closed" /> #*)
   Lemma isΠsem_or_closed n :
     (forall k (p: vec nat k -> Prop), isΠsem n p -> forall (q : vec nat k -> Prop), isΠsem n q -> DNE_Πdisj n -> isΠsem n (fun v => p v \/ q v)).
   Proof.
