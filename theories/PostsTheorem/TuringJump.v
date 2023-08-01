@@ -308,6 +308,7 @@ Section jump.
       eapply not_semidecidable_compl_J; eassumption.
   Qed.
 
+  (** # <a id="J_self_J_m_red" /> #*)
   Lemma J_self_𝒥_m_red:
     forall Q, (J Q) ⪯ₘ (𝒥 Q).
   Proof.
