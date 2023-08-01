@@ -25,8 +25,6 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">Library SyntheticComputability.ReducibilityDegrees.simple_construction</h1>
-
 <div class="code">
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="SyntheticComputability.Axioms.EA.html#"><span class="id" title="library">SyntheticComputability.Axioms.EA</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="SyntheticComputability.Shared.Pigeonhole.html#"><span class="id" title="library">SyntheticComputability.Shared.Pigeonhole</span></a>.<br/>
@@ -223,8 +221,10 @@
 <span class="id" title="keyword">Section</span> <a id="fix_ct" class="idref" href="#fix_ct"><span class="id" title="section">fix_ct</span></a>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Assuming&nbsp;enumerator&nbsp;of&nbsp;semidecidable&nbsp;predicates&nbsp;W&nbsp;and&nbsp;its&nbsp;semidecidability&nbsp;*)</span><br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Variable&nbsp;W&nbsp;:&nbsp;nat&nbsp;-&gt;&nbsp;nat&nbsp;-&gt;&nbsp;Prop.&nbsp;&nbsp;*)</span><br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Lemma</span> <a id="es" class="idref" href="#es"><span class="id" title="lemma">es</span></a> : <span class="id" title="keyword">forall</span> <a id="p:95" class="idref" href="#p:95"><span class="id" title="binder">p</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Prop</span>, <a class="idref" href="SyntheticComputability.Synthetic.Definitions.html#semi_decidable"><span class="id" title="definition">semi_decidable</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#p:95"><span class="id" title="variable">p</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'&lt;-&gt;'_x"><span class="id" title="notation">&lt;-&gt;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">exists</span></a> <a id="c:96" class="idref" href="#c:96"><span class="id" title="binder">c</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">,</span></a> <span class="id" title="keyword">forall</span> <a id="x:97" class="idref" href="#x:97"><span class="id" title="binder">x</span></a>, <a class="idref" href="SyntheticComputability.Axioms.EA.html#Assume_EA.W"><span class="id" title="definition">W</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#c:96"><span class="id" title="variable">c</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#x:97"><span class="id" title="variable">x</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'&lt;-&gt;'_x"><span class="id" title="notation">&lt;-&gt;</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#p:95"><span class="id" title="variable">p</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#x:97"><span class="id" title="variable">x</span></a>.<br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Proof</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">p</span>. <span class="id" title="tactic">rewrite</span> &lt;- <a class="idref" href="SyntheticComputability.Axioms.EA.html#enum_iff"><span class="id" title="lemma">enum_iff</span></a>, <a class="idref" href="SyntheticComputability.Axioms.EA.html#Assume_EA.W_spec"><span class="id" title="lemma">W_spec</span></a>. <span class="id" title="tactic">firstorder</span>.<br/>
@@ -239,6 +239,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Variable</span> <a id="fix_ct.c_top_spec" class="idref" href="#fix_ct.c_top_spec"><span class="id" title="variable">c_top_spec</span></a>: <span class="id" title="keyword">forall</span> <a id="x:104" class="idref" href="#x:104"><span class="id" title="binder">x</span></a>, <a class="idref" href="SyntheticComputability.Axioms.EA.html#Assume_EA.W"><span class="id" title="definition">W</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#fix_ct.c_top"><span class="id" title="variable">c_top</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#x:104"><span class="id" title="variable">x</span></a>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Auxiliary&nbsp;Predicate&nbsp;C&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <a id="C" class="idref" href="#C"><span class="id" title="definition">C</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">(</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#11c698c8685bb8ab1cf725545c085ac4"><span class="id" title="notation">*</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Prop</span><br/>
@@ -292,6 +293,10 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#iso_three_nat_func"><span class="id" title="definition">iso_three_nat_func</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">now</span> <span class="id" title="tactic">rewrite</span> !<a class="idref" href="SyntheticComputability.Shared.embed_nat.html#embedP"><span class="id" title="lemma">embedP</span></a>.<br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
+<span class="comment">(*&nbsp;<br/>
+&nbsp;&nbsp;Definition&nbsp;C_Enum:&nbsp;nat&nbsp;-&gt;&nbsp;nat&nbsp;*&nbsp;nat<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;:=&nbsp;enum_To_StrongenumF&nbsp;(semidec_To_enumF&nbsp;C_SDec&nbsp;iso_three_nat_func)&nbsp;(c_top,&nbsp;1&nbsp;+&nbsp;2&nbsp;*&nbsp;c_top).<br/>
+&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Lemma</span> <a id="C_strong_enumerator" class="idref" href="#C_strong_enumerator"><span class="id" title="lemma">C_strong_enumerator</span></a>:<br/>
@@ -358,6 +363,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Definition&nbsp;of&nbsp;psi&nbsp;via&nbsp;recursive&nbsp;mu-operator&nbsp;for&nbsp;enumerable&nbsp;predicates&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <a id="psi" class="idref" href="#psi"><span class="id" title="definition">psi</span></a>: <span class="id" title="keyword">forall</span> <a id="c:129" class="idref" href="#c:129"><span class="id" title="binder">c</span></a>, <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#DomC"><span class="id" title="definition">DomC</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#c:129"><span class="id" title="variable">c</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> .<br/>
@@ -391,12 +397,14 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Definition&nbsp;of&nbsp;the&nbsp;simple&nbsp;predicate&nbsp;S&nbsp;as&nbsp;the&nbsp;range&nbsp;of&nbsp;psi&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <a id="S" class="idref" href="#S"><span class="id" title="definition">S</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Prop</span> <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;:= <span class="id" title="keyword">fun</span> <a id="x:143" class="idref" href="#x:143"><span class="id" title="binder">x</span></a> =&gt; <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">exists</span></a> <a id="c:144" class="idref" href="#c:144"><span class="id" title="binder">c</span></a> <a id="H:145" class="idref" href="#H:145"><span class="id" title="binder">H</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">,</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#psi"><span class="id" title="definition">psi</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#c:144"><span class="id" title="variable">c</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#H:145"><span class="id" title="variable">H</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#x:143"><span class="id" title="variable">x</span></a>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;S&nbsp;is&nbsp;semidecidable&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <a id="DomC_proof" class="idref" href="#DomC_proof"><span class="id" title="definition">DomC_proof</span></a> <a id="n:146" class="idref" href="#n:146"><span class="id" title="binder">n</span></a>: <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#DomC"><span class="id" title="definition">DomC</span></a> (<a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#DomC_Enum"><span class="id" title="definition">DomC_Enum</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#n:146"><span class="id" title="variable">n</span></a>).<br/>
@@ -441,6 +449,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Complement&nbsp;of&nbsp;S&nbsp;contains&nbsp;no&nbsp;semidecidable,&nbsp;infinite&nbsp;subset&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Lemma</span> <a id="S_No_S_Inf_Subset" class="idref" href="#S_No_S_Inf_Subset"><span class="id" title="lemma">S_No_S_Inf_Subset</span></a>:<br/>
@@ -466,6 +475,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Co-Infinity&nbsp;Proof&nbsp;of&nbsp;S&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Lemma</span> <a id="DomC_pullback" class="idref" href="#DomC_pullback"><span class="id" title="lemma">DomC_pullback</span></a> <a id="n:157" class="idref" href="#n:157"><span class="id" title="binder">n</span></a> <a id="L:158" class="idref" href="#L:158"><span class="id" title="binder">L</span></a>:<br/>
@@ -522,6 +532,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Listing&nbsp;of&nbsp;predicates&nbsp;up&nbsp;to&nbsp;a&nbsp;bound&nbsp;b&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <a id="PredListTo" class="idref" href="#PredListTo"><span class="id" title="definition">PredListTo</span></a> <a id="p:172" class="idref" href="#p:172"><span class="id" title="binder">p</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#list"><span class="id" title="inductive">list</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Prop</span><br/>
@@ -606,6 +617,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Length&nbsp;of&nbsp;listings&nbsp;of&nbsp;S&nbsp;up&nbsp;to&nbsp;2*n&nbsp;is&nbsp;bounded&nbsp;by&nbsp;n&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Lemma</span> <a id="S_Listing" class="idref" href="#S_Listing"><span class="id" title="lemma">S_Listing</span></a>:<br/>
@@ -619,6 +631,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Weak&nbsp;Existence&nbsp;Infinite&nbsp;Criterion&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Lemma</span> <a id="ComplS_Listing" class="idref" href="#ComplS_Listing"><span class="id" title="lemma">ComplS_Listing</span></a>:<br/>
@@ -649,6 +662,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;S&nbsp;is&nbsp;a&nbsp;simple&nbsp;predicate&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Corollary</span> <a id="S_simple" class="idref" href="#S_simple"><span class="id" title="lemma">S_simple</span></a>:<br/>
@@ -682,6 +696,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;:= <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#S"><span class="id" title="definition">S</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#S_Star.W_SDec"><span class="id" title="variable">W_SDec</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#S_Star.W_semidecider"><span class="id" title="variable">W_semidecider</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#S_Star.c_top"><span class="id" title="variable">c_top</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#S_Star.c_top_spec"><span class="id" title="variable">c_top_spec</span></a>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Auxiliary&nbsp;List&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <a id="S_Pow" class="idref" href="#S_Pow"><span class="id" title="definition">S_Pow</span></a> <a id="n:207" class="idref" href="#n:207"><span class="id" title="binder">n</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#list"><span class="id" title="inductive">list</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> <br/>
@@ -723,6 +738,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Definition&nbsp;S*&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <a id="S_Star" class="idref" href="#S_Star"><span class="id" title="definition">S_Star</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Prop</span><br/>
@@ -743,6 +759,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;S*&nbsp;is&nbsp;semidecidable&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Lemma</span> <a id="S_Star_semidec" class="idref" href="#S_Star_semidec"><span class="id" title="lemma">S_Star_semidec</span></a>:<br/>
@@ -759,6 +776,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Complement&nbsp;of&nbsp;S*&nbsp;contains&nbsp;no&nbsp;semidecidable,&nbsp;infinite&nbsp;subset&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Lemma</span> <a id="S_Star_No_S_Inf_Subset" class="idref" href="#S_Star_No_S_Inf_Subset"><span class="id" title="lemma">S_Star_No_S_Inf_Subset</span></a>:<br/>
@@ -773,6 +791,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Co-Infinite&nbsp;Proof&nbsp;of&nbsp;S*&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Lemma</span> <a id="W_empty" class="idref" href="#W_empty"><span class="id" title="lemma">W_empty</span></a>: <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">exists</span></a> <a id="c_bot:229" class="idref" href="#c_bot:229"><span class="id" title="binder">c_bot</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">,</span></a> <span class="id" title="keyword">forall</span> <a id="x:230" class="idref" href="#x:230"><span class="id" title="binder">x</span></a>, <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#63a68285c81db8f9bc456233bb9ed181"><span class="id" title="notation">~</span></a> <a class="idref" href="SyntheticComputability.Axioms.EA.html#Assume_EA.W"><span class="id" title="definition">W</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#c_bot:229"><span class="id" title="variable">c_bot</span></a> <a class="idref" href="SyntheticComputability.ReducibilityDegrees.simple_construction.html#x:230"><span class="id" title="variable">x</span></a>.<br/>
@@ -869,6 +888,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;S*&nbsp;is&nbsp;simple&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Corollary</span> <a id="S_Star_simple" class="idref" href="#S_Star_simple"><span class="id" title="lemma">S_Star_simple</span></a>:<br/>
@@ -883,6 +903,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;W&nbsp;truth-table&nbsp;reduces&nbsp;to&nbsp;S*&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Lemma</span> <a id="S_Star_split" class="idref" href="#S_Star_split"><span class="id" title="lemma">S_Star_split</span></a> <a id="L:253" class="idref" href="#L:253"><span class="id" title="binder">L</span></a>:<br/>

@@ -25,8 +25,6 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">Library SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchyEquiv</h1>
-
 <div class="code">
 </div>
 
@@ -44,7 +42,7 @@
 <span class="id" title="keyword">From</span> <span class="id" title="var">SyntheticComputability</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#"><span class="id" title="library">ArithmeticalHierarchySyntactic</span></a> <a class="idref" href="SyntheticComputability.PostsTheorem.ArithmeticalHierarchySemantic.html#"><span class="id" title="library">ArithmeticalHierarchySemantic</span></a>.<br/>
 
 <br/>
-<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Arith.PeanoNat.html#"><span class="id" title="library">PeanoNat</span></a>  <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Bool.Bool.html#"><span class="id" title="library">Bool</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Arith.PeanoNat.html#"><span class="id" title="library">PeanoNat</span></a> <span class="comment">(*&nbsp;Nat.eqb&nbsp;*)</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Bool.Bool.html#"><span class="id" title="library">Bool</span></a>.<br/>
 
 <br/>
 <span class="id" title="keyword">From</span> <span class="id" title="keyword">Equations</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="library">Equations</span>.<br/>
@@ -132,6 +130,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;Rückrichtung&nbsp;annehmen&nbsp;entscheidbar&nbsp;-&gt;&nbsp;Δ1&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <a id="86e521fe5e15907d31a9571e6dc01d6c" class="idref" href="#86e521fe5e15907d31a9571e6dc01d6c"><span class="id" title="definition">decΔ1syn</span></a> := <span class="id" title="keyword">forall</span> <a id="k:72" class="idref" href="#k:72"><span class="id" title="binder">k</span></a> (<a id="f:73" class="idref" href="#f:73"><span class="id" title="binder">f</span></a>: <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchyEquiv.html#vec"><span class="id" title="abbreviation">vec</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchyEquiv.html#k:72"><span class="id" title="variable">k</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#bool"><span class="id" title="inductive">bool</span></a>), <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#768aef1dde8b35c48a51773995b96916"><span class="id" title="definition">isΔsyn</span></a> 1 (<span class="id" title="keyword">fun</span> <a id="v:74" class="idref" href="#v:74"><span class="id" title="binder">v</span></a> =&gt; <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchyEquiv.html#f:73"><span class="id" title="variable">f</span></a> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchyEquiv.html#v:74"><span class="id" title="variable">v</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a>).<br/>

@@ -25,8 +25,6 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">Library SyntheticComputability.Shared.Libs.PSL.Prelim</h1>
-
 <div class="code">
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Bool.Bool.html#"><span class="id" title="library">Bool</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.micromega.Lia.html#"><span class="id" title="library">Lia</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Lists.List.html#"><span class="id" title="library">List</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Setoids.Setoid.html#"><span class="id" title="library">Setoid</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Classes.Morphisms.html#"><span class="id" title="library">Morphisms</span></a>.<br/>
 <span class="id" title="keyword">From</span> <span class="id" title="var">SyntheticComputability.Shared.Libs.PSL</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Export</span> <a class="idref" href="SyntheticComputability.Shared.Libs.PSL.Tactics.Tactics.html#"><span class="id" title="library">Tactics</span></a>.<br/>
@@ -39,8 +37,10 @@
 <span class="id" title="keyword">Global</span> <span class="id" title="keyword">Set</span> <span class="id" title="var">Regular</span> <span class="id" title="var">Subst</span> <span class="id" title="keyword">Tactic</span>.<br/>
 
 <br/>
-#[<span class="id" title="var">global</span>] <span class="id" title="keyword">Hint</span> <span class="id" title="keyword">Extern</span> 4 =&gt; <span class="id" title="tactic">exact</span> <span class="id" title="var">_</span> : <span class="id" title="var">core</span>. 
+#[<span class="id" title="var">global</span>] <span class="id" title="keyword">Hint</span> <span class="id" title="keyword">Extern</span> 4 =&gt; <span class="id" title="tactic">exact</span> <span class="id" title="var">_</span> : <span class="id" title="var">core</span>. <span class="comment">(*&nbsp;makes&nbsp;auto&nbsp;use&nbsp;type&nbsp;class&nbsp;inference&nbsp;*)</span><br/>
+
 <br/>
+<span class="comment">(*&nbsp;De&nbsp;Morgan&nbsp;laws&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <a id="DM_or" class="idref" href="#DM_or"><span class="id" title="lemma">DM_or</span></a> (<a id="X:1" class="idref" href="#X:1"><span class="id" title="binder">X</span></a> <a id="Y:2" class="idref" href="#Y:2"><span class="id" title="binder">Y</span></a> : <span class="id" title="keyword">Prop</span>) :<br/>
@@ -57,6 +57,7 @@
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;**&nbsp;Boolean&nbsp;propositions&nbsp;and&nbsp;decisions&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Coercion</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#is_true"><span class="id" title="definition">is_true</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#is_true"><span class="id" title="definition">:</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#is_true"><span class="id" title="definition">bool</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#is_true"><span class="id" title="definition">&gt;-&gt;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#is_true"><span class="id" title="definition">Sortclass</span></a>.<br/>
@@ -96,6 +97,7 @@
 <br/>
 <span class="id" title="keyword">Definition</span> <a id="bool2nat" class="idref" href="#bool2nat"><span class="id" title="definition">bool2nat</span></a> := <span class="id" title="keyword">fun</span> <a id="b:11" class="idref" href="#b:11"><span class="id" title="binder">b</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#bool"><span class="id" title="inductive">bool</span></a> =&gt; <span class="id" title="keyword">if</span> <a class="idref" href="SyntheticComputability.Shared.Libs.PSL.Prelim.html#b:11"><span class="id" title="variable">b</span></a> <span class="id" title="keyword">then</span> 1 <span class="id" title="keyword">else</span> 0.<br/>
 <span class="id" title="keyword">Definition</span> <a id="nat2bool" class="idref" href="#nat2bool"><span class="id" title="definition">nat2bool</span></a> := <span class="id" title="keyword">fun</span> <a id="n:12" class="idref" href="#n:12"><span class="id" title="binder">n</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> =&gt; <span class="id" title="keyword">match</span> <a class="idref" href="SyntheticComputability.Shared.Libs.PSL.Prelim.html#n:12"><span class="id" title="variable">n</span></a> <span class="id" title="keyword">with</span> 0 =&gt; <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#false"><span class="id" title="constructor">false</span></a> | <span class="id" title="var">_</span> =&gt; <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a> <span class="id" title="keyword">end</span>.<br/>
+<span class="comment">(*&nbsp;Coercion&nbsp;nat2bool&nbsp;:&nbsp;nat&nbsp;&gt;-&gt;&nbsp;bool.&nbsp;*)</span><br/>
 <span class="id" title="keyword">Lemma</span> <a id="bool_nat" class="idref" href="#bool_nat"><span class="id" title="lemma">bool_nat</span></a> (<a id="b:14" class="idref" href="#b:14"><span class="id" title="binder">b</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#bool"><span class="id" title="inductive">bool</span></a>) :<br/>
 &nbsp;&nbsp;1 <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="SyntheticComputability.Shared.Libs.PSL.Prelim.html#bool2nat"><span class="id" title="definition">bool2nat</span></a> <a class="idref" href="SyntheticComputability.Shared.Libs.PSL.Prelim.html#b:14"><span class="id" title="variable">b</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="SyntheticComputability.Shared.Libs.PSL.Prelim.html#b:14"><span class="id" title="variable">b</span></a>.<br/>
 <span class="id" title="keyword">Proof</span>. <span class="id" title="tactic">intros</span>; <span class="id" title="tactic">cbv</span> <span class="id" title="tactic">in</span> *. <span class="id" title="tactic">destruct</span> <span class="id" title="var">b</span>. <span class="id" title="tactic">auto</span>. <span class="id" title="tactic">congruence</span>. <span class="id" title="keyword">Qed</span>.<br/>

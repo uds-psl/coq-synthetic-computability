@@ -25,8 +25,6 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">Library SyntheticComputability.Synthetic.ListEnumerabilityFacts</h1>
-
 <div class="code">
 <span class="id" title="keyword">From</span> <span class="id" title="var">SyntheticComputability.Synthetic</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="SyntheticComputability.Synthetic.DecidabilityFacts.html#"><span class="id" title="library">DecidabilityFacts</span></a> <a class="idref" href="SyntheticComputability.Synthetic.SemiDecidabilityFacts.html#"><span class="id" title="library">SemiDecidabilityFacts</span></a> <a class="idref" href="SyntheticComputability.Synthetic.EnumerabilityFacts.html#"><span class="id" title="library">EnumerabilityFacts</span></a>.<br/>
 <span class="id" title="keyword">From</span> <span class="id" title="var">SyntheticComputability</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="SyntheticComputability.Shared.embed_nat.html#"><span class="id" title="library">Shared.embed_nat</span></a>.<br/>
@@ -360,6 +358,13 @@ Typeclasses
 <span class="id" title="keyword">Proof</span>.<br/>
 &nbsp;&nbsp;<span class="id" title="tactic">intros</span> <span class="id" title="var">H</span> <span class="id" title="var">x</span>. <span class="id" title="tactic">eapply</span> <a class="idref" href="SyntheticComputability.Synthetic.ListEnumerabilityFacts.html#enumerator_to_list_enumerator"><span class="id" title="lemma">enumerator_to_list_enumerator</span></a>. <span class="id" title="tactic">eauto</span>.<br/>
 <span class="id" title="keyword">Qed</span>.<br/>
+<span class="comment">(*&nbsp;<br/>
+Existing&nbsp;Class&nbsp;inf_list_enumerableᵗ.<br/>
+Instance&nbsp;inf_to_enumerator&nbsp;{X}&nbsp;:<br/>
+&nbsp;&nbsp;forall&nbsp;H&nbsp;:&nbsp;inf_list_enumerableᵗ&nbsp;X,&nbsp;list_enumeratorᵗ&nbsp;(proj1_sig&nbsp;H)&nbsp;X&nbsp;|&nbsp;100.<br/>
+Proof.<br/>
+&nbsp;&nbsp;intros&nbsp;<span class="inlinecode">?</span> <span class="inlinecode"><span class="id" title="var">H</span></span>.&nbsp;eapply&nbsp;H.<br/>
+Defined.&nbsp;*)</span><br/>
 
 <br/>
 </div>
@@ -392,12 +397,32 @@ Predicate embedability
 <div class="code">
 
 <br/>
+<span class="comment">(*&nbsp;Definition&nbsp;infinite&nbsp;{X}&nbsp;(sz&nbsp;:&nbsp;X&nbsp;-&gt;&nbsp;nat)&nbsp;(p&nbsp;:&nbsp;X&nbsp;-&gt;&nbsp;Prop)&nbsp;:=&nbsp;forall&nbsp;n,&nbsp;exists&nbsp;x,&nbsp;sz&nbsp;x&nbsp;&gt;=&nbsp;n&nbsp;/\&nbsp;p&nbsp;x.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Lemma&nbsp;enumerable_infinite&nbsp;{X}&nbsp;(p&nbsp;:&nbsp;X&nbsp;-&gt;&nbsp;Prop)&nbsp;sz&nbsp;:&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;discrete&nbsp;X&nbsp;-&gt;&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;infinite&nbsp;sz&nbsp;p&nbsp;-&gt;&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;enumerable&nbsp;p&nbsp;-&gt;&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;exists&nbsp;e&nbsp;:&nbsp;nat&nbsp;-&gt;&nbsp;X,&nbsp;(forall&nbsp;x,&nbsp;p&nbsp;x&nbsp;&lt;-&gt;&nbsp;exists&nbsp;n,&nbsp;e&nbsp;n&nbsp;=&nbsp;x)&nbsp;/\&nbsp;(forall&nbsp;n1&nbsp;n2,&nbsp;e&nbsp;n1&nbsp;=&nbsp;e&nbsp;n2&nbsp;-&gt;&nbsp;n1&nbsp;=&nbsp;n2).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;intros&nbsp;<span class="inlinecode"><span class="id" title="var">D</span></span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;assert&nbsp;(gen&nbsp;:&nbsp;forall&nbsp;L,&nbsp;exists&nbsp;x,&nbsp;p&nbsp;x&nbsp;/\&nbsp;~&nbsp;In&nbsp;x&nbsp;L)&nbsp;by&nbsp;admit.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;pose&nbsp;(g&nbsp;:=&nbsp;fix&nbsp;g&nbsp;n&nbsp;:=&nbsp;match&nbsp;n&nbsp;with&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;=&gt;&nbsp;nil&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;S&nbsp;n&nbsp;=&gt;&nbsp;g&nbsp;n&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">proj1_sig</span></span> <span class="inlinecode">(<span class="id" title="var">gen</span></span> <span class="inlinecode">(<span class="id" title="var">g</span></span> <span class="inlinecode"><span class="id" title="var">n</span>))</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;exists&nbsp;(fun&nbsp;n&nbsp;=&gt;&nbsp;proj1_sig&nbsp;(gen&nbsp;(g&nbsp;n))).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;red&nbsp;in&nbsp;He.&nbsp;split.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;intros&nbsp;x.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Definition&nbsp;tight_retraction'&nbsp;{X}&nbsp;{Y}&nbsp;(I&nbsp;:&nbsp;X&nbsp;-&gt;&nbsp;Y)&nbsp;R&nbsp;:=&nbsp;forall&nbsp;x&nbsp;:&nbsp;X,&nbsp;R&nbsp;(I&nbsp;x)&nbsp;=&nbsp;x.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Notation&nbsp;tight_retraction&nbsp;I&nbsp;R&nbsp;X&nbsp;Y&nbsp;:=&nbsp;(@tight_retraction'&nbsp;X&nbsp;Y&nbsp;I&nbsp;R).&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Definition&nbsp;tight_retract&nbsp;X&nbsp;Y&nbsp;:=&nbsp;exists&nbsp;I&nbsp;R,&nbsp;retraction&nbsp;I&nbsp;R&nbsp;X&nbsp;Y.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Definition&nbsp;countable&nbsp;X&nbsp;:=&nbsp;retract&nbsp;X&nbsp;nat.&nbsp;*)</span><br/>
 
 <br/>
 </div>

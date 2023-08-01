@@ -25,8 +25,6 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">Library SyntheticComputability.CRM.kleenetree</h1>
-
 <div class="code">
 <span class="id" title="keyword">Set Implicit Arguments</span>.<br/>
 <span class="id" title="keyword">Unset</span> <span class="id" title="keyword">Strict</span> <span class="id" title="keyword">Implicit</span>.<br/>
@@ -464,6 +462,7 @@
 <span class="id" title="keyword">Lemma</span> <a id="is_tree_subtree_at" class="idref" href="#is_tree_subtree_at"><span class="id" title="lemma">is_tree_subtree_at</span></a> (<a id="T:147" class="idref" href="#T:147"><span class="id" title="binder">T</span></a> : <a class="idref" href="SyntheticComputability.CRM.kleenetree.html#tree"><span class="id" title="record">tree</span></a>) <a id="l:148" class="idref" href="#l:148"><span class="id" title="binder">l</span></a> :<br/>
 &nbsp;&nbsp;<a class="idref" href="SyntheticComputability.CRM.kleenetree.html#T:147"><span class="id" title="variable">T</span></a> <a class="idref" href="SyntheticComputability.CRM.kleenetree.html#l:148"><span class="id" title="variable">l</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="SyntheticComputability.CRM.kleenetree.html#is_tree"><span class="id" title="record">is_tree</span></a> (<a class="idref" href="SyntheticComputability.CRM.kleenetree.html#subtree_at"><span class="id" title="definition">subtree_at</span></a> <a class="idref" href="SyntheticComputability.CRM.kleenetree.html#l:148"><span class="id" title="variable">l</span></a> <a class="idref" href="SyntheticComputability.CRM.kleenetree.html#T:147"><span class="id" title="variable">T</span></a>).<br/>
 <span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;destruct&nbsp;T&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">T</span></span>;&nbsp;cbn&nbsp;in&nbsp;*.&nbsp;*)</span><br/>
 &nbsp;&nbsp;<span class="id" title="tactic">split</span>.<br/>
 &nbsp;&nbsp;- <span class="id" title="tactic">exists</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Lists.List.html#ae9a5e1034e143b218b09d8e454472bd"><span class="id" title="notation">[]</span></a>. <span class="id" title="tactic">unfold</span> <a class="idref" href="SyntheticComputability.CRM.kleenetree.html#subtree_at"><span class="id" title="definition">subtree_at</span></a>. <span class="id" title="tactic">rewrite</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Lists.List.html#app_nil_r"><span class="id" title="lemma">app_nil_r</span></a>. <span class="id" title="tactic">exact</span> <span class="id" title="var">H</span>.<br/>
 &nbsp;&nbsp;- <span class="id" title="tactic">intros</span> <span class="id" title="var">l1</span> <span class="id" title="var">l2</span> <span class="id" title="var">Hp</span> <span class="id" title="var">Hl1</span>. <span class="id" title="tactic">red</span> <span class="id" title="tactic">in</span> <span class="id" title="var">Hl1</span>. <span class="id" title="tactic">eapply</span> <a class="idref" href="SyntheticComputability.CRM.kleenetree.html#tree_p"><span class="id" title="projection">tree_p</span></a> <span class="id" title="tactic">in</span> <span class="id" title="var">Hl1</span>. <span class="id" title="var">eassumption</span>. <span class="id" title="tactic">eapply</span> <span class="id" title="var">T</span>.<br/>
@@ -750,6 +749,7 @@
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;Definition&nbsp;MP_tree'&nbsp;:=&nbsp;forall&nbsp;T&nbsp;:&nbsp;tree,&nbsp;~&nbsp;infinite_path&nbsp;T&nbsp;-&gt;&nbsp;wellfounded_tree&nbsp;T.&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <a id="MP_tree_iff'" class="idref" href="#MP_tree_iff'"><span class="id" title="lemma">MP_tree_iff'</span></a> :<br/>
@@ -1276,32 +1276,240 @@
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;Lemma&nbsp;is_tree_ext&nbsp;:&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;Proper&nbsp;(pointwise_relation&nbsp;_&nbsp;iff&nbsp;==&gt;&nbsp;iff)&nbsp;is_tree.&nbsp;&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;intros&nbsp;T1&nbsp;T2&nbsp;H.&nbsp;split;&nbsp;intros&nbsp;<span class="inlinecode"></span>;&nbsp;repeat&nbsp;split.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;firstorder.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;intros.&nbsp;rewrite&nbsp;&lt;-&nbsp;H&nbsp;in&nbsp;*.&nbsp;eauto.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;rewrite&nbsp;&lt;-&nbsp;H.&nbsp;eauto.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;firstorder.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;intros.&nbsp;rewrite&nbsp;H&nbsp;in&nbsp;H1&nbsp;|-&nbsp;*.&nbsp;eauto.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;rewrite&nbsp;H.&nbsp;eauto.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Lemma&nbsp;infinite_tree_ext&nbsp;:&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;Proper&nbsp;(pointwise_relation&nbsp;_&nbsp;iff&nbsp;==&gt;&nbsp;iff)&nbsp;infinite_tree.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;intros&nbsp;T1&nbsp;T2&nbsp;H.&nbsp;unfold&nbsp;infinite_tree.&nbsp;split;&nbsp;intros&nbsp;H1&nbsp;k.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;now&nbsp;setoid_rewrite&nbsp;&lt;-&nbsp;H.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;now&nbsp;setoid_rewrite&nbsp;H.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Lemma&nbsp;subtree_at_app&nbsp;T&nbsp;l1&nbsp;l2&nbsp;:&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;is_tree&nbsp;(subtree_at&nbsp;l2&nbsp;(subtree_at&nbsp;l1&nbsp;T))&nbsp;&lt;-&gt;&nbsp;is_tree&nbsp;(subtree_at&nbsp;(l1&nbsp;++&nbsp;l2)&nbsp;T).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;rewrite&nbsp;is_tree_ext.&nbsp;reflexivity.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;red.&nbsp;unfold&nbsp;subtree_at.&nbsp;intros.&nbsp;now&nbsp;rewrite&nbsp;app_assoc.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Lemma&nbsp;subtree_at_app_inf&nbsp;T&nbsp;l1&nbsp;l2&nbsp;:&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;infinite_tree&nbsp;(subtree_at&nbsp;l2&nbsp;(subtree_at&nbsp;l1&nbsp;T))&nbsp;&lt;-&gt;&nbsp;infinite_tree&nbsp;(subtree_at&nbsp;(l1&nbsp;++&nbsp;l2)&nbsp;T).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;rewrite&nbsp;infinite_tree_ext.&nbsp;reflexivity.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;red.&nbsp;unfold&nbsp;subtree_at.&nbsp;intros.&nbsp;now&nbsp;rewrite&nbsp;app_assoc.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Lemma&nbsp;subtree_at_app'&nbsp;T&nbsp;l1&nbsp;l2&nbsp;:&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;is_tree&nbsp;(subtree_at&nbsp;l2&nbsp;(subtree_at&nbsp;l1&nbsp;T))&nbsp;-&gt;&nbsp;is_tree&nbsp;(subtree_at&nbsp;(l1&nbsp;++&nbsp;l2)&nbsp;T).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;eapply&nbsp;subtree_at_app.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Lemma&nbsp;subtree_at_app_inf'&nbsp;T&nbsp;l1&nbsp;l2&nbsp;:&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;infinite_tree&nbsp;(subtree_at&nbsp;l2&nbsp;(subtree_at&nbsp;l1&nbsp;T))&nbsp;-&gt;&nbsp;infinite_tree&nbsp;(subtree_at&nbsp;(l1&nbsp;++&nbsp;l2)&nbsp;T).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;eapply&nbsp;subtree_at_app_inf.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Hint&nbsp;Resolve&nbsp;subtree_at_app'&nbsp;subtree_at_app_inf'&nbsp;:&nbsp;core.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Lemma&nbsp;LLPO_ADCC_WKL&nbsp;:&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;LLPO_tree&nbsp;-&gt;&nbsp;(forall&nbsp;P,&nbsp;(ADC_on&nbsp;(sig&nbsp;(fun&nbsp;l&nbsp;:&nbsp;list&nbsp;bool&nbsp;=&gt;&nbsp;P&nbsp;l))))&nbsp;-&gt;&nbsp;WKL.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;move&nbsp;=&gt;&nbsp;LLPO&nbsp;C&nbsp;T&nbsp;Hinf.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;unshelve&nbsp;edestruct&nbsp;(C&nbsp;(fun&nbsp;l&nbsp;=&gt;&nbsp;is_tree&nbsp;(subtree_at&nbsp;l&nbsp;T)&nbsp;/\&nbsp;infinite_tree&nbsp;(subtree_at&nbsp;l&nbsp;T))&nbsp;&nbsp;(fun&nbsp;l1&nbsp;l2&nbsp;=&gt;&nbsp;exists&nbsp;b,&nbsp;proj1_sig&nbsp;l2&nbsp;=&nbsp;proj1_sig&nbsp;l1&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">b</span></span>))&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">f</span></span> <span class="inlinecode">[<span class="id" title="var">H0</span></span> <span class="inlinecode"><span class="id" title="var">Hf</span>]</span>.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;exists&nbsp;<span class="inlinecode"></span>.&nbsp;split.&nbsp;eapply&nbsp;T.&nbsp;eapply&nbsp;Hinf.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;intros&nbsp;<span class="inlinecode"><span class="id" title="var">l</span></span> <span class="inlinecode">[<span class="id" title="var">l_tree</span></span> <span class="inlinecode"><span class="id" title="var">l_inf</span>]</span>.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;destruct&nbsp;(LLPO&nbsp;(Build_tree&nbsp;l_tree)&nbsp;l_inf)&nbsp;as&nbsp;<span class="inlinecode">[<span class="id" title="var">Htree</span></span> <span class="inlinecode"><span class="id" title="var">Hinft</span>]</span> <span class="inlinecode">|</span> <span class="inlinecode">[<span class="id" title="var">Htree</span></span> <span class="inlinecode"><span class="id" title="var">Hinft</span>]</span>;&nbsp;cbn&nbsp;in&nbsp;*.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;unshelve&nbsp;eexists.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;exists&nbsp;(l&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">true</span></span>).&nbsp;eauto.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;exists&nbsp;true.&nbsp;reflexivity.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;unshelve&nbsp;eexists.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;exists&nbsp;(l&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">false</span></span>).&nbsp;eauto.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;exists&nbsp;false.&nbsp;reflexivity.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;assert&nbsp;(Hl&nbsp;:&nbsp;forall&nbsp;n,&nbsp;length&nbsp;(proj1_sig&nbsp;(f&nbsp;n))&nbsp;=&nbsp;n).&nbsp;{&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;induction&nbsp;n.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;rewrite&nbsp;H0.&nbsp;reflexivity.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;destruct&nbsp;(Hf&nbsp;n)&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">b</span></span> <span class="inlinecode">-&gt;</span>.&nbsp;&nbsp;rewrite&nbsp;app_length&nbsp;IHn&nbsp;//=.&nbsp;lia.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert&nbsp;(Hmap&nbsp;:&nbsp;forall&nbsp;n,&nbsp;(map&nbsp;(λ&nbsp;n0&nbsp;:&nbsp;nat,&nbsp;nth_default&nbsp;false&nbsp;(proj1_sig&nbsp;(f&nbsp;(S&nbsp;n0)))&nbsp;n0)&nbsp;(seq&nbsp;0&nbsp;n)&nbsp;=&nbsp;proj1_sig&nbsp;(f&nbsp;n))).&nbsp;{&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intros&nbsp;n.&nbsp;induction&nbsp;n.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;cbn.&nbsp;rewrite&nbsp;H0.&nbsp;reflexivity.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;replace&nbsp;(S&nbsp;n)&nbsp;with&nbsp;(n&nbsp;+&nbsp;1)&nbsp;at&nbsp;1&nbsp;by&nbsp;lia.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rewrite&nbsp;seq_app&nbsp;map_app&nbsp;IHn.&nbsp;cbn.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;specialize&nbsp;(Hf&nbsp;n)&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">b</span></span> <span class="inlinecode">-&gt;</span>.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rewrite&nbsp;nth_default_eq&nbsp;app_nth2.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;rewrite&nbsp;Hl.&nbsp;lia.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;rewrite&nbsp;Hl.&nbsp;cbn.&nbsp;now&nbsp;rewrite&nbsp;minus_diag.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;exists&nbsp;(fun&nbsp;n&nbsp;=&gt;&nbsp;nth_default&nbsp;false&nbsp;(proj1_sig&nbsp;(f&nbsp;(S&nbsp;n)))&nbsp;n).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intros&nbsp;n.&nbsp;rewrite&nbsp;Hmap.&nbsp;destruct&nbsp;(f&nbsp;n)&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">l</span></span> <span class="inlinecode">[<span class="id" title="var">Htree</span>]</span>.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cbn.&nbsp;eapply&nbsp;tree_nil&nbsp;in&nbsp;Htree.&nbsp;unfold&nbsp;subtree_at&nbsp;in&nbsp;Htree.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;revert&nbsp;Htree.&nbsp;now&nbsp;simpl_list.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Definition&nbsp;DC_lor&nbsp;:=&nbsp;forall&nbsp;p&nbsp;q,&nbsp;(forall&nbsp;u&nbsp;:&nbsp;list&nbsp;bool,&nbsp;p&nbsp;u&nbsp;\/&nbsp;q&nbsp;u)&nbsp;-&gt;&nbsp;exists&nbsp;f,&nbsp;forall&nbsp;n,&nbsp;if&nbsp;f&nbsp;n&nbsp;then&nbsp;p&nbsp;(map&nbsp;f&nbsp;(seq&nbsp;0&nbsp;n))&nbsp;else&nbsp;q&nbsp;(map&nbsp;f&nbsp;(seq&nbsp;0&nbsp;n)).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Definition&nbsp;CC_lor&nbsp;:=&nbsp;forall&nbsp;p&nbsp;q,&nbsp;(forall&nbsp;n&nbsp;:&nbsp;nat,&nbsp;p&nbsp;n&nbsp;\/&nbsp;q&nbsp;n)&nbsp;-&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;exists&nbsp;f,&nbsp;forall&nbsp;n,&nbsp;if&nbsp;f&nbsp;n&nbsp;then&nbsp;p&nbsp;n&nbsp;else&nbsp;q&nbsp;n.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Lemma&nbsp;Delta_DC_lor&nbsp;:&nbsp;forall&nbsp;p&nbsp;q,&nbsp;decidable&nbsp;p&nbsp;-&gt;&nbsp;decidable&nbsp;q&nbsp;-&gt;&nbsp;(forall&nbsp;u&nbsp;:&nbsp;list&nbsp;bool,&nbsp;p&nbsp;u&nbsp;\/&nbsp;q&nbsp;u)&nbsp;-&gt;&nbsp;exists&nbsp;f,&nbsp;forall&nbsp;n,&nbsp;if&nbsp;f&nbsp;n&nbsp;then&nbsp;p&nbsp;(map&nbsp;f&nbsp;(seq&nbsp;0&nbsp;n))&nbsp;else&nbsp;q&nbsp;(map&nbsp;f&nbsp;(seq&nbsp;0&nbsp;n)).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;intros&nbsp;p&nbsp;q&nbsp;<span class="inlinecode"><span class="id" title="var">f</span></span> <span class="inlinecode"><span class="id" title="var">Hf</span></span>&nbsp;<span class="inlinecode"><span class="id" title="var">g</span></span> <span class="inlinecode"><span class="id" title="var">Hg</span></span>&nbsp;H.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;pose&nbsp;(F&nbsp;:=&nbsp;fix&nbsp;F&nbsp;n&nbsp;:=&nbsp;match&nbsp;n&nbsp;with&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;0&nbsp;=&gt;&nbsp;if&nbsp;f&nbsp;<span class="inlinecode"></span>&nbsp;then&nbsp;<span class="inlinecode"><span class="id" title="var">true</span></span>&nbsp;else&nbsp;<span class="inlinecode"><span class="id" title="var">false</span></span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;S&nbsp;n&nbsp;=&gt;&nbsp;if&nbsp;f&nbsp;(F&nbsp;n)&nbsp;then&nbsp;F&nbsp;n&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">true</span></span>&nbsp;else&nbsp;F&nbsp;n&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">false</span></span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;assert&nbsp;(HF&nbsp;:&nbsp;forall&nbsp;n,&nbsp;length&nbsp;(F&nbsp;n)&nbsp;=&nbsp;S&nbsp;n).&nbsp;{&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;induction&nbsp;n;&nbsp;cbn.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;destruct&nbsp;(f&nbsp;<span class="inlinecode"></span>);&nbsp;reflexivity.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;destruct&nbsp;(f&nbsp;(F&nbsp;n));&nbsp;rewrite&nbsp;app_length;&nbsp;cbn;&nbsp;lia.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;}&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;exists&nbsp;(fun&nbsp;n&nbsp;=&gt;&nbsp;nth&nbsp;n&nbsp;(F&nbsp;n)&nbsp;false).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;induction&nbsp;n.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;cbn.&nbsp;specialize&nbsp;(Hf&nbsp;<span class="inlinecode"></span>).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;destruct&nbsp;(f&nbsp;<span class="inlinecode"></span>);&nbsp;cbn.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;now&nbsp;eapply&nbsp;Hf.&nbsp;&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;edestruct&nbsp;(H&nbsp;<span class="inlinecode"></span>)&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">H1</span></span> <span class="inlinecode">|</span> <span class="inlinecode"><span class="id" title="var">H1</span></span>;&nbsp;eauto.&nbsp;eapply&nbsp;Hf&nbsp;in&nbsp;H1.&nbsp;congruence.&nbsp;&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;specialize&nbsp;(Hf&nbsp;(F&nbsp;n)).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cbn&nbsp;-<span class="inlinecode"><span class="id" title="var">seq</span></span>.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert&nbsp;(E&nbsp;:&nbsp;map&nbsp;(λ&nbsp;n0&nbsp;:&nbsp;nat,&nbsp;nth&nbsp;n0&nbsp;(F&nbsp;n0)&nbsp;false)&nbsp;(seq&nbsp;0&nbsp;(length&nbsp;(F&nbsp;n)))&nbsp;=&nbsp;F&nbsp;n).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;clear&nbsp;Hf.&nbsp;clear&nbsp;-&nbsp;HF.&nbsp;induction&nbsp;n.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;cbn.&nbsp;destruct&nbsp;(f&nbsp;<span class="inlinecode"></span>);&nbsp;reflexivity.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;cbn.&nbsp;destruct&nbsp;(f&nbsp;(F&nbsp;n))&nbsp;eqn:E.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;rewrite&nbsp;app_length&nbsp;seq_app&nbsp;map_app.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cbn.&nbsp;rewrite&nbsp;HF.&nbsp;cbn&nbsp;-<span class="inlinecode"><span class="id" title="var">seq</span></span>.&nbsp;rewrite&nbsp;E.&nbsp;rewrite&nbsp;app_nth2.&nbsp;rewrite&nbsp;HF.&nbsp;lia.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cbn&nbsp;-<span class="inlinecode"><span class="id" title="var">seq</span></span>.&nbsp;rewrite&nbsp;HF&nbsp;minus_diag.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rewrite&nbsp;&lt;-&nbsp;IHn.&nbsp;now&nbsp;rewrite&nbsp;HF.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;rewrite&nbsp;app_length&nbsp;seq_app&nbsp;map_app.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cbn.&nbsp;rewrite&nbsp;HF.&nbsp;cbn&nbsp;-<span class="inlinecode"><span class="id" title="var">seq</span></span>.&nbsp;rewrite&nbsp;E.&nbsp;rewrite&nbsp;app_nth2.&nbsp;rewrite&nbsp;HF.&nbsp;lia.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cbn&nbsp;-<span class="inlinecode"><span class="id" title="var">seq</span></span>.&nbsp;rewrite&nbsp;HF&nbsp;minus_diag.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rewrite&nbsp;&lt;-&nbsp;IHn.&nbsp;now&nbsp;rewrite&nbsp;HF.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;destruct&nbsp;(f&nbsp;(F&nbsp;n)).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;rewrite&nbsp;app_nth2.&nbsp;rewrite&nbsp;HF.&nbsp;lia.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rewrite&nbsp;HF&nbsp;minus_diag.&nbsp;cbn&nbsp;<span class="inlinecode"><span class="id" title="var">nth</span></span>.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rewrite&nbsp;&lt;-&nbsp;HF,&nbsp;E.&nbsp;now&nbsp;eapply&nbsp;Hf.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;rewrite&nbsp;app_nth2.&nbsp;rewrite&nbsp;HF.&nbsp;lia.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rewrite&nbsp;HF&nbsp;minus_diag.&nbsp;cbn&nbsp;<span class="inlinecode"><span class="id" title="var">nth</span></span>.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rewrite&nbsp;&lt;-&nbsp;HF,&nbsp;E.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;destruct&nbsp;(H&nbsp;(F&nbsp;n));&nbsp;eauto.&nbsp;eapply&nbsp;Hf&nbsp;in&nbsp;H0.&nbsp;congruence.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Lemma&nbsp;DC_CC_iff&nbsp;:&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;DC_lor&nbsp;&lt;-&gt;&nbsp;CC_lor.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;split.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;intros&nbsp;dc&nbsp;p&nbsp;q&nbsp;H.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;destruct&nbsp;(dc&nbsp;(fun&nbsp;u&nbsp;=&gt;&nbsp;p&nbsp;(length&nbsp;u))&nbsp;(fun&nbsp;u&nbsp;=&gt;&nbsp;q&nbsp;(length&nbsp;u)))&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">f</span></span> <span class="inlinecode"><span class="id" title="var">Hf</span></span>;&nbsp;eauto.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;exists&nbsp;f.&nbsp;intros&nbsp;n.&nbsp;specialize&nbsp;(Hf&nbsp;n).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;now&nbsp;rewrite&nbsp;map_length&nbsp;seq_length&nbsp;in&nbsp;Hf.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;assert&nbsp;(countable&nbsp;(list&nbsp;bool))&nbsp;as&nbsp;(G&nbsp;&amp;&nbsp;F&nbsp;&amp;&nbsp;HFG).&nbsp;{&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;eapply&nbsp;enumerable_discrete_countable;&nbsp;eauto.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;eapply&nbsp;discrete_iff.&nbsp;econstructor.&nbsp;exact&nbsp;_.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intros&nbsp;cc&nbsp;p&nbsp;q&nbsp;H.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pose&nbsp;(F'&nbsp;n&nbsp;:=&nbsp;match&nbsp;F&nbsp;n&nbsp;with&nbsp;Some&nbsp;u&nbsp;=&gt;&nbsp;u&nbsp;|&nbsp;_&nbsp;=&gt;&nbsp;<span class="inlinecode"></span>&nbsp;end).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;destruct&nbsp;(cc&nbsp;(fun&nbsp;n&nbsp;=&gt;&nbsp;p&nbsp;(F'&nbsp;n))&nbsp;(fun&nbsp;n&nbsp;=&gt;&nbsp;q&nbsp;(F'&nbsp;n)))&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">f</span></span> <span class="inlinecode"><span class="id" title="var">Hf</span></span>;&nbsp;eauto.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert&nbsp;(forall&nbsp;u,&nbsp;f&nbsp;(G&nbsp;u)&nbsp;=&nbsp;true&nbsp;\/&nbsp;f&nbsp;(G&nbsp;u)&nbsp;=&nbsp;false)&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">g</span></span> <span class="inlinecode"><span class="id" title="var">Hg</span></span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intros&nbsp;u.&nbsp;destruct&nbsp;(f&nbsp;(G&nbsp;u));&nbsp;eauto.&nbsp;&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;exists&nbsp;g.&nbsp;intros&nbsp;n.&nbsp;specialize&nbsp;(Hg&nbsp;n).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;specialize&nbsp;(Hf&nbsp;(G&nbsp;(map&nbsp;g&nbsp;(seq&nbsp;0&nbsp;n)))).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;destruct&nbsp;(g&nbsp;n);&nbsp;now&nbsp;rewrite&nbsp;Hg&nbsp;/F'&nbsp;HFG&nbsp;in&nbsp;Hf.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;eapply&nbsp;decidable_iff.&nbsp;econstructor.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intros.&nbsp;exact&nbsp;_.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;eapply&nbsp;decidable_iff.&nbsp;econstructor.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intros.&nbsp;exact&nbsp;_.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;Lemma&nbsp;LLPO_DC_WKL&nbsp;:&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;LLPO_tree&nbsp;-&gt;&nbsp;DC_lor&nbsp;-&gt;&nbsp;WKL.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;Proof.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;move&nbsp;=&gt;&nbsp;LLPO&nbsp;C&nbsp;T&nbsp;Hinf.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;specialize&nbsp;(C&nbsp;(fun&nbsp;u&nbsp;=&gt;&nbsp;is_tree&nbsp;(subtree_at&nbsp;(u)&nbsp;T)&nbsp;/\&nbsp;infinite_tree&nbsp;(subtree_at&nbsp;(u)&nbsp;T)&nbsp;-&gt;&nbsp;is_tree&nbsp;(subtree_at&nbsp;(u&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">true</span></span>)&nbsp;T)&nbsp;/\&nbsp;infinite_tree&nbsp;(subtree_at&nbsp;(u&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">true</span></span>)&nbsp;T))&nbsp;(fun&nbsp;u&nbsp;=&gt;&nbsp;is_tree&nbsp;(subtree_at&nbsp;(u)&nbsp;T)&nbsp;/\&nbsp;infinite_tree&nbsp;(subtree_at&nbsp;(u)&nbsp;T)&nbsp;-&gt;&nbsp;is_tree&nbsp;(subtree_at&nbsp;(u&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">false</span></span>)&nbsp;T)&nbsp;/\&nbsp;infinite_tree&nbsp;(subtree_at&nbsp;(u&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">false</span></span>)&nbsp;T)))&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">f</span></span> <span class="inlinecode"><span class="id" title="var">Hf</span></span>.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;induction&nbsp;u&nbsp;using&nbsp;rev_ind.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;destruct&nbsp;(LLPO&nbsp;T);&nbsp;eauto.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;destruct&nbsp;IHu&nbsp;as&nbsp;<span class="inlinecode">(<span class="id" title="var">v</span></span> <span class="inlinecode">&amp;</span> <span class="inlinecode"><span class="id" title="var">H1</span></span> <span class="inlinecode">&amp;</span> <span class="inlinecode"><span class="id" title="var">H2</span></span> <span class="inlinecode">&amp;</span> <span class="inlinecode"><span class="id" title="var">H3</span>)|(<span class="id" title="var">v</span></span> <span class="inlinecode">&amp;</span> <span class="inlinecode"><span class="id" title="var">H1</span></span> <span class="inlinecode">&amp;</span> <span class="inlinecode"><span class="id" title="var">H2</span></span> <span class="inlinecode">&amp;</span> <span class="inlinecode"><span class="id" title="var">H3</span>)</span>.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;eapply&nbsp;(LLPO&nbsp;(Build_tree&nbsp;H2))&nbsp;in&nbsp;H3&nbsp;as&nbsp;<span class="inlinecode">[<span class="id" title="var">H3</span></span> <span class="inlinecode"><span class="id" title="var">H4</span>]</span> <span class="inlinecode">|</span> <span class="inlinecode">[<span class="id" title="var">H3</span></span> <span class="inlinecode"><span class="id" title="var">H4</span>]</span>;&nbsp;cbn&nbsp;in&nbsp;*.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;eapply&nbsp;subtree_at_app&nbsp;in&nbsp;H3.&nbsp;eapply&nbsp;subtree_at_app_inf&nbsp;in&nbsp;H4.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;left.&nbsp;exists&nbsp;(v&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">true</span></span>).&nbsp;split.&nbsp;rewrite!&nbsp;app_length.&nbsp;cbn.&nbsp;lia.&nbsp;eauto.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;eapply&nbsp;subtree_at_app&nbsp;in&nbsp;H3.&nbsp;eapply&nbsp;subtree_at_app_inf&nbsp;in&nbsp;H4.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;right.&nbsp;exists&nbsp;(v&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">true</span></span>).&nbsp;split.&nbsp;rewrite!&nbsp;app_length.&nbsp;cbn.&nbsp;lia.&nbsp;eauto.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;eapply&nbsp;(LLPO&nbsp;(Build_tree&nbsp;H2))&nbsp;in&nbsp;H3&nbsp;as&nbsp;<span class="inlinecode">[<span class="id" title="var">H3</span></span> <span class="inlinecode"><span class="id" title="var">H4</span>]</span> <span class="inlinecode">|</span> <span class="inlinecode">[<span class="id" title="var">H3</span></span> <span class="inlinecode"><span class="id" title="var">H4</span>]</span>;&nbsp;cbn&nbsp;in&nbsp;*.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;eapply&nbsp;subtree_at_app&nbsp;in&nbsp;H3.&nbsp;eapply&nbsp;subtree_at_app_inf&nbsp;in&nbsp;H4.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;left.&nbsp;exists&nbsp;(v&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">false</span></span>).&nbsp;split.&nbsp;rewrite!&nbsp;app_length.&nbsp;cbn.&nbsp;lia.&nbsp;eauto.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;eapply&nbsp;subtree_at_app&nbsp;in&nbsp;H3.&nbsp;eapply&nbsp;subtree_at_app_inf&nbsp;in&nbsp;H4.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;right.&nbsp;exists&nbsp;(v&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">false</span></span>).&nbsp;split.&nbsp;rewrite!&nbsp;app_length.&nbsp;cbn.&nbsp;lia.&nbsp;eauto.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;exists&nbsp;f.&nbsp;induction&nbsp;n.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;cbn.&nbsp;eauto.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;replace&nbsp;(S&nbsp;n)&nbsp;with&nbsp;(n&nbsp;+&nbsp;1)&nbsp;by&nbsp;lia.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rewrite&nbsp;seq_app.&nbsp;cbn.&nbsp;*)</span>&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;destruct&nbsp;(C&nbsp;(fun&nbsp;u&nbsp;=&gt;&nbsp;T&nbsp;(u&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">true</span></span>))&nbsp;(fun&nbsp;u&nbsp;=&gt;&nbsp;T&nbsp;(u&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">false</span></span>))).&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;unshelve&nbsp;edestruct&nbsp;(C&nbsp;(fun&nbsp;l&nbsp;=&gt;&nbsp;is_tree&nbsp;(subtree_at&nbsp;l&nbsp;T)&nbsp;/\&nbsp;infinite_tree&nbsp;(subtree_at&nbsp;l&nbsp;T))&nbsp;&nbsp;(fun&nbsp;l1&nbsp;l2&nbsp;=&gt;&nbsp;exists&nbsp;b,&nbsp;proj1_sig&nbsp;l2&nbsp;=&nbsp;proj1_sig&nbsp;l1&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">b</span></span>))&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">f</span></span> <span class="inlinecode">[<span class="id" title="var">H0</span></span> <span class="inlinecode"><span class="id" title="var">Hf</span>]</span>.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;exists&nbsp;<span class="inlinecode"></span>.&nbsp;split.&nbsp;eapply&nbsp;T.&nbsp;eapply&nbsp;Hinf.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;intros&nbsp;<span class="inlinecode"><span class="id" title="var">l</span></span> <span class="inlinecode">[<span class="id" title="var">l_tree</span></span> <span class="inlinecode"><span class="id" title="var">l_inf</span>]</span>.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;destruct&nbsp;(LLPO&nbsp;(Build_tree&nbsp;l_tree)&nbsp;l_inf)&nbsp;as&nbsp;<span class="inlinecode">[<span class="id" title="var">Htree</span></span> <span class="inlinecode"><span class="id" title="var">Hinft</span>]</span> <span class="inlinecode">|</span> <span class="inlinecode">[<span class="id" title="var">Htree</span></span> <span class="inlinecode"><span class="id" title="var">Hinft</span>]</span>;&nbsp;cbn&nbsp;in&nbsp;*.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;unshelve&nbsp;eexists.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;exists&nbsp;(l&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">true</span></span>).&nbsp;eauto.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;exists&nbsp;true.&nbsp;reflexivity.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;unshelve&nbsp;eexists.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;exists&nbsp;(l&nbsp;++&nbsp;<span class="inlinecode"><span class="id" title="var">false</span></span>).&nbsp;eauto.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;exists&nbsp;false.&nbsp;reflexivity.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;assert&nbsp;(Hl&nbsp;:&nbsp;forall&nbsp;n,&nbsp;length&nbsp;(proj1_sig&nbsp;(f&nbsp;n))&nbsp;=&nbsp;n).&nbsp;{&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;induction&nbsp;n.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;rewrite&nbsp;H0.&nbsp;reflexivity.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;destruct&nbsp;(Hf&nbsp;n)&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">b</span></span> <span class="inlinecode">-&gt;</span>.&nbsp;&nbsp;rewrite&nbsp;app_length&nbsp;IHn&nbsp;//=.&nbsp;lia.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assert&nbsp;(Hmap&nbsp;:&nbsp;forall&nbsp;n,&nbsp;(map&nbsp;(λ&nbsp;n0&nbsp;:&nbsp;nat,&nbsp;nth_default&nbsp;false&nbsp;(proj1_sig&nbsp;(f&nbsp;(S&nbsp;n0)))&nbsp;n0)&nbsp;(seq&nbsp;0&nbsp;n)&nbsp;=&nbsp;proj1_sig&nbsp;(f&nbsp;n))).&nbsp;{&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intros&nbsp;n.&nbsp;induction&nbsp;n.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;cbn.&nbsp;rewrite&nbsp;H0.&nbsp;reflexivity.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;replace&nbsp;(S&nbsp;n)&nbsp;with&nbsp;(n&nbsp;+&nbsp;1)&nbsp;at&nbsp;1&nbsp;by&nbsp;lia.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rewrite&nbsp;seq_app&nbsp;map_app&nbsp;IHn.&nbsp;cbn.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;specialize&nbsp;(Hf&nbsp;n)&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">b</span></span> <span class="inlinecode">-&gt;</span>.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rewrite&nbsp;nth_default_eq&nbsp;app_nth2.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;rewrite&nbsp;Hl.&nbsp;lia.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;rewrite&nbsp;Hl.&nbsp;cbn.&nbsp;now&nbsp;rewrite&nbsp;minus_diag.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;exists&nbsp;(fun&nbsp;n&nbsp;=&gt;&nbsp;nth_default&nbsp;false&nbsp;(proj1_sig&nbsp;(f&nbsp;(S&nbsp;n)))&nbsp;n).&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;intros&nbsp;n.&nbsp;rewrite&nbsp;Hmap.&nbsp;destruct&nbsp;(f&nbsp;n)&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">l</span></span> <span class="inlinecode">[<span class="id" title="var">Htree</span>]</span>.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cbn.&nbsp;eapply&nbsp;tree_nil&nbsp;in&nbsp;Htree.&nbsp;unfold&nbsp;subtree_at&nbsp;in&nbsp;Htree.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;revert&nbsp;Htree.&nbsp;now&nbsp;simpl_list.&nbsp;*)</span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<span class="comment">(*&nbsp;Qed.&nbsp;*)</span>&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Lemma&nbsp;test&nbsp;:&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;WKL&nbsp;&lt;-&gt;&nbsp;&nbsp;&nbsp;coS_ADC_on_weak&nbsp;bool.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;split.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;intros&nbsp;WKL.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;eapply&nbsp;maria,&nbsp;bla.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;eapply&nbsp;WKL_to_LPOO.&nbsp;eassumption.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;eapply&nbsp;WKL_to_coS_AC_on_nat_bool.&nbsp;eassumption.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;-&nbsp;eapply&nbsp;andback.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
 </div>

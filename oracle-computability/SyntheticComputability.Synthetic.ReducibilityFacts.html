@@ -25,8 +25,6 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">Library SyntheticComputability.Synthetic.ReducibilityFacts</h1>
-
 <div class="code">
 <span class="id" title="keyword">From</span> <span class="id" title="var">SyntheticComputability.Synthetic</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="SyntheticComputability.Synthetic.DecidabilityFacts.html#"><span class="id" title="library">DecidabilityFacts</span></a> <a class="idref" href="SyntheticComputability.Synthetic.EnumerabilityFacts.html#"><span class="id" title="library">EnumerabilityFacts</span></a> <a class="idref" href="SyntheticComputability.Synthetic.ListEnumerabilityFacts.html#"><span class="id" title="library">ListEnumerabilityFacts</span></a> <a class="idref" href="SyntheticComputability.Synthetic.MoreEnumerabilityFacts.html#"><span class="id" title="library">MoreEnumerabilityFacts</span></a> <a class="idref" href="SyntheticComputability.Synthetic.reductions.html#"><span class="id" title="library">reductions</span></a>.<br/>
 <span class="id" title="keyword">From</span> <span class="id" title="var">SyntheticComputability.Shared</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="SyntheticComputability.Shared.ListAutomation.html#"><span class="id" title="library">ListAutomation</span></a>.<br/>
@@ -74,6 +72,7 @@
 &nbsp;&nbsp;<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;**&nbsp;An&nbsp;equivalent&nbsp;dependent&nbsp;definition&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Fact</span> <a id="reduces_dependent" class="idref" href="#reduces_dependent"><span class="id" title="lemma">reduces_dependent</span></a> :<br/>
@@ -89,6 +88,26 @@
 <span class="id" title="keyword">End</span> <a class="idref" href="SyntheticComputability.Synthetic.ReducibilityFacts.html#Properties"><span class="id" title="section">Properties</span></a>.<br/>
 
 <br/>
+<span class="comment">(*Module&nbsp;ReductionChainNotations.<br/>
+<br/>
+&nbsp;<span class="comment">(*&nbsp;DLW:&nbsp;Thx&nbsp;to&nbsp;M.&nbsp;Wuttke&nbsp;for&nbsp;the&nbsp;tip,&nbsp;see&nbsp;coq-club&nbsp;ML&nbsp;*)</span><br/>
+<br/>
+Ltac&nbsp;redchain2Prop_rec&nbsp;xs&nbsp;:=<br/>
+&nbsp;&nbsp;lazymatch&nbsp;xs&nbsp;with<br/>
+&nbsp;&nbsp;|&nbsp;pair&nbsp;?x&nbsp;(pair&nbsp;?y&nbsp;?xs)&nbsp;=&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;z&nbsp;:=&nbsp;redchain2Prop_rec&nbsp;(pair&nbsp;y&nbsp;xs)&nbsp;in<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;constr:(x&nbsp;⪯&nbsp;y&nbsp;/\&nbsp;z)<br/>
+&nbsp;&nbsp;|&nbsp;pair&nbsp;?x&nbsp;?y&nbsp;=&gt;&nbsp;constr:(x&nbsp;⪯&nbsp;y)<br/>
+&nbsp;&nbsp;end.<br/>
+<br/>
+Ltac&nbsp;redchain2Prop&nbsp;xs&nbsp;:=<br/>
+&nbsp;&nbsp;let&nbsp;z&nbsp;:=&nbsp;redchain2Prop_rec&nbsp;xs&nbsp;<br/>
+&nbsp;&nbsp;in&nbsp;&nbsp;exact&nbsp;z.<br/>
+<br/>
+Declare&nbsp;Scope&nbsp;reduction_chain.<br/>
+Delimit&nbsp;Scope&nbsp;reduction_chain&nbsp;with&nbsp;redchain_scope.<br/>
+Notation&nbsp;"x&nbsp;'⪯ₘ'&nbsp;y"&nbsp;:=&nbsp;(pair&nbsp;x&nbsp;y)&nbsp;(at&nbsp;level&nbsp;80,&nbsp;right&nbsp;associativity,&nbsp;only&nbsp;parsing)&nbsp;:&nbsp;reduction_chain.<br/>
+Notation&nbsp;"'⎩'&nbsp;xs&nbsp;'⎭'"&nbsp;:=&nbsp;(ltac:(redchain2Prop&nbsp;(xs&nbsp;*)</span><br/>
 </div>
 
 <div class="doc">

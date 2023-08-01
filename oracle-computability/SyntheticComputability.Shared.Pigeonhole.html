@@ -25,8 +25,6 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">Library SyntheticComputability.Shared.Pigeonhole</h1>
-
 <div class="code">
 <span class="id" title="keyword">Require</span> <a class="idref" href="SyntheticComputability.Shared.Dec.html#"><span class="id" title="library">SyntheticComputability.Shared.Dec</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Setoids.Setoid.html#"><span class="id" title="library">Setoid</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Classes.Morphisms.html#"><span class="id" title="library">Morphisms</span></a>.<br/>
@@ -140,9 +138,10 @@
 <span class="id" title="keyword">Tactic Notation</span> "ccase" <span class="id" title="keyword">constr</span>(<span class="id" title="var">P</span>) "as" <span class="id" title="var">intropattern</span>(<span class="id" title="var">pat</span>) := <br/>
 <span class="id" title="keyword">match</span> <span class="id" title="keyword">goal</span> <span class="id" title="keyword">with</span><br/>
 | [ |- <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#63a68285c81db8f9bc456233bb9ed181"><span class="id" title="notation">~</span></a> ?<span class="id" title="var">G</span> ] =&gt; <span class="id" title="tactic">eapply</span> (<a class="idref" href="SyntheticComputability.Shared.Pigeonhole.html#ccase_neg"><span class="id" title="lemma">ccase_neg</span></a> <span class="id" title="var">P</span>); <span class="id" title="tactic">intros</span> <span class="id" title="var">pat</span><br/>
-&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;let&nbsp;H&nbsp;:=&nbsp;fresh&nbsp;"H"&nbsp;in&nbsp;assert&nbsp;(H&nbsp;:&nbsp;~~&nbsp;(P&nbsp;\/&nbsp;~P))&nbsp;by&nbsp;tauto;&nbsp;cunwrap&nbsp;H;&nbsp;revert&nbsp;H;&nbsp;intros&nbsp;pat&nbsp;*)</span><br/>
 | [ |- ?<span class="id" title="var">G</span> ] =&gt; <span class="id" title="tactic">eapply</span> (@<a class="idref" href="SyntheticComputability.Shared.Pigeonhole.html#DN_dec"><span class="id" title="lemma">DN_dec</span></a> <span class="id" title="var">_</span> <span class="id" title="var">_</span>); <span class="id" title="tactic">eapply</span> (<a class="idref" href="SyntheticComputability.Shared.Pigeonhole.html#ccase_neg"><span class="id" title="lemma">ccase_neg</span></a> <span class="id" title="var">P</span>); <span class="id" title="tactic">intros</span> <span class="id" title="var">pat</span>; <span class="id" title="tactic">apply</span> <a class="idref" href="SyntheticComputability.Shared.Pigeonhole.html#DN"><span class="id" title="lemma">DN</span></a><br/>
-&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;let&nbsp;H&nbsp;:=&nbsp;fresh&nbsp;"H"&nbsp;in&nbsp;assert&nbsp;(H&nbsp;:&nbsp;~~&nbsp;(P&nbsp;\/&nbsp;~P))&nbsp;by&nbsp;tauto;&nbsp;cunwrap&nbsp;H;&nbsp;revert&nbsp;H;&nbsp;intros&nbsp;pat;<br/>
+&nbsp;&nbsp;apply&nbsp;DN&nbsp;*)</span><br/>
 <span class="id" title="keyword">end</span>.<br/>
 
 <br/>

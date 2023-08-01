@@ -25,8 +25,6 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">Library SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic</h1>
-
 <div class="code">
 </div>
 
@@ -49,7 +47,7 @@
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="library">Equations.Prop.DepElim</span>.<br/>
 
 <br/>
-<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Arith.PeanoNat.html#"><span class="id" title="library">PeanoNat</span></a>  <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Bool.Bool.html#"><span class="id" title="library">Bool</span></a>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Arith.PeanoNat.html#"><span class="id" title="library">PeanoNat</span></a> <span class="comment">(*&nbsp;Nat.eqb&nbsp;*)</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Bool.Bool.html#"><span class="id" title="library">Bool</span></a>.<br/>
 
 <br/>
 <span class="id" title="keyword">Local Set Implicit Arguments</span>.<br/>
@@ -100,8 +98,10 @@
 &nbsp;&nbsp;&nbsp;&nbsp;#[<span class="id" title="var">local</span>] <span class="id" title="keyword">Hint</span> <span class="id" title="keyword">Constructors</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#7ea41494271c43fb4b1e577b36a2be7e"><span class="id" title="inductive">isΠf_ind</span></a> : <span class="id" title="var">core</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">(*&nbsp;generacte&nbsp;induction&nbsp;scheme&nbsp;*)</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">Scheme</span> <a id="f32e63580a3b7cbd24e2412f84b657fd" class="idref" href="#f32e63580a3b7cbd24e2412f84b657fd"><span class="id" title="definition">isΣf_ind_isΠf_ind_ind</span></a> := <span class="id" title="keyword">Induction</span> <span class="id" title="keyword">for</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#7500b565e65690b09a75fe82fa751235"><span class="id" title="inductive">isΣf_ind</span></a> <span class="id" title="keyword">Sort</span> <span class="id" title="keyword">Prop</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">with</span> <a id="0d7f4696c57997655fbb44dc76e6f9b4" class="idref" href="#0d7f4696c57997655fbb44dc76e6f9b4"><span class="id" title="definition">isΠf_ind_isΣf_ind_ind</span></a> := <span class="id" title="keyword">Induction</span> <span class="id" title="keyword">for</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#7ea41494271c43fb4b1e577b36a2be7e"><span class="id" title="inductive">isΠf_ind</span></a> <span class="id" title="keyword">Sort</span> <span class="id" title="keyword">Prop</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">(*&nbsp;https://coq.inria.fr/refman/proofs/writing-proofs/reasoning-inductives.htmlcombined-scheme *)</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">Combined Scheme</span> <a id="5638605eb3c981656a2f9f7290fcee68" class="idref" href="#5638605eb3c981656a2f9f7290fcee68"><span class="id" title="definition">isΣ_syn_isΠ_syn_mutind</span></a> <span class="id" title="var">from</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#f32e63580a3b7cbd24e2412f84b657fd"><span class="id" title="definition">isΣf_ind_isΠf_ind_ind</span></a>,<a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#0d7f4696c57997655fbb44dc76e6f9b4"><span class="id" title="definition">isΠf_ind_isΣf_ind_ind</span></a>.<br/>
 
 <br/>
@@ -154,6 +154,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">Lemma</span> <a id="2b5d4f367192de1153ae82f9ebdb7a27" class="idref" href="#2b5d4f367192de1153ae82f9ebdb7a27"><span class="id" title="lemma">PNF_isΣorΠ_syn</span></a> {<a id="ff:84" class="idref" href="#ff:84"><span class="id" title="binder">ff</span></a>: <span class="id" title="class">falsity_flag</span>} <a id="f:85" class="idref" href="#f:85"><span class="id" title="binder">f</span></a> (<a id="pnf:86" class="idref" href="#pnf:86"><span class="id" title="binder">pnf</span></a> : <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.PrenexNormalForm.html#PNF_ind"><span class="id" title="inductive">PNF_ind</span></a> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#f:85"><span class="id" title="variable">f</span></a>):<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Specif.html#e6a434cae860987d1c5f61b342cc9e57"><span class="id" title="notation">{</span></a> <a id="n:87" class="idref" href="#n:87"><span class="id" title="binder">n</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Specif.html#e6a434cae860987d1c5f61b342cc9e57"><span class="id" title="notation">&amp;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#sum"><span class="id" title="inductive">sum</span></a> (<a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#7500b565e65690b09a75fe82fa751235"><span class="id" title="inductive">isΣf_ind</span></a> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#n:87"><span class="id" title="variable">n</span></a> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#f:85"><span class="id" title="variable">f</span></a>) (<a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#7ea41494271c43fb4b1e577b36a2be7e"><span class="id" title="inductive">isΠf_ind</span></a> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#n:87"><span class="id" title="variable">n</span></a> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#f:85"><span class="id" title="variable">f</span></a>) <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Specif.html#e6a434cae860987d1c5f61b342cc9e57"><span class="id" title="notation">}</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">(*&nbsp;PNF_ind_rec&nbsp;is&nbsp;an&nbsp;eliminator&nbsp;to&nbsp;Type&nbsp;and&nbsp;enables&nbsp;strong&nbsp;induction&nbsp;*)</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">induction</span> <span class="id" title="var">pnf</span> <span class="id" title="keyword">as</span> [<span class="id" title="var">b</span> <span class="id" title="var">ϕ</span> <span class="id" title="var">H</span>|<span class="id" title="var">b</span> [] <span class="id" title="var">ϕ</span> <span class="id" title="var">H</span> [<span class="id" title="var">n</span> [<span class="id" title="var">IH</span>|<span class="id" title="var">IH</span>]]].<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">exists</span> 0. <span class="id" title="tactic">left</span>. <span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#91c5ff7fae8fa0f59d131544e2430068"><span class="id" title="constructor">isΣnoQuant</span></a>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;- <span class="id" title="tactic">exists</span> (<a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#S"><span class="id" title="constructor">S</span></a> <span class="id" title="var">n</span>). <span class="id" title="tactic">right</span>. <span class="id" title="var">now</span> <span class="id" title="tactic">eapply</span> <a class="idref" href="SyntheticComputability.ArithmeticHierarchy.ArithmeticalHierarchySyntactic.html#4157db7784aab2b722aee287d4616b15"><span class="id" title="constructor">isΣall</span></a>.<br/>
@@ -173,6 +174,8 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">Defined</span>.<br/>
 
 <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">(*&nbsp;Compute&nbsp;(projT1&nbsp;(PNF_isΣorΠ_syn&nbsp;(convert_PNF_PNF&nbsp;(∀∃∀∃∀&nbsp;⊥)))).&nbsp;*)</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">(*&nbsp;Compute&nbsp;(projT2&nbsp;(PNF_isΣorΠ_syn&nbsp;(convert_PNF_PNF&nbsp;(∀∃∀∃∀&nbsp;⊥)))).&nbsp;*)</span><br/>
 
 <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">Lemma</span> <a id="1f3aae98d60d1b3e3aa035fe9f5bd5d1" class="idref" href="#1f3aae98d60d1b3e3aa035fe9f5bd5d1"><span class="id" title="lemma">isΣΠf_PNF</span></a>:<br/>

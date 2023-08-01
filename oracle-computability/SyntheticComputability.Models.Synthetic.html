@@ -25,8 +25,6 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">Library SyntheticComputability.Models.Synthetic</h1>
-
 <div class="code">
 <span class="id" title="keyword">From</span> <span class="id" title="var">SyntheticComputability.Synthetic</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="SyntheticComputability.Synthetic.DecidabilityFacts.html#"><span class="id" title="library">DecidabilityFacts</span></a> <a class="idref" href="SyntheticComputability.Synthetic.EnumerabilityFacts.html#"><span class="id" title="library">EnumerabilityFacts</span></a> <a class="idref" href="SyntheticComputability.Synthetic.ListEnumerabilityFacts.html#"><span class="id" title="library">ListEnumerabilityFacts</span></a> <a class="idref" href="SyntheticComputability.Synthetic.ReducibilityFacts.html#"><span class="id" title="library">ReducibilityFacts</span></a>.<br/>
 <span class="id" title="keyword">From</span> <span class="id" title="var">SyntheticComputability</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="SyntheticComputability.Models.LMuRecursion.html#"><span class="id" title="library">LMuRecursion</span></a>.<br/>
@@ -290,15 +288,25 @@
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;Definition&nbsp;T_nat_nat&nbsp;:=&nbsp;Eval&nbsp;cbn&nbsp;in&nbsp;L_T&nbsp;(X&nbsp;:=&nbsp;nat&nbsp;*&nbsp;nat).&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Definition&nbsp;pair'&nbsp;:&nbsp;nat&nbsp;*&nbsp;nat&nbsp;-&gt;&nbsp;nat&nbsp;*&nbsp;nat&nbsp;:=&nbsp;fun&nbsp;'(x,y)&nbsp;=&gt;&nbsp;(x,y).&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Instance&nbsp;term_pair'&nbsp;:&nbsp;computable&nbsp;pair'.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;extract.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="SyntheticComputability.Shared.embed_nat.html#"><span class="id" title="library">SyntheticComputability.Shared.embed_nat</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Nat.html#"><span class="id" title="library">Nat</span></a>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;Instance&nbsp;term_nat_rec&nbsp;{X&nbsp;:&nbsp;Set}&nbsp;`{encodable&nbsp;X}&nbsp;:&nbsp;computable&nbsp;(@nat_rec&nbsp;(fun&nbsp;_&nbsp;=&gt;&nbsp;X)).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;unfold&nbsp;nat_rec,&nbsp;nat_rect.&nbsp;extract.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Definition</span> <a id="F'" class="idref" href="#F'"><span class="id" title="definition">F'</span></a> := (<span class="id" title="keyword">fix</span> <span class="id" title="var">F</span> (<a id="n:102" class="idref" href="#n:102"><span class="id" title="binder">n</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a>) : <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> := <span class="id" title="keyword">match</span> <a class="idref" href="SyntheticComputability.Models.Synthetic.html#n:102"><span class="id" title="variable">n</span></a> <span class="id" title="keyword">with</span><br/>
@@ -343,16 +351,45 @@
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;Definition&nbsp;F'''&nbsp;:=&nbsp;(prod_enum&nbsp;nat_enum&nbsp;nat_enum).&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Instance&nbsp;term_prod_enum&nbsp;:&nbsp;computable&nbsp;F'''.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;unfold&nbsp;F'''.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;extract.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Instance&nbsp;term_nat_enum&nbsp;:&nbsp;computable&nbsp;nat_enum.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;extract.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Instance&nbsp;term_T_nat_nat&nbsp;:&nbsp;computable&nbsp;T_nat_nat.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;change&nbsp;(computable&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(fix&nbsp;f&nbsp;(n&nbsp;:&nbsp;nat)&nbsp;:&nbsp;list&nbsp;(nat&nbsp;*&nbsp;nat)&nbsp;:=&nbsp;match&nbsp;n&nbsp;with&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;0&nbsp;=&gt;&nbsp;<span class="inlinecode"></span>&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;S&nbsp;n0&nbsp;=&gt;&nbsp;f&nbsp;n0&nbsp;++&nbsp;opt_to_list&nbsp;(F'''&nbsp;n0)&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end)).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;extract.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Instance&nbsp;term_R_nat_nat&nbsp;:&nbsp;computable&nbsp;R_nat_nat.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;change&nbsp;(computable&nbsp;(fun&nbsp;n&nbsp;:&nbsp;nat&nbsp;=&gt;&nbsp;nthe&nbsp;n&nbsp;(T_nat_nat&nbsp;n))).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;extract.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;Instance&nbsp;term_ofNat&nbsp;X&nbsp;`{encodable&nbsp;X}&nbsp;:&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;computable&nbsp;(@ofNat&nbsp;X).&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;extract.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Definition</span> <a id="lenumerates" class="idref" href="#lenumerates"><span class="id" title="definition">lenumerates</span></a> {<a id="X:114" class="idref" href="#X:114"><span class="id" title="binder">X</span></a>} <a id="L:115" class="idref" href="#L:115"><span class="id" title="binder">L</span></a> (<a id="p:116" class="idref" href="#p:116"><span class="id" title="binder">p</span></a> : <a class="idref" href="SyntheticComputability.Models.Synthetic.html#X:114"><span class="id" title="variable">X</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Prop</span>) :=<br/>

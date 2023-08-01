@@ -25,8 +25,6 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">Library SyntheticComputability.Shared.Dec</h1>
-
 <div class="code">
 <span class="id" title="keyword">Set Implicit Arguments</span>.<br/>
 
@@ -65,9 +63,15 @@
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;Lemma&nbsp;Dec_auto_not&nbsp;(X:&nbsp;Prop)&nbsp;(d:&nbsp;dec&nbsp;X)&nbsp;:&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;~&nbsp;X&nbsp;-&gt;&nbsp;~&nbsp;Dec&nbsp;X.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;destruct&nbsp;d&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">A</span>|<span class="id" title="var">A</span></span>;&nbsp;cbn;&nbsp;tauto.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
-#[<span class="id" title="var">export</span>] <span class="id" title="keyword">Hint</span> <span class="id" title="keyword">Extern</span> 4 =&gt;  <br/>
+<span class="comment">(*&nbsp;Hint&nbsp;Resolve&nbsp;Dec_auto&nbsp;Dec_auto_not&nbsp;:&nbsp;core.&nbsp;*)</span><br/>
+#[<span class="id" title="var">export</span>] <span class="id" title="keyword">Hint</span> <span class="id" title="keyword">Extern</span> 4 =&gt;  <span class="comment">(*&nbsp;Improves&nbsp;type&nbsp;class&nbsp;inference&nbsp;*)</span><br/>
 <span class="id" title="keyword">match</span> <span class="id" title="keyword">goal</span> <span class="id" title="keyword">with</span><br/>
 &nbsp;&nbsp;| [  |- <a class="idref" href="SyntheticComputability.Shared.Dec.html#dec"><span class="id" title="class">dec</span></a> ((<span class="id" title="keyword">fun</span> <span class="id" title="var">_</span> =&gt; <span class="id" title="var">_</span>) <span class="id" title="var">_</span>) ] =&gt; <span class="id" title="var">cbn</span><br/>
 <span class="id" title="keyword">end</span> : <span class="id" title="var">typeclass_instances</span>.<br/>
@@ -102,6 +106,7 @@
 <span class="id" title="keyword">end</span> : <span class="id" title="var">core</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;Decided&nbsp;propositions&nbsp;behave&nbsp;classically&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <a id="dec_DN" class="idref" href="#dec_DN"><span class="id" title="lemma">dec_DN</span></a> <a id="X:15" class="idref" href="#X:15"><span class="id" title="binder">X</span></a> : <br/>
@@ -125,6 +130,7 @@
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;Propagation&nbsp;rules&nbsp;for&nbsp;decisions&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Fact</span> <a id="dec_transfer" class="idref" href="#dec_transfer"><span class="id" title="lemma">dec_transfer</span></a> <a id="P:20" class="idref" href="#P:20"><span class="id" title="binder">P</span></a> <a id="Q:21" class="idref" href="#Q:21"><span class="id" title="binder">Q</span></a> :<br/>
@@ -169,6 +175,8 @@
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;Coq&nbsp;standard&nbsp;modules&nbsp;make&nbsp;"not"&nbsp;and&nbsp;"iff"&nbsp;opaque&nbsp;for&nbsp;type&nbsp;class&nbsp;inference,&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;can&nbsp;be&nbsp;seen&nbsp;with&nbsp;Print&nbsp;HintDb&nbsp;typeclass_instances.&nbsp;*)</span><br/>
 
 <br/>
 #[<span class="id" title="var">export</span>] <span class="id" title="keyword">Instance</span> <a id="not_dec" class="idref" href="#not_dec"><span class="id" title="instance">not_dec</span></a> (<a id="X:28" class="idref" href="#X:28"><span class="id" title="binder">X</span></a> : <span class="id" title="keyword">Prop</span>) : <br/>
@@ -185,6 +193,7 @@
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;Discrete&nbsp;types&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Notation</span> <a id=":::'eq_dec'_x" class="idref" href="#:::'eq_dec'_x"><span class="id" title="notation">&quot;</span></a>'eq_dec' X" := (<span class="id" title="keyword">forall</span> <a id="x:31" class="idref" href="#x:31"><span class="id" title="binder">x</span></a> <a id="y:32" class="idref" href="#y:32"><span class="id" title="binder">y</span></a> : <span class="id" title="var">X</span>, <a class="idref" href="SyntheticComputability.Shared.Dec.html#dec"><span class="id" title="class">dec</span></a> (<a class="idref" href="SyntheticComputability.Shared.Dec.html#x:31"><span class="id" title="variable">x</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a><a class="idref" href="SyntheticComputability.Shared.Dec.html#y:32"><span class="id" title="variable">y</span></a>)) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 70).<br/>

@@ -25,8 +25,6 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">Library SyntheticComputability.Models.CT</h1>
-
 <div class="code">
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="library">Undecidability.L.Datatypes.LNat</span>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="library">Undecidability.L.Datatypes.List.List_in</span> <span class="id" title="library">Undecidability.L.Datatypes.List.List_basics</span>.<br/>
@@ -94,6 +92,8 @@
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;Definition&nbsp;unembed'&nbsp;:=&nbsp;(fix&nbsp;F&nbsp;(k&nbsp;:&nbsp;nat)&nbsp;:=&nbsp;&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;match&nbsp;k&nbsp;with&nbsp;0&nbsp;=&gt;&nbsp;(0,0)&nbsp;|&nbsp;S&nbsp;n&nbsp;=&gt;&nbsp;match&nbsp;fst&nbsp;(F&nbsp;n)&nbsp;with&nbsp;0&nbsp;=&gt;&nbsp;(S&nbsp;(snd&nbsp;(F&nbsp;n)),&nbsp;0)&nbsp;|&nbsp;S&nbsp;x&nbsp;=&gt;&nbsp;(x,&nbsp;S&nbsp;(snd&nbsp;(F&nbsp;n)))&nbsp;end&nbsp;end).&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Fixpoint</span> <a id="sum" class="idref" href="#sum"><span class="id" title="definition">sum</span></a> <a id="n:26" class="idref" href="#n:26"><span class="id" title="binder">n</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> :=<br/>
@@ -122,6 +122,10 @@
 <span class="id" title="keyword">Definition</span> <a id="enum_term" class="idref" href="#enum_term"><span class="id" title="definition">enum_term</span></a> := (<a class="idref" href="SyntheticComputability.Shared.embed_nat.html#29dfd6de2563b31b58d19138697a48a6"><span class="id" title="notation">fun</span></a><a class="idref" href="SyntheticComputability.Shared.embed_nat.html#29dfd6de2563b31b58d19138697a48a6"><span class="id" title="notation">!</span></a> <a class="idref" href="SyntheticComputability.Shared.embed_nat.html#29dfd6de2563b31b58d19138697a48a6"><span class="id" title="notation">⟨</span></a><a id="n:32" class="idref" href="#n:32"><span class="id" title="binder">n</span></a><a class="idref" href="SyntheticComputability.Shared.embed_nat.html#29dfd6de2563b31b58d19138697a48a6"><span class="id" title="notation">,</span></a><a id="m:33" class="idref" href="#m:33"><span class="id" title="binder">m</span></a><a class="idref" href="SyntheticComputability.Shared.embed_nat.html#29dfd6de2563b31b58d19138697a48a6"><span class="id" title="notation">⟩</span></a> <a class="idref" href="SyntheticComputability.Shared.embed_nat.html#29dfd6de2563b31b58d19138697a48a6"><span class="id" title="notation">=&gt;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Lists.List.html#nth_error"><span class="id" title="definition">nth_error</span></a> (<a class="idref" href="SyntheticComputability.Models.CT.html#list_enumerator_term"><span class="id" title="definition">list_enumerator_term</span></a> <a class="idref" href="SyntheticComputability.Models.CT.html#n:32"><span class="id" title="variable">n</span></a>) <a class="idref" href="SyntheticComputability.Models.CT.html#m:33"><span class="id" title="variable">m</span></a>).<br/>
 
 <br/>
+<span class="comment">(*&nbsp;Instance&nbsp;enum_term_computable&nbsp;:&nbsp;computable&nbsp;enum_term.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;extract.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Definition</span> <a id="enum_closed" class="idref" href="#enum_closed"><span class="id" title="definition">enum_closed</span></a> <a id="n:34" class="idref" href="#n:34"><span class="id" title="binder">n</span></a> :=<br/>
@@ -148,6 +152,10 @@
 &nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;Instance&nbsp;T_L_computable&nbsp;:&nbsp;computable&nbsp;T_L.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Proof.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;extract.&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;Qed.&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="SyntheticComputability.Axioms.Equivalence.html#"><span class="id" title="library">SyntheticComputability.Axioms.Equivalence</span></a>.<br/>

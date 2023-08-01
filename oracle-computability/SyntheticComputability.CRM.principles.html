@@ -25,8 +25,6 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">Library SyntheticComputability.CRM.principles</h1>
-
 <div class="code">
 <span class="id" title="keyword">From</span> <span class="id" title="var">Coq.Logic</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Logic.ConstructiveEpsilon.html#"><span class="id" title="library">ConstructiveEpsilon</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.micromega.Lia.html#"><span class="id" title="library">Lia</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Nat.html#"><span class="id" title="library">Nat</span></a>.<br/>
@@ -238,6 +236,24 @@
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+<span class="comment">(*<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;LEM&nbsp;--&gt;&nbsp;DGP&nbsp;--&gt;&nbsp;WLEM&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;LPO&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&gt;&nbsp;&nbsp;&nbsp;&nbsp;WLPO&nbsp;&nbsp;&nbsp;--&gt;&nbsp;&nbsp;&nbsp;LLPO<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v<br/>
+&nbsp;&nbsp;MP&nbsp;/\&nbsp;WLPO&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PFP&nbsp;/\&nbsp;LLPO<br/>
+<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;MP&nbsp;/\&nbsp;IP<br/>
+<br/>
+&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Definition</span> <a id="LPO" class="idref" href="#LPO"><span class="id" title="definition">LPO</span></a> := <span class="id" title="notation">forall</span> <a id="f:96" class="idref" href="#f:96"><span class="id" title="binder">f</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#bool"><span class="id" title="inductive">bool</span></a><span class="id" title="notation">,</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#f031fe1957c4a4a8e217aa46af2b4e25"><span class="id" title="notation">(</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">exists</span></a> <a id="n:97" class="idref" href="#n:97"><span class="id" title="binder">n</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">,</span></a> <a class="idref" href="SyntheticComputability.CRM.principles.html#f:96"><span class="id" title="variable">f</span></a> <a class="idref" href="SyntheticComputability.CRM.principles.html#n:97"><span class="id" title="variable">n</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#f031fe1957c4a4a8e217aa46af2b4e25"><span class="id" title="notation">)</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#f031fe1957c4a4a8e217aa46af2b4e25"><span class="id" title="notation">\/</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#63a68285c81db8f9bc456233bb9ed181"><span class="id" title="notation">~</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#63a68285c81db8f9bc456233bb9ed181"><span class="id" title="notation">(</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">exists</span></a> <a id="n:98" class="idref" href="#n:98"><span class="id" title="binder">n</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#a883bdd010993579f99d60b3775bcf54"><span class="id" title="notation">,</span></a> <a class="idref" href="SyntheticComputability.CRM.principles.html#f:96"><span class="id" title="variable">f</span></a> <a class="idref" href="SyntheticComputability.CRM.principles.html#n:98"><span class="id" title="variable">n</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#6cd0f7b28b6092304087c7049437bb1a"><span class="id" title="notation">=</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#true"><span class="id" title="constructor">true</span></a><a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#63a68285c81db8f9bc456233bb9ed181"><span class="id" title="notation">)</span></a>.<br/>
@@ -833,7 +849,8 @@
 <span class="id" title="keyword">Module</span> <a id="assume_EA" class="idref" href="#assume_EA"><span class="id" title="module">assume_EA</span></a>.<br/>
 
 <br/>
-&nbsp;&nbsp;<span class="id" title="keyword">Import</span> <a class="idref" href="SyntheticComputability.Axioms.EA.html#Assume_EA"><span class="id" title="module">Assume_EA</span></a>. 
+&nbsp;&nbsp;<span class="id" title="keyword">Import</span> <a class="idref" href="SyntheticComputability.Axioms.EA.html#Assume_EA"><span class="id" title="module">Assume_EA</span></a>. <span class="comment">(*&nbsp;assumes&nbsp;EA&nbsp;as&nbsp;an&nbsp;axiom,&nbsp;i.e.&nbsp;a&nbsp;parametrically&nbsp;universal&nbsp;enumerator&nbsp;*)</span><br/>
+
 <br/>
 &nbsp;&nbsp;<span class="id" title="keyword">Lemma</span> <a id="assume_EA.MP_iff_stable_W" class="idref" href="#assume_EA.MP_iff_stable_W"><span class="id" title="lemma">MP_iff_stable_W</span></a> :<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<a class="idref" href="SyntheticComputability.CRM.principles.html#MP"><span class="id" title="definition">MP</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'&lt;-&gt;'_x"><span class="id" title="notation">&lt;-&gt;</span></a> <a class="idref" href="SyntheticComputability.Synthetic.Definitions.html#stable"><span class="id" title="abbreviation">Definitions.stable</span></a> (<a class="idref" href="SyntheticComputability.Synthetic.Definitions.html#uncurry"><span class="id" title="definition">uncurry</span></a> <a class="idref" href="SyntheticComputability.Axioms.EA.html#Assume_EA.W"><span class="id" title="definition">W</span></a>).<br/>
@@ -1100,6 +1117,28 @@
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;***&nbsp;Compatibility&nbsp;&nbsp;*)</span><br/>
+<span class="comment">(*&nbsp;<br/>
+Lemma&nbsp;AC_1_0_Fext&nbsp;:<br/>
+&nbsp;&nbsp;AC_1_0&nbsp;-&gt;&nbsp;Fext&nbsp;-&gt;&nbsp;EA&nbsp;-&gt;&nbsp;decidable&nbsp;(compl&nbsp;K_nat_nat).<br/>
+Proof.<br/>
+&nbsp;&nbsp;intros&nbsp;C&nbsp;Fext&nbsp;EA.<br/>
+&nbsp;&nbsp;pose&nbsp;proof&nbsp;(fun&nbsp;f&nbsp;=&gt;&nbsp;enumerable_code&nbsp;EA&nbsp;_&nbsp;(enumerable_graph'&nbsp;f)).<br/>
+&nbsp;&nbsp;eapply&nbsp;C&nbsp;in&nbsp;H&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">code</span></span> <span class="inlinecode"><span class="id" title="var">Hcode</span></span>.<br/>
+&nbsp;&nbsp;exists&nbsp;(fun&nbsp;f&nbsp;=&gt;&nbsp;Nat.eqb&nbsp;(code&nbsp;f)&nbsp;(code&nbsp;(fun&nbsp;_&nbsp;=&gt;&nbsp;0))).<br/>
+&nbsp;&nbsp;eapply&nbsp;Proper_decider.&nbsp;intros&nbsp;?.&nbsp;reflexivity.<br/>
+&nbsp;&nbsp;eapply&nbsp;(K_nat_equiv).<br/>
+&nbsp;&nbsp;intros&nbsp;f.&nbsp;split;&nbsp;rewrite&nbsp;NPeano.Nat.eqb_eq.<br/>
+&nbsp;&nbsp;-&nbsp;intros&nbsp;E.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;eapply&nbsp;f_equal,&nbsp;Fext,&nbsp;E.<br/>
+&nbsp;&nbsp;-&nbsp;intros&nbsp;E&nbsp;n.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;generalize&nbsp;(Hcode&nbsp;f),&nbsp;(Hcode&nbsp;(fun&nbsp;_&nbsp;=&gt;&nbsp;0)).<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;rewrite&nbsp;E.&nbsp;clear&nbsp;E.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;intros&nbsp;Hf&nbsp;H.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;pose&nbsp;proof(enumerator_ext&nbsp;Hf&nbsp;H&nbsp;(ltac:(reflexivity))&nbsp;⟨&nbsp;n,&nbsp;f&nbsp;n&nbsp;⟩)&nbsp;as&nbsp;E.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;destruct&nbsp;E&nbsp;as&nbsp;<span class="inlinecode">[<span class="id" title="var">x</span></span> <span class="inlinecode"><span class="id" title="var">E</span>%(<span class="id" title="tactic">f_equal</span></span> <span class="inlinecode"><span class="id" title="var">unembed</span>)]</span> <span class="inlinecode"><span class="id" title="var">_</span></span>;&nbsp;eauto.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;rewrite&nbsp;!embedP&nbsp;in&nbsp;E.&nbsp;now&nbsp;inv&nbsp;E.<br/>
+Qed.&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <a id="AUC_to_dec" class="idref" href="#AUC_to_dec"><span class="id" title="lemma">AUC_to_dec</span></a> (<a id="p:446" class="idref" href="#p:446"><span class="id" title="binder">p</span></a> : <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Datatypes.html#nat"><span class="id" title="inductive">nat</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Prop</span>) :<br/>

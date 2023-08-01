@@ -25,8 +25,6 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">Library SyntheticComputability.Synthetic.SemiDecidabilityFacts</h1>
-
 <div class="code">
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Lists.List.html#"><span class="id" title="library">List</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Classes.Morphisms.html#"><span class="id" title="library">Morphisms</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.micromega.Lia.html#"><span class="id" title="library">Lia</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="SyntheticComputability.Synthetic.DecidabilityFacts.html#"><span class="id" title="library">SyntheticComputability.Synthetic.DecidabilityFacts</span></a> <a class="idref" href="SyntheticComputability.Synthetic.EnumerabilityFacts.html#"><span class="id" title="library">SyntheticComputability.Synthetic.EnumerabilityFacts</span></a> <a class="idref" href="SyntheticComputability.Shared.partial.html#"><span class="id" title="library">SyntheticComputability.Shared.partial</span></a> <a class="idref" href="SyntheticComputability.Shared.embed_nat.html#"><span class="id" title="library">SyntheticComputability.Shared.embed_nat</span></a> <a class="idref" href="SyntheticComputability.Shared.FinitenessFacts.html#"><span class="id" title="library">SyntheticComputability.Shared.FinitenessFacts</span></a> <a class="idref" href="SyntheticComputability.Shared.Dec.html#"><span class="id" title="library">SyntheticComputability.Shared.Dec</span></a>.<br/>
@@ -287,8 +285,26 @@
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;Lemma&nbsp;sdec_commpute_lor&nbsp;{X}&nbsp;{p&nbsp;q&nbsp;:&nbsp;X&nbsp;-&gt;&nbsp;Prop}&nbsp;:<br/>
+&nbsp;&nbsp;semi_decidable&nbsp;p&nbsp;-&gt;&nbsp;semi_decidable&nbsp;q&nbsp;-&gt;&nbsp;(forall&nbsp;x,&nbsp;p&nbsp;x&nbsp;\/&nbsp;q&nbsp;x)&nbsp;-&gt;&nbsp;exists&nbsp;f&nbsp;:&nbsp;X&nbsp;-&gt;&nbsp;bool,&nbsp;forall&nbsp;x,&nbsp;if&nbsp;f&nbsp;x&nbsp;then&nbsp;p&nbsp;x&nbsp;else&nbsp;q&nbsp;x.<br/>
+Proof.<br/>
+&nbsp;&nbsp;intros&nbsp;<span class="inlinecode"><span class="id" title="var">f_p</span></span> <span class="inlinecode"><span class="id" title="var">Hp</span></span>&nbsp;<span class="inlinecode"><span class="id" title="var">f_q</span></span> <span class="inlinecode"><span class="id" title="var">Hq</span></span>&nbsp;Ho.<br/>
+&nbsp;&nbsp;unshelve&nbsp;eexists.<br/>
+&nbsp;&nbsp;-&nbsp;refine&nbsp;(fun&nbsp;x&nbsp;=&gt;&nbsp;let&nbsp;(n,&nbsp;H)&nbsp;:=&nbsp;mu_nat&nbsp;(P&nbsp;:=&nbsp;fun&nbsp;n&nbsp;=&gt;&nbsp;orb&nbsp;(f_p&nbsp;x&nbsp;n)&nbsp;(f_q&nbsp;x&nbsp;n)&nbsp;=&nbsp;true)&nbsp;(ltac:(cbn;&nbsp;decide&nbsp;equality))&nbsp;_&nbsp;in&nbsp;f_p&nbsp;x&nbsp;n).<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;destruct&nbsp;(Ho&nbsp;x)&nbsp;as&nbsp;<span class="inlinecode">[<span class="id" title="var">n</span></span> <span class="inlinecode"><span class="id" title="var">H</span>]</span> <span class="inlinecode">%</span> <span class="inlinecode"><span class="id" title="var">Hp</span></span> <span class="inlinecode">|</span> <span class="inlinecode">[<span class="id" title="var">n</span></span> <span class="inlinecode"><span class="id" title="var">H</span>]</span> <span class="inlinecode">%</span> <span class="inlinecode"><span class="id" title="var">Hq</span></span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;exists&nbsp;n.&nbsp;now&nbsp;rewrite&nbsp;H.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;exists&nbsp;n.&nbsp;rewrite&nbsp;H.&nbsp;now&nbsp;destruct&nbsp;f_p.<br/>
+&nbsp;&nbsp;-&nbsp;intros&nbsp;x.&nbsp;cbn&nbsp;-<span class="inlinecode"><span class="id" title="var">mu_nat</span></span>.&nbsp;destruct&nbsp;mu_nat.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;specialize&nbsp;(Hp&nbsp;x).&nbsp;specialize&nbsp;(Hq&nbsp;x).<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;destruct&nbsp;(f_p)&nbsp;eqn:E1.&nbsp;eapply&nbsp;Hp.&nbsp;eauto.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;destruct&nbsp;(f_q)&nbsp;eqn:E2.&nbsp;eapply&nbsp;Hq.&nbsp;eauto.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;inversion&nbsp;e.<br/>
+Qed.<br/>
+<br/>
+&nbsp;*)</span><br/>
 
 <br/>
+<span class="comment">(*&nbsp;**&nbsp;Other&nbsp;&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <a id="d_semi_decidable_impl" class="idref" href="#d_semi_decidable_impl"><span class="id" title="lemma">d_semi_decidable_impl</span></a> {<a id="X:162" class="idref" href="#X:162"><span class="id" title="binder">X</span></a>} {<a id="p:163" class="idref" href="#p:163"><span class="id" title="binder">p</span></a> <a id="q:164" class="idref" href="#q:164"><span class="id" title="binder">q</span></a> : <a class="idref" href="SyntheticComputability.Synthetic.SemiDecidabilityFacts.html#X:162"><span class="id" title="variable">X</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Prop</span>} :<br/>
@@ -324,7 +340,7 @@
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <a id="co_semi_decidable_impl" class="idref" href="#co_semi_decidable_impl"><span class="id" title="lemma">co_semi_decidable_impl</span></a> {<a id="X:178" class="idref" href="#X:178"><span class="id" title="binder">X</span></a>} {<a id="p:179" class="idref" href="#p:179"><span class="id" title="binder">p</span></a> <a id="q:180" class="idref" href="#q:180"><span class="id" title="binder">q</span></a> : <a class="idref" href="SyntheticComputability.Synthetic.SemiDecidabilityFacts.html#X:178"><span class="id" title="variable">X</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Prop</span>} :<br/>
-&nbsp;&nbsp;<br/>
+&nbsp;&nbsp;<span class="comment">(*&nbsp;(forall&nbsp;x,&nbsp;~~&nbsp;p&nbsp;x&nbsp;-&gt;&nbsp;p&nbsp;x)&nbsp;-&gt;&nbsp;*)</span><br/>
 &nbsp;&nbsp;<a class="idref" href="SyntheticComputability.Synthetic.Definitions.html#semi_decidable"><span class="id" title="definition">semi_decidable</span></a> (<a class="idref" href="SyntheticComputability.Synthetic.Definitions.html#complement"><span class="id" title="definition">complement</span></a> (<a class="idref" href="SyntheticComputability.Synthetic.Definitions.html#complement"><span class="id" title="definition">complement</span></a> <a class="idref" href="SyntheticComputability.Synthetic.SemiDecidabilityFacts.html#p:179"><span class="id" title="variable">p</span></a>)) <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="SyntheticComputability.Synthetic.Definitions.html#decidable"><span class="id" title="definition">decidable</span></a> <a class="idref" href="SyntheticComputability.Synthetic.SemiDecidabilityFacts.html#q:180"><span class="id" title="variable">q</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="SyntheticComputability.Synthetic.Definitions.html#semi_decidable"><span class="id" title="definition">semi_decidable</span></a> (<a class="idref" href="SyntheticComputability.Synthetic.Definitions.html#complement"><span class="id" title="definition">complement</span></a> (<span class="id" title="keyword">fun</span> <a id="x:181" class="idref" href="#x:181"><span class="id" title="binder">x</span></a> =&gt; <a class="idref" href="SyntheticComputability.Synthetic.SemiDecidabilityFacts.html#p:179"><span class="id" title="variable">p</span></a> <a class="idref" href="SyntheticComputability.Synthetic.SemiDecidabilityFacts.html#x:181"><span class="id" title="variable">x</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <a class="idref" href="SyntheticComputability.Synthetic.SemiDecidabilityFacts.html#q:180"><span class="id" title="variable">q</span></a> <a class="idref" href="SyntheticComputability.Synthetic.SemiDecidabilityFacts.html#x:181"><span class="id" title="variable">x</span></a>)).<br/>
 <span class="id" title="keyword">Proof</span>.<br/>
 &nbsp;&nbsp;<span class="id" title="tactic">intros</span> [<span class="id" title="var">f</span> <span class="id" title="var">Hf</span>] [<span class="id" title="var">g</span> <span class="id" title="var">Hg</span>].<br/>

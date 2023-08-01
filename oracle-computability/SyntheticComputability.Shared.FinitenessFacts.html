@@ -25,8 +25,6 @@
 </div>
     <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
     <div id="main">
-<h1 class="libtitle">Library SyntheticComputability.Shared.FinitenessFacts</h1>
-
 <div class="code">
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="SyntheticComputability.Shared.Dec.html#"><span class="id" title="library">SyntheticComputability.Shared.Dec</span></a> <a class="idref" href="SyntheticComputability.Shared.ListAutomation.html#"><span class="id" title="library">SyntheticComputability.Shared.ListAutomation</span></a>.<br/>
 <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Setoids.Setoid.html#"><span class="id" title="library">Setoid</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Classes.Morphisms.html#"><span class="id" title="library">Morphisms</span></a>.<br/>
@@ -553,6 +551,54 @@
 <span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
+<span class="comment">(*&nbsp;<br/>
+Lemma&nbsp;generative_even&nbsp;:<br/>
+&nbsp;&nbsp;generative&nbsp;(fun&nbsp;n&nbsp;:&nbsp;nat&nbsp;=&gt;&nbsp;Nat.even&nbsp;n&nbsp;=&nbsp;true).<br/>
+Proof.<br/>
+&nbsp;&nbsp;intros&nbsp;l.&nbsp;exists&nbsp;(2&nbsp;*&nbsp;S&nbsp;(list_max&nbsp;l)).&nbsp;split.<br/>
+&nbsp;&nbsp;-&nbsp;now&nbsp;rewrite&nbsp;Nat.even_mul.<br/>
+&nbsp;&nbsp;-&nbsp;intros&nbsp;H.&nbsp;eapply&nbsp;Forall_forall&nbsp;in&nbsp;H.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;2:&nbsp;eapply&nbsp;list_max_le&nbsp;with&nbsp;(n&nbsp;:=&nbsp;list_max&nbsp;l);&nbsp;lia.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;cbn&nbsp;in&nbsp;H.&nbsp;lia.<br/>
+Qed.<br/>
+<br/>
+Lemma&nbsp;generative_odd&nbsp;:<br/>
+&nbsp;&nbsp;generative&nbsp;(fun&nbsp;n&nbsp;:&nbsp;nat&nbsp;=&gt;&nbsp;Nat.odd&nbsp;n&nbsp;=&nbsp;true).<br/>
+Proof.<br/>
+&nbsp;&nbsp;intros&nbsp;l.&nbsp;exists&nbsp;(1&nbsp;+&nbsp;2&nbsp;*&nbsp;S&nbsp;(list_max&nbsp;l)).&nbsp;split.<br/>
+&nbsp;&nbsp;-&nbsp;now&nbsp;rewrite&nbsp;Nat.odd_succ,&nbsp;Nat.even_mul.&nbsp;<br/>
+&nbsp;&nbsp;-&nbsp;intros&nbsp;H.&nbsp;eapply&nbsp;Forall_forall&nbsp;in&nbsp;H.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;2:&nbsp;eapply&nbsp;list_max_le&nbsp;with&nbsp;(n&nbsp;:=&nbsp;list_max&nbsp;l);&nbsp;lia.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;cbn&nbsp;in&nbsp;H.&nbsp;lia.<br/>
+Qed.<br/>
+<br/>
+Definition&nbsp;P_inf&nbsp;P&nbsp;:=&nbsp;(fun&nbsp;n&nbsp;=&gt;&nbsp;if&nbsp;Nat.even&nbsp;n&nbsp;then&nbsp;P&nbsp;else&nbsp;~&nbsp;P).<br/>
+<br/>
+Lemma&nbsp;P_inf_spec&nbsp;P&nbsp;:&nbsp;<br/>
+&nbsp;&nbsp;P&nbsp;\/&nbsp;~&nbsp;P&nbsp;&lt;-&gt;&nbsp;&nbsp;exists&nbsp;n,&nbsp;P_inf&nbsp;P&nbsp;n.<br/>
+Proof.<br/>
+&nbsp;&nbsp;split.<br/>
+&nbsp;&nbsp;-&nbsp;intros&nbsp;<span class="inlinecode"><span class="id" title="var">H</span></span> <span class="inlinecode">|</span> <span class="inlinecode"><span class="id" title="var">H</span></span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;now&nbsp;exists&nbsp;0.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;+&nbsp;now&nbsp;exists&nbsp;1.<br/>
+&nbsp;&nbsp;-&nbsp;intros&nbsp;<span class="inlinecode"><span class="id" title="var">n</span></span> <span class="inlinecode"><span class="id" title="var">H</span></span>.&nbsp;red&nbsp;in&nbsp;H.&nbsp;destruct&nbsp;Nat.even;&nbsp;firstorder.<br/>
+Qed.&nbsp;&nbsp;<br/>
+<br/>
+<br/>
+<br/>
+Lemma&nbsp;P_inf_non_finite&nbsp;P&nbsp;:<br/>
+&nbsp;&nbsp;~&nbsp;finite&nbsp;(P_inf&nbsp;P).<br/>
+Proof.<br/>
+&nbsp;&nbsp;intros&nbsp;H.&nbsp;ccase&nbsp;P&nbsp;as&nbsp;<span class="inlinecode"><span class="id" title="var">HP</span></span> <span class="inlinecode">|</span> <span class="inlinecode"><span class="id" title="var">HP</span></span>.<br/>
+&nbsp;&nbsp;-&nbsp;eapply&nbsp;generative_non_exhaustible;&nbsp;eauto.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;eapply&nbsp;generative_ext.&nbsp;2:&nbsp;eapply&nbsp;generative_even.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;intros&nbsp;n.&nbsp;unfold&nbsp;P_inf.&nbsp;destruct&nbsp;(Nat.even&nbsp;n);&nbsp;firstorder&nbsp;congruence.<br/>
+&nbsp;&nbsp;-&nbsp;eapply&nbsp;generative_non_exhaustible;&nbsp;eauto.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;eapply&nbsp;generative_ext.&nbsp;2:eapply&nbsp;generative_odd.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;intros&nbsp;n.&nbsp;rewrite&nbsp;&lt;-&nbsp;Nat.negb_even.&nbsp;unfold&nbsp;P_inf.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;destruct&nbsp;(Nat.even&nbsp;n);&nbsp;cbn;&nbsp;firstorder&nbsp;congruence.<br/>
+Qed.<br/>
+&nbsp;*)</span><br/>
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <a id="unbounded_inhabited" class="idref" href="#unbounded_inhabited"><span class="id" title="lemma">unbounded_inhabited</span></a> {<a id="X:173" class="idref" href="#X:173"><span class="id" title="binder">X</span></a>} (<a id="p:174" class="idref" href="#p:174"><span class="id" title="binder">p</span></a> : <a class="idref" href="SyntheticComputability.Shared.FinitenessFacts.html#X:173"><span class="id" title="variable">X</span></a> <a class="idref" href="http://coq.inria.fr/distrib/V8.17.0/stdlib//Coq.Init.Logic.html#::type_scope:x_'-&gt;'_x"><span class="id" title="notation">-&gt;</span></a> <span class="id" title="keyword">Prop</span>) :<br/>
