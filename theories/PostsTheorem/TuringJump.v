@@ -200,9 +200,9 @@ Section TuringRedEnumerator.
   Definition χ c R x := rel_b (ξ bool c) R x.
 
   Fact computable_b :
-    OracleComputable (fun R '(c,x) (o : unit) => Ξ c R x).
+    OracleComputable (fun R '(c,x) (o : bool) => χ c R x o).
   Proof.
-    exists (fun '(c,x) => ξ unit c x). intros R [c x] [].
+    exists (fun '(c,x) => ξ bool c x). intros R [c x].
     reflexivity.
   Qed.
 
@@ -221,6 +221,36 @@ Section TuringRedEnumerator.
   Qed.
 
 End TuringRedEnumerator.
+
+Module Reverse.
+
+  Context {Part : partiality}.
+
+  Variable χ : nat -> (nat -> bool -> Prop) -> nat -> bool -> Prop.
+  Variable computable_b : OracleComputable (fun R '(c,x) (o : bool) => χ c R x o).
+  Variable surjective_b : forall (F : (nat -> bool -> Prop) -> nat -> bool -> Prop) (H : OracleComputable F),
+    exists c, forall R x b, χ c R x b <-> F R x b.
+
+  Lemma EPF_bool : exists θ : nat -> (nat ↛ bool), forall f : nat ↛ bool,
+    exists c, forall x v, θ c x =! v <-> f x =! v.
+  Proof.
+    destruct computable_b as [τ Hτ].
+    unshelve eexists.
+    - intros c.
+      edestruct @Turing_transports_computable_strong with (F := χ c) as [f Hf].
+      intros. rewrite (Hτ R (c,x) o). eapply iff_refl.
+      exact (f (fun _ => ret false)).
+    - cbn. intros f.
+      destruct surjective_b with (F := fun (R : nat -> bool -> Prop) x b => f x =! b) as [c Hc].
+      + eapply computable_partial_function. 
+      + exists c. intros x v. destruct Turing_transports_computable_strong as [F Hf].
+        unfold pcomputes in Hf.
+        specialize Hf with (R := fun _ o => o = false).
+        rewrite Hf. intros. rewrite <- ret_hasvalue_iff. firstorder congruence.
+        eapply Hc.
+  Qed.
+
+End Reverse.
 
 (* Opaque Ξ.Ξ. *)
 
