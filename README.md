@@ -24,6 +24,7 @@
   - [Synthetic Kolmogorov Complexity in Coq](https://drops.dagstuhl.de/opus/volltexte/2022/16721/) doi:[10.4230/LIPIcs.ITP.2022.12](https://doi.org/10.4230/LIPIcs.ITP.2022.12)
   - [Constructive and Synthetic Reducibility Degrees: Post's Problem for Many-One and Truth-Table Reducibility in Coq](https://doi.org/10.4230/LIPIcs.CSL.2023.21) doi:[10.4230/LIPIcs.CSL.2023.21](https://doi.org/10.4230/LIPIcs.CSL.2023.21)
   - [A Computational Cantor-Bernstein and Myhill's Isomorphism Theorem in Constructive Type Theory (Proof Pearl)](https://hal.inria.fr/hal-03891390/file/myhill-cantor-cpp23.pdf) doi:[10.1145/3573105.3575690](https://doi.org/10.1145/3573105.3575690)
+  - [Oracle Computability and Turing Reducibility in the Calculus of Inductive Constructions](https://arxiv.org/abs/2307.15543) doi:[10.48550/arXiv.2307.15543](https://doi.org/10.48550/arXiv.2307.15543)
 
 ## Description
 
