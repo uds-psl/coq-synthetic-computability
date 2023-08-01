@@ -381,10 +381,10 @@ Section jump.
 
   Notation "P ⪯ᴛ Q" := (red_Turing P Q) (at level 50).
 
-  Lemma red_T_imp_red_T_jumps  (P : nat -> Prop) (Q : nat -> Prop): 
-    P ⪯ᴛ Q -> (J P) ⪯ᴛ (J Q).
+  Lemma red_T_imp_red_m_jumps  (P : nat -> Prop) (Q : nat -> Prop): 
+    P ⪯ᴛ Q -> (J P) ⪯ₘ (J Q).
   Proof.
-    intros rT. apply red_m_impl_red_T, red_m_iff_semidec_jump.
+    intros rT. apply red_m_iff_semidec_jump.
     eapply Turing_transports_sdec; [apply semidecidable_J|apply rT].
   Qed.
 
