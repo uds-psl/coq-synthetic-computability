@@ -36,6 +36,7 @@ Section ArithmeticalHierarchyEquiv.
     - exfalso. inversion nQ.
   Qed.
 
+  (** # <a id="isSigmasyn_in_isSigmasem" /> #*)
   Lemma isΣnsyn_in_isΣsem:
     (forall n k (p: vec nat k -> Prop), isΣsyn n p -> isΣsem n p)
  /\ (forall n k (p: vec nat k -> Prop), isΠsyn n p -> isΠsem n p).
@@ -83,8 +84,10 @@ Section ArithmeticalHierarchyEquiv.
   (* Rückrichtung annehmen entscheidbar -> Δ1 *)
 
   Definition decΔ1syn := forall k (f: vec nat k -> bool), isΔsyn 1 (fun v => f v = true).
+  (** # <a id="decSigma1syn" /> #*)
   Definition decΣ1syn := forall k (f: vec nat k -> bool), isΣsyn 1 (fun v => f v = true).
 
+  (** # <a id="decSigma1syn_decDelta1syn" /> #*)
   Lemma decΣ1syn_decΔ1syn : decΣ1syn <-> decΔ1syn.
   Proof.
     unfold decΣ1syn, decΔ1syn.
@@ -95,6 +98,7 @@ Section ArithmeticalHierarchyEquiv.
     - intros H k f. apply H. 
   Qed.
 
+  (** # <a id="decSigma1syn_incl_1" /> #*)
   Lemma decΣ1syn_incl_1 :
     decΣ1syn <->
       (forall k (p : vec nat k -> Prop), isΣsem 1 p -> isΣsyn 1 p)
@@ -118,7 +122,8 @@ Section ArithmeticalHierarchyEquiv.
       intros H k f. apply H. apply isΣΠsem0.
     }
   Qed.
-  
+
+  (** # <a id="isSigmasem_in_isSigmasyn" /> #*)
   Lemma isΣsem_in_isΣsyn :
   decΣ1syn ->
     (forall n k (p: vec nat k -> Prop), isΣsem n p -> n <> 0 -> isΣsyn n p)

@@ -95,6 +95,7 @@ Section ArithmeticalHierarchySemantic.
     - intros. econstructor. eapply H. reflexivity. firstorder.
   Qed.
 
+  (** # <a id="semi_dec_iff_Sigma1" /> #*)
   Lemma semi_dec_iff_Σ1 {k} (p : vec nat k -> Prop):
     semi_decidable p <-> isΣsem 1 p.
   Proof.
@@ -123,6 +124,7 @@ Section ArithmeticalHierarchySemantic.
         apply isΠsemS. apply IHn.
   Qed.
 
+  (** # <a id="isSigman_In_SigmaSn" /> #*)
   Lemma isΣΠn_In_ΣΠSn l :
     (forall n k (p: vec nat k -> Prop), isΣsem n p -> isΣsem (l + n) p)
 /\  (forall n k (p: vec nat k -> Prop), isΠsem n p -> isΠsem (l + n) p).
@@ -133,6 +135,7 @@ Section ArithmeticalHierarchySemantic.
     all: cbn; econstructor; eauto.
   Qed.
 
+  (** # <a id="isSigmasem_m_red_closed" /> #*)
   Lemma isΣsem_m_red_closed : 
     (forall n k (q: vec nat k -> Prop), isΣsem n q -> forall k' (p : vec nat k' -> Prop), p ⪯ₘ q -> isΣsem n p)
 /\  (forall n k (q: vec nat k -> Prop), isΠsem n q -> forall k' (p : vec nat k' -> Prop), p ⪯ₘ q -> isΠsem n p).
@@ -155,7 +158,8 @@ Section ArithmeticalHierarchySemantic.
         intros x. eapply iff_refl.
       + firstorder.
   Qed.
-  
+
+  (** # <a id="isSigmasemTwoEx" /> #*)
   Lemma isΣsemTwoEx k n (p : vec nat (S (S k)) -> Prop):
     isΠsem n p -> isΣsem (S n) (fun v => exists y x : nat, p (x :: y :: v)).
   Proof.
@@ -174,6 +178,7 @@ Section ArithmeticalHierarchySemantic.
       now rewrite eqhd, eqtl, eq in Hp.
   Qed.
 
+  (** # <a id="isSigmasemE" /> #*)
   Lemma isΣsemE k n (p : vec nat (S k) -> Prop):
     isΣsem (S n) p -> isΣsem (S n) (fun v => exists x : nat, p (x :: v)).
   Proof.
@@ -207,6 +212,7 @@ Section ArithmeticalHierarchySemantic.
     eapply PredExt. eapply isΠsemTwoAll. eauto. firstorder.
   Qed.
 
+  (** # <a id="isSigman_In_PiSn" /> #*)
   Lemma isΣΠn_In_ΠΣSn :
     (forall n k (p: vec nat k -> Prop), isΣsem n p -> isΠsem (S n) p)
 /\  (forall n k (p: vec nat k -> Prop), isΠsem n p -> isΣsem (S n) p).
@@ -219,7 +225,8 @@ Section ArithmeticalHierarchySemantic.
       2: { exists (fun v => Vector.tl v). intros v. split; intros pv; apply pv. }
       apply isΣsemS in H. eapply PredExt. 1: apply H. firstorder.
   Qed.
-  
+
+  (** # <a id="isSigmasem_and_closed" /> #*)
   Lemma isΣsem_and_closed n :
     (forall k (p: vec nat k -> Prop), isΣsem n p -> forall (q : vec nat k -> Prop), isΣsem n q -> isΣsem n (fun v => p v /\ q v))
 /\  (forall k (p: vec nat k -> Prop), isΠsem n p -> forall (q : vec nat k -> Prop), isΠsem n q -> isΠsem n (fun v => p v /\ q v)).
@@ -263,6 +270,7 @@ Section ArithmeticalHierarchySemantic.
   Variable list_vec_nat_inv : forall k v, nat_to_list_vec k (list_vec_to_nat v) = v.
   Variable nat_list_vec_inv : forall k n, list_vec_to_nat (nat_to_list_vec k n) = n.
 
+  (** # <a id="isSigmasem_if_closed" /> #*)
   Lemma isΣsem_if_closed n :
     (forall k (p: vec nat k -> Prop), isΣsem n p -> forall (q : vec nat k -> Prop) (f : nat -> bool), isΣsem n q -> isΣsem n (fun v => if f (Vector.hd v) then p (Vector.tl v) else q (Vector.tl v)))
 /\  (forall k (p: vec nat k -> Prop), isΠsem n p -> forall (q : vec nat k -> Prop) (f : nat -> bool), isΠsem n q -> isΠsem n (fun v => if f (Vector.hd v) then p (Vector.tl v) else q (Vector.tl v))). 
@@ -292,6 +300,7 @@ Section ArithmeticalHierarchySemantic.
         firstorder. cbn. destruct f; firstorder. cbn in *. destruct f; firstorder.
   Qed.
 
+  (** # <a id="isSigmaPiball" /> #*)
   Lemma isΣΠball n :
     (forall k (p : vec nat (S k) -> Prop), isΣsem n p -> isΣsem n (fun v => forall l, l < (Vector.hd v) -> p (l::(Vector.tl v))))
 /\  (forall k (p : vec nat (S k) -> Prop), isΠsem n p -> isΠsem n (fun v => forall l, l < (Vector.hd v) -> p (l::(Vector.tl v)))).
@@ -445,47 +454,7 @@ Section ArithmeticalHierarchySemantic.
       end in Vector.tl (N :: xl :: l :: v0)).
     now intros.
   Qed.
-
-  (* Lemma isΣsemListΣ {k k'} (p : vec nat k -> Prop) n:  *)
-  (*   (isΣsem n p -> isΣsem n *)
-  (*     (fun v : vec nat (S k') => *)
-  (*       List.Forall p (nat_to_list_vec k (Vector.hd v)))) *)
-  (* /\ *)
-  (*   (isΠsem n p -> isΠsem n *)
-  (*     (fun v : vec nat (S k') => *)
-  (*       List.Forall p (nat_to_list_vec k (Vector.hd v)))). *)
-  (* Proof. *)
-  (*   assert ((fun v : vec nat (S k') => Forall p (nat_to_list_vec k (Vector.hd v))) *)
-  (*   ⪯ₘ (fun v : vec nat (S (S k')) => *)
-  (*       forall l : nat, *)
-  (*       l < Vector.hd v -> *)
-  (*       (fun v0 : vec nat (S (S k')) => *)
-  (*        p (nth (Vector.hd v0) (nat_to_list_vec k (Vector.hd (Vector.tl v0))) (const 42 k))) *)
-  (*         (l :: Vector.tl v))) as mred. { *)
-  (*     exists (fun v => (length (nat_to_list_vec k (Vector.hd v)))::v). *)
-  (*     intros v. dependent destruction v. cbn. *)
-  (*     remember (nat_to_list_vec k h) as L. clear. *)
-  (*     rewrite List.Forall_forall. split. *)
-  (*     - intros H l lt. apply H. now apply List.nth_In. *)
-  (*     - intros H x i. eapply List.In_nth in i as [l [lt <-]]. now apply H.  *)
-  (*   } *)
-  (*   split. all: intros H. *)
-  (*   all: unshelve eapply isΣsem_m_red_closed. 2, 4: exact ( *)
-  (*     fun v : vec nat (S (S k')) => *)
-  (*       forall l : nat, *)
-  (*       l < (Vector.hd v) -> *)
-  (*       (fun v =>  *)
-  (*         p (List.nth (Vector.hd v) (nat_to_list_vec k (Vector.hd (Vector.tl v))) (const 42 k)))(l:: Vector.tl v) *)
-  (*   ). *)
-  (*   2, 4: apply mred. *)
-  (*   all: apply isΣΠball. *)
-  (*   all: eapply isΣsem_m_red_closed. *)
-  (*   1, 3: apply H. *)
-  (*   all: eexists; intros v; split; apply (fun x => x). *)
-  (* Qed. *)
-
-  (** Σ and Π are complements **)
-
+  
   Definition DN := forall P, ~~P -> P.
 
   Definition Markov: Prop :=
@@ -581,7 +550,7 @@ Section ArithmeticalHierarchySemantic.
         change (isΠsem 1 (fun v => forall x, (fun v => f (Vector.tl v) (Vector.hd v) <> true) (x::v))).
         apply isΠsemS.
         econstructor. instantiate (1 := fun v => if f (Vector.tl v) (Vector.hd v) then false else true).
-        firstorder; now destruct f.        
+        firstorder; now destruct f.
       }
       specialize (H _ _ HΠ). repeat dependent destruction H.
       exists (fun v x => f0 (x::v)). intros v.
@@ -610,10 +579,10 @@ Section ArithmeticalHierarchySemantic.
       split. all: intros nA A; apply nA; intros n; specialize (A n); now destruct f.
   Qed.
 
-  Goal 
+  Lemma anonymisedMPiff :
     (forall k alpha, exists beta, forall (x : vec nat k), ~ (forall (n : nat), alpha x n = false) <-> (exists (n : nat), beta x n = true))
     <->
-    (forall k (p : vec nat k -> Prop), isΠsem 1 p -> isΣsem 1 (fun v => ~ (p v))).
+      (forall k (p : vec nat k -> Prop), isΠsem 1 p -> isΣsem 1 (fun v => ~ (p v))).
   Proof. rewrite equiv_sdec_functions. apply equiv_DN_sdec. Qed.
 
   Definition stable {X} (p : X -> Prop) := forall x, ~~ p x -> p x.
@@ -645,6 +614,13 @@ Section ArithmeticalHierarchySemantic.
     firstorder.
   Qed.
 
+  Lemma LEM_Π_to_DNE_Π n :
+    LEM_Π n ->
+    DNE_Π n.
+  Proof.
+    firstorder.
+  Qed.
+
   Lemma DNE_equiv_S n :
     DNE_Σ n <-> DNE_Π (S n).
   Proof.
@@ -664,8 +640,7 @@ Section ArithmeticalHierarchySemantic.
     1:now eapply isΣΠn_In_ΣΠSn with (l := 1).
   Qed.
 
-  Lemma negΣinΠsem:
-    (forall n k (p: vec nat k -> Prop), isΣsem n p -> DNE_Π n -> isΠsem n (fun v => ~(p v)))
+  Lemma negΣinΠsem: (forall n k (p: vec nat k -> Prop), isΣsem n p -> DNE_Π n -> isΠsem n (fun v => ~(p v)))
     /\ (forall n k (p: vec nat k -> Prop), isΠsem n p -> DNE_Σ n -> isΣsem n (fun v => ~(p v))).
   Proof.
     apply isΣsem_isΠsem_mutind.
@@ -703,6 +678,13 @@ Section ArithmeticalHierarchySemantic.
       assumption.
   Qed.
 
+  Lemma LEM_Π_Sn_to_LEM_Σ_n n :
+    LEM_Π (S n) -> LEM_Σ n.
+  Proof.
+    intros H ? ? ?.
+    eapply H. now eapply isΣΠn_In_ΠΣSn.
+  Qed.
+
   Goal DNE_Π 1.
   Proof.
     intros k p H x. depelim H. depelim H.
@@ -712,6 +694,144 @@ Section ArithmeticalHierarchySemantic.
     rewrite HE in E. congruence.
   Qed.
 
+  Definition ArithmeticHierarchyNegation n :=
+    (forall k (p: vec nat k -> Prop), isΣsem n p -> isΠsem n (fun v => ~(p v)))
+    /\ (forall k (p: vec nat k -> Prop), isΠsem n p -> isΣsem n (fun v => ~(p v))).
+
+  Lemma DN_implies_ArithmeticHierarchyNegation n :
+    DNE_Σ n -> ArithmeticHierarchyNegation n.
+  Proof.
+    intros. split; intros; eapply negΣinΠsem; eauto using DNEimpl.
+  Qed.
+
+  Definition ArithmeticHierarchyDoubleNegation n :=
+    (forall k (p: vec nat k -> Prop), isΣsem n p -> isΣsem n (fun v => ~~(p v)))
+    /\ (forall k (p: vec nat k -> Prop), isΠsem n p -> isΠsem n (fun v => ~~(p v))).
+
+  Lemma Negation_to_DoubleNegation n :
+    ArithmeticHierarchyNegation n -> ArithmeticHierarchyDoubleNegation n.
+  Proof.
+    intros H. firstorder.
+  Qed.
+
+  Lemma DoubleNegation_to_Negation n :
+    (forall m, m <= n -> ArithmeticHierarchyDoubleNegation m) ->
+    DNE_Π n ->
+    ArithmeticHierarchyNegation n.
+  Proof.
+    enough ((forall n (k : nat) (p : vec nat k -> Prop), isΣsem n p -> DNE_Π n -> (forall m, m <= n -> ArithmeticHierarchyDoubleNegation m) -> isΠsem n (fun v : vec nat k => ~ p v)) /\
+              (forall n (k : nat) (p : vec nat k -> Prop), isΠsem n p -> DNE_Π n -> (forall m, m <= n -> ArithmeticHierarchyDoubleNegation m) ->isΣsem n (fun v : vec nat k => ~ p v))) by firstorder.
+    clear n. apply isΣsem_isΠsem_mutind.
+    - intros. apply Σ0sem_notΠ0_int. econstructor. eassumption.
+    - intros n k p p' H IH H' DN HH.
+      econstructor. apply IH.
+      + now eapply DNEimpl, DNE_equiv_S.
+      + intros. eapply HH. lia.
+      + cbn. clear - H'. firstorder.
+    - intros. apply Σ0sem_notΠ0_int. econstructor. eassumption.
+    - intros n k p p' H IH H' DN HH.
+      eapply PredExt with (p := fun v => ~~ exists x, ~p' (x :: v)).
+      2:{ intros. rewrite H'. split. 2:firstorder.
+          intros ? ?.  eapply H0.
+          intros. eapply DNE_equiv_S; eauto.
+      }
+      eapply HH. lia.
+      econstructor. eapply IH.
+      + now eapply DNEimpl, DNE_equiv_S.
+      + intros. eapply HH. lia.
+      + cbn. reflexivity.
+  Qed.
+
+  (** # <a id="isSigmasem_or_closed" /> #*)
+  Lemma isΣsem_or_closed n :
+    (forall k (p: vec nat k -> Prop), isΣsem n p -> forall (q : vec nat k -> Prop), isΣsem n q -> isΣsem n (fun v => p v \/ q v)).
+  Proof.
+    intros k p Hp q Hq.
+    depelim Hp.
+    + depelim Hq. cbn in *.
+      unshelve eapply PredExt. exact (fun v => f0 v || f v = true). 2: cbn; intros; rewrite orb_true_iff; firstorder.
+      apply isΣsem0.
+    + depelim Hq. cbn in *.
+      rename p' into pp.
+      rename p into p'.
+      rename p0 into q'.
+      rename pp into p.
+      unshelve eapply PredExt.
+      exact (fun v => exists n, if Nat.eqb n 0 then exists x, p' (x :: v) else exists x, q' (x :: v)).
+      2:{ cbn in *. split.
+          + intros []. exists 0; firstorder. exists 1; firstorder.
+          + intros [[]]; firstorder.
+      }
+      eapply isΣsemE with (p := fun v => if Vector.hd v =? 0 then exists x : nat, p' (x :: Vector.tl v) else exists x : nat, q' (x :: Vector.tl v)).
+      destruct (isΣsem_if_closed (S n)) as [Hs _].
+      eapply Hs with (f := fun x => Nat.eqb x 0) (p := fun v => exists x, p' (x :: v)) (q := fun v => exists x, q' (x :: v)).
+      eapply isΣsemS. eauto.
+      eapply isΣsemS. eauto.
+  Qed.
+
+  Lemma DNE_Σ_Sn_to_LEM_Σ_n n :
+    DNE_Σ (S n) -> LEM_Σ n.
+  Proof.
+    intros DNE k p H v.
+    eapply DNE with (x := v). 2: firstorder.
+    eapply isΣsem_or_closed.
+    - now eapply isΣΠn_In_ΣΠSn with (l := 1).
+    - eapply DN_implies_ArithmeticHierarchyNegation; eauto.
+      now eapply isΣΠn_In_ΠΣSn.
+  Qed.
+
+  Definition DNE_Πdisj := fun n : nat => forall (k : nat) (p1 p2 : vec nat k -> Prop), isΠsem n p1 -> isΠsem n p2 -> stable (fun v => p1 v \/ p2 v).
+
+  (** # <a id="isPisem_or_closed" /> #*)
+  Lemma isΠsem_or_closed n :
+    (forall k (p: vec nat k -> Prop), isΠsem n p -> forall (q : vec nat k -> Prop), isΠsem n q -> DNE_Πdisj n -> isΠsem n (fun v => p v \/ q v)).
+  Proof.
+    intros. depelim H.
+    + depelim H0. cbn in *.
+      unshelve eapply PredExt. exact (fun v => f0 v || f v = true). 2: cbn; intros; rewrite orb_true_iff; firstorder.
+      apply isΠsem0.
+    + depelim H1. cbn in *.
+      rename p' into pp.
+      rename p into p'.
+      rename p0 into q'.
+      rename pp into p.
+      unshelve eapply PredExt.
+      exact (fun v => forall y x : nat, (fun v => p' (Vector.hd v:: Vector.tl (Vector.tl v)) \/ q' (Vector.hd (Vector.tl v)::Vector.tl (Vector.tl v))) (x::y::v)).
+      apply isΠsemTwoAll.
+      * eapply isΣsem_or_closed.
+        -- eapply isΣsem_m_red_closed. { apply H. }
+           eexists. red. intros. eapply iff_refl.
+        -- eapply isΣsem_m_red_closed. { apply H1. }
+           eexists. red. intros. eapply iff_refl.
+      * firstorder. edestruct (H3 k p q) with (x := v); eauto. cbn in *.
+        rewrite H0 in *. rewrite H2 in *. clear H0 H2 p q.
+        intros G.
+        assert (~~ ((forall x : nat, p' (x :: v)) \/ ~ (forall x : nat, p' (x :: v)))) by tauto. eapply H0.
+        intros []; eauto.
+        assert (~~ ((forall x : nat, q' (x :: v)) \/ ~(forall x : nat, q' (x :: v)))) by tauto. eapply H5.
+        intros []; eauto. clear H0 H5.
+        eapply H2. intros y.
+        unshelve edestruct (H3 _ (fun v => p' (y :: v)) (fun _ => False)).
+        -- exact v.
+        -- eapply isΣΠn_In_ΠΣSn. eapply isΣsem_m_red_closed. { apply H. }
+           now eexists. 
+        -- replace (S n) with (S n + 0) by lia.
+           eapply isΣΠn_In_ΣΠSn with (l := S n).
+           unshelve econstructor. exact (fun v => false). firstorder congruence.
+        -- firstorder.
+        -- auto.
+        -- firstorder.
+  Qed.
+
+  Lemma LEM_Π_to_DNE_disj n :
+    LEM_Π n -> DNE_Πdisj n .
+  Proof.
+    intros H k p1 p2 H1 H2 v Hv.
+    destruct (H _ p1 H1 v); eauto.
+    destruct (H _ p2 H2 v); eauto.
+    firstorder.
+  Qed.
+  
 End ArithmeticalHierarchySemantic.
 
  

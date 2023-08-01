@@ -12,6 +12,8 @@ Require Import Equations.Prop.DepElim.
 
 Section PostsTheorem.
 
+  Context {Part : partiality}.
+
   Variable vec_to_nat : forall k, vec nat k -> nat.
   Variable nat_to_vec : forall k, nat -> vec nat k.
   Variable vec_nat_inv : forall k v, nat_to_vec k (vec_to_nat v) = v.
@@ -39,15 +41,15 @@ Section PostsTheorem.
     (fix jumpNK {k} (v : vec nat k) :=
     match v with
     | [] => False
-    | x::[] => ­∅^(n) x
+    | x::[] => ­{0}^(n) x
     | x::v' => jumpNK v'
     end) (S k) v.
 
-  Notation "'∅^[' n ',' k ']'" := (@jumpNK n k) (at level 25, format "∅^[ n , k ]").
-  Notation "'∅^[' n ']'" := (jumpNK n) (at level 25, format "∅^[ n ]").
+  Notation "'{0}^[' n ',' k ']'" := (@jumpNK n k) (at level 25, format "{0}^[ n , k ]").
+  Notation "'{0}^[' n ']'" := (jumpNK n) (at level 25, format "{0}^[ n ]").
 
   Lemma jumpNKspec n {k} :
-    ∅^[n,k] ⪯ₘ ­∅^(n) /\ ­∅^(n) ⪯ₘ ∅^[n,k].
+    {0}^[n,k] ⪯ₘ ­{0}^(n) /\ ­{0}^(n) ⪯ₘ {0}^[n,k].
   Proof.
     induction k as [|k IH].
     - split.
@@ -60,17 +62,21 @@ Section PostsTheorem.
         exists (fun v => 27::v). intros v. now do 2 dependent destruction v.
   Qed.
 
-  Lemma jumpNK0 {k} (v : vec nat (S k)):
-    ∅^[0] v <-> False.
+  Lemma jumpNK0 k :
+    isΣsem 0 ({0}^[0,k]).
   Proof.
     induction k.
-    - now repeat dependent destruction v.
-    - do 2 dependent destruction v.
-      now rewrite <- (IHk (h0::v)).
+    + eapply isΣsem0_ with (f := fun v => Nat.eqb (hd v) 0).
+      intros v. do 2 depelim v. cbn.
+      destruct h; cbn; firstorder congruence.
+    + depelim IHk. cbn in H.
+      eapply isΣsem0_ with (f := fun v => f (Vector.tl v)).
+      intros v. do 2 depelim v.
+      now rewrite (H (h0 :: v)).
   Qed.
 
   Lemma jumpNKSemiDec n {k1 k2}:
-    oracle_semi_decidable (∅^[n,k1]) (∅^[S n,k2]).
+    oracle_semi_decidable ({0}^[n,k1]) ({0}^[S n,k2]).
   Proof.
     eapply red_m_transports_sdec. 2: apply jumpNKspec.
     eapply Turing_transports_sdec.
@@ -78,6 +84,7 @@ Section PostsTheorem.
     - apply red_m_impl_red_T, jumpNKspec.
   Qed.
 
+  (** # <a id="Sigma_semi_decidable_in_Pi1" /> #*)
   Lemma Σ_semi_decidable_in_Π1 {k} (p: (vec nat k) -> Prop) n : LEM_Π n ->
       isΣsem (S n) p -> exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p.
   Proof.
@@ -101,6 +108,7 @@ Section PostsTheorem.
     intros ? ? []; cbn; firstorder.
   Qed.
 
+  (** # <a id="Sigma_semi_decidable_in_Pi2" /> #*)
   Lemma Σ_semi_decidable_in_Π2 {k} (p: (vec nat k) -> Prop) n (DN : DNE_Σ n):
     (exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p) -> isΣsem (S n) p.
   Proof.
@@ -223,10 +231,10 @@ Section PostsTheorem.
   Qed.
 
   Lemma jump_in_Σn n {k} (DN : LEM_Σ n) :
-    @isΣsem n (S k) (∅^[n]).
+    @isΣsem n (S k) ({0}^[n]).
   Proof.
     induction n as [|n IH] in k, DN |-*.
-    - unshelve eapply PredExt. exact (fun _ => false=true). { apply isΣsem0. } setoid_rewrite jumpNK0. clear. firstorder congruence.
+    - eapply jumpNK0.
     - apply Σ_semi_decidable_in_Σ; eauto.
       { intros n' p Hp. eapply DN. now eapply isΣΠn_In_ΣΠSn with (l := 1). }
       exists (jumpNK n). split; [apply IH|].
@@ -235,35 +243,28 @@ Section PostsTheorem.
   Qed.
 
   Lemma jump_Σn_complete n (DN : LEM_Σ n) :
-    forall k (p : vec nat k -> Prop), isΣsem (S n) p -> p ⪯ₘ (­∅^(S n)).
+    forall k (p : vec nat k -> Prop), isΣsem (n) p -> p ⪯ₘ (­{0}^(n)).
   Proof.
     induction n as [|n IH].
-    - intros k p H.
-      apply (@red_m_iff_semidec_jump_vec vec_to_nat nat_to_vec vec_nat_inv).
-      eapply semi_decidable_OracleSemiDecidable. 
-      now apply semi_dec_iff_Σ1.
+    - intros k p H. cbn.
+      depelim H. cbn in H.
+      exists (fun v => if f v then 0 else 1). red.
+      intros v. specialize (H v). destruct (f v); firstorder congruence.
     - intros k p [p' [Σp' Sp']]%Σ_semi_decidable_in_Σ.
-      apply (@red_m_iff_semidec_jump_vec vec_to_nat nat_to_vec vec_nat_inv).
+      apply (@red_m_iff_semidec_jump_vec _ vec_to_nat nat_to_vec vec_nat_inv).
       eapply (Turing_transports_sdec Sp').
       apply red_m_impl_red_T. eapply IH; eauto.
-      all: eauto.
-      { intros n' q Hq. eapply DN. now eapply isΣΠn_In_ΣΠSn with (l := 1). }
+      all: intros n' q Hq; eapply DN; now eapply isΣΠn_In_ΣΠSn with (l := 1). 
   Qed.
 
   Lemma jump_Σn_complete_redT n (DN : LEM_Σ n) :
-    forall k (p : vec nat k -> Prop), isΣsem n p -> p ⪯ᴛ (­∅^(n)).
+    forall k (p : vec nat k -> Prop), isΣsem n p -> p ⪯ᴛ (­{0}^(n)).
   Proof.
-    intros k p H. destruct n.
-    - dependent destruction H.
-      eexists. split.
-      eapply computable_function with (f := f).
-      cbn. intros x []. cbn in *. firstorder. cbn in *. rewrite H. destruct (f x); firstorder congruence.
-    - apply red_m_impl_red_T. eapply jump_Σn_complete; eauto.
-      { intros n' q Hq. eapply DN. now eapply isΣΠn_In_ΣΠSn with (l := 1). }
+    intros. apply red_m_impl_red_T. eapply jump_Σn_complete; eauto.
   Qed.
 
   Lemma Σ_semi_decidable_jump {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :
-      isΣsem (S n) p <-> oracle_semi_decidable (­∅^(n)) p.
+      isΣsem (S n) p <-> oracle_semi_decidable (­{0}^(n)) p.
   Proof.
     split.
     - intros [p' [Σp' Sp']]%Σ_semi_decidable_in_Σ.
@@ -271,7 +272,7 @@ Section PostsTheorem.
       eapply jump_Σn_complete_redT.
       all: eauto.
     - intros H. apply Σ_semi_decidable_in_Σ; eauto.
-      exists (∅^[n]). split.
+      exists ({0}^[n]). split.
       + apply jump_in_Σn; eauto.
       + apply (Turing_transports_sdec H), red_m_impl_red_T, jumpNKspec.
   Qed.
@@ -279,10 +280,10 @@ Section PostsTheorem.
   Theorem PostsTheorem {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :
     (isΣsem (S n) p <-> exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p)
  /\ (isΣsem (S n) p <-> exists (p': vec nat (S k) -> Prop), isΣsem n p' /\ oracle_semi_decidable p' p)
- /\ (@isΣsem n (S k) (∅^[n]))
- /\ (isΣsem (S n) p -> p ⪯ₘ (­∅^(S n)))
- /\ (isΣsem n p -> p ⪯ᴛ (­∅^(n)))
- /\ (isΣsem (S n) p <-> oracle_semi_decidable (­∅^(n)) p).
+ /\ (@isΣsem n (S k) ({0}^[n]))
+ /\ (isΣsem n p -> p ⪯ₘ (­{0}^(n)))
+ /\ (isΣsem n p -> p ⪯ᴛ (­{0}^(n)))
+ /\ (isΣsem (S n) p <-> oracle_semi_decidable (­{0}^(n)) p).
   Proof with eauto.
     split; [|split]; [| |split]; [| | |split]; [| | | |split].
     - apply Σ_semi_decidable_in_Π...

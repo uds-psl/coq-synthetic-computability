@@ -101,55 +101,73 @@ Section halting.
 
 End halting.
 
-Module Ξ.
+Section Enumerator.
   (** ** Enumerating Oracle Machines *)
 
   Context {Part : partiality}.
 
-  Variable EPF_assm : EPF.
+  Axiom EPF_assm : EPF.
   Definition θ := proj1_sig EPF_assm.
   Definition EPF := proj2_sig EPF_assm.
 
-  Variable ξ : nat -> nat -> tree nat bool unit.
+  Variable O : Type.
 
-  Axiom ξ_surjective :
-    forall τ : nat -> tree nat bool unit, exists c, forall l i o, ξ c i l =! o <-> τ i l =! o.
+  Parameter iota1 : (nat * list bool) -> nat.
+  Parameter iota2 : (nat + O) -> nat.
+  Parameter rho1 : nat -> nat * list bool.
+  Parameter rho2 : nat -> nat + O.
 
-  Definition ξ' : nat -> nat -> tree nat bool unit :=
-      (fun ic x l => let (i, c) := unembed ic in ξ c (embed (i, x)) l).
+  Parameter bij1 : forall y, (rho1 (iota1 y) = y).
+  Parameter bij2 : forall y, (rho2 (iota2 y) = y).
 
-  Fact ξ'_parametric :
-    forall f : nat -> nat -> tree nat bool unit, exists γ, forall j l i o, ξ' (γ j) i l =! o <-> f j i l =! o.
+  Definition ξ : nat -> nat -> tree nat bool O :=
+    fun c x l => bind (θ c (iota1 (x, l))) (fun v => ret (rho2 v)).
+
+  Lemma ξ_parametric :
+    forall τ : nat -> nat -> tree nat bool O, exists γ, forall n l i o, ξ (γ n) i l =! o <-> τ n i l =! o.
   Proof.
-    intros f. unfold ξ'.
-    destruct (ξ_surjective (fun ji l => let (j, i) := unembed ji in f j i l)) as [c Hc].
-    exists (fun i => embed(i, c)). intros i. rewrite embedP.
-    intros r n ?. rewrite Hc. now rewrite embedP.
+    intros τ.
+    destruct (EPF (fun n x => let (i,l) := rho1 x in bind (τ n i l) (fun v => ret (iota2 v)))) as [γ H].
+    cbn in *. exists γ. intros. cbn in *. unfold partial.equiv in *.
+    unfold ξ. rewrite bind_hasvalue.
+    setoid_rewrite H.
+    setoid_rewrite bij1.
+    setoid_rewrite bind_hasvalue.
+    setoid_rewrite <- ret_hasvalue_iff.
+    firstorder subst.
+    now rewrite bij2.
+    repeat eexists. eauto. eapply bij2.
   Qed.
 
-  Fact ξ'_surjective (τ : nat -> tree nat bool unit) :
-    exists j, forall l i o, ξ' j i l =! o <-> τ i l =! o.
+  Fact ξ_surjective (τ : nat -> tree nat bool O) :
+    exists j, forall l i o, ξ j i l =! o <-> τ i l =! o.
   Proof.
-    destruct (ξ'_parametric (fun _ => τ)) as [γ Hγ].
-    now exists (γ 27).
+    destruct (ξ_parametric (fun _ => τ)) as [γ Hγ].
+    now exists (γ 42).
   Qed.
+
+End Enumerator.
+
+Section SemiDecEnumerator.
+
+  Context {Part : partiality}.
 
   Definition rel {I A Q} (τ : I -> list A ↛ (Q + unit)) R x :=
     exists qs ans, interrogation (τ x) R qs ans /\ (τ x) ans =! inr tt.
 
-  Definition Ξ c R x := rel (ξ' c) R x.
+  Definition Ξ c R x := rel (ξ unit c) R x.
 
   Fact computable :
     OracleComputable (fun R '(c,x) (o : unit) => Ξ c R x).
   Proof.
-    exists (fun '(c,x) => ξ' c x). intros R [c x] [].
+    exists (fun '(c,x) => ξ unit c x). intros R [c x] [].
     reflexivity.
   Qed.
 
   Fact parametric (τ : nat -> nat -> list bool ↛ (nat + unit)) :
     exists γ, forall j R x, Ξ (γ j) R x <-> rel (τ j) R x.
   Proof.
-    destruct (ξ'_parametric τ) as [γ Hγ].
+    destruct (ξ_parametric τ) as [γ Hγ].
     exists γ. intros j.
     intros. unfold Ξ, rel.
     specialize (Hγ j).
@@ -170,15 +188,78 @@ Module Ξ.
     - exists (γ 27). intros. rewrite Hτ Hγ. reflexivity.
   Qed.
 
-End Ξ.
+End SemiDecEnumerator.
+
+Section TuringRedEnumerator.
+
+  Context {Part : partiality}.
+
+  Definition rel_b {I A Q} (τ : I -> list A ↛ (Q + bool)) R x o :=
+    exists qs ans, interrogation (τ x) R qs ans /\ (τ x) ans =! inr o.
+
+  Definition χ c R x := rel_b (ξ bool c) R x.
+
+  Fact computable_b :
+    OracleComputable (fun R '(c,x) (o : bool) => χ c R x o).
+  Proof.
+    exists (fun '(c,x) => ξ bool c x). intros R [c x].
+    reflexivity.
+  Qed.
+
+  Fact surjective_b (F : (nat -> bool -> Prop) -> nat -> bool -> Prop) (H : OracleComputable F) :
+    exists c, forall R x b, χ c R x b <-> F R x b.
+  Proof.
+    destruct H as [τ Hτ].
+    destruct (ξ_surjective τ) as [c Hc].
+    exists c. intros. unfold χ, rel_b.
+    setoid_rewrite Hτ. setoid_rewrite Hc.
+    firstorder.
+    exists x0, x1. split; eauto. eapply interrogation_ext. 2: reflexivity. 2: eassumption.
+    firstorder.
+    exists x0, x1. split; eauto. eapply interrogation_ext. 2: reflexivity. 2: eauto.
+    firstorder.
+  Qed.
+
+End TuringRedEnumerator.
+
+Module Reverse.
+
+  Context {Part : partiality}.
+
+  Variable χ : nat -> (nat -> bool -> Prop) -> nat -> bool -> Prop.
+  Variable computable_b : OracleComputable (fun R '(c,x) (o : bool) => χ c R x o).
+  Variable surjective_b : forall (F : (nat -> bool -> Prop) -> nat -> bool -> Prop) (H : OracleComputable F),
+    exists c, forall R x b, χ c R x b <-> F R x b.
+
+  Lemma EPF_bool : exists θ : nat -> (nat ↛ bool), forall f : nat ↛ bool,
+    exists c, forall x v, θ c x =! v <-> f x =! v.
+  Proof.
+    destruct computable_b as [τ Hτ].
+    unshelve eexists.
+    - intros c.
+      edestruct @Turing_transports_computable_strong with (F := χ c) as [f Hf].
+      intros. rewrite (Hτ R (c,x) o). eapply iff_refl.
+      exact (f (fun _ => ret false)).
+    - cbn. intros f.
+      destruct surjective_b with (F := fun (R : nat -> bool -> Prop) x b => f x =! b) as [c Hc].
+      + eapply computable_partial_function. 
+      + exists c. intros x v. destruct Turing_transports_computable_strong as [F Hf].
+        unfold pcomputes in Hf.
+        specialize Hf with (R := fun _ o => o = false).
+        rewrite Hf. intros. rewrite <- ret_hasvalue_iff. firstorder congruence.
+        eapply Hc.
+  Qed.
+
+End Reverse.
 
 (* Opaque Ξ.Ξ. *)
-Notation Ξ := Ξ.Ξ.
 
 Notation oracle_semi_decidable := OracleSemiDecidable.
 
 Section jump.
   (** ** Synthetic Turing Jump *)
+
+  Context {Part : partiality}.
 
   Definition J Q c := Ξ c (char_rel Q) c.
 
@@ -187,7 +268,7 @@ Section jump.
     exists (fun O c o => Ξ c O c). split.
     - eapply OracleComputable_ext.
       eapply computable_bind.
-      2: eapply Ξ.computable. 2: cbn.
+      2: eapply computable. 2: cbn.
       eapply computable_ident. cbn.
       intros ? ? []; firstorder subst.
       firstorder.
@@ -197,7 +278,7 @@ Section jump.
   Lemma not_semidecidable_compl_J Q : ~ oracle_semi_decidable Q (compl (J Q)).
   Proof.
     intros (F & Hcomp & H). 
-    specialize (Ξ.surjective Hcomp) as [c Hc].
+    specialize (surjective Hcomp) as [c Hc].
     unfold J in H. specialize (H c).
     rewrite <- Hc in H. tauto.
   Qed.
@@ -211,7 +292,7 @@ Section jump.
   Proof.
     split.
     - assert (OracleComputable (fun R (x : nat) (o : unit) => R x true))
-               as [c Hc] % Ξ.surjective.
+               as [c Hc] % surjective.
       { eapply OracleComputable_ext.
         eapply computable_bind. eapply computable_id.
         eapply computable_if with (test := snd).
@@ -237,7 +318,7 @@ Section jump.
   Lemma red_𝒥_J_self Q : 
     𝒥 Q ⪯ₘ J Q.
   Proof.
-    destruct (Ξ.parametric (fun! ⟨c,x⟩ => fun _ => Ξ.ξ' c x)) as [γ Hγ].
+    destruct (parametric (fun! ⟨c,x⟩ => fun _ => ξ unit c x)) as [γ Hγ].
     exists γ. unfold J, 𝒥. red. setoid_rewrite Hγ. intros ⟨c, x⟩.
     reflexivity. 
   Qed.
@@ -247,7 +328,7 @@ Section jump.
   Proof.
     split.
     - intros [F [Hom H]]. apply red_m_transitive with (𝒥 Q). 2: apply red_𝒥_J_self.
-      specialize (Ξ.surjective Hom) as [c Hc].
+      specialize (surjective Hom) as [c Hc].
       unfold 𝒥.
       exists (fun x => embed (c, x)).
       intros x. rewrite H. rewrite embedP. now rewrite Hc.
@@ -259,7 +340,7 @@ Section jump.
       + eapply OracleComputable_ext.
         eapply computable_bind.
         2: eapply computable_precompose with (g := fun '(c, i) => (f c, f i)).
-        2: eapply Ξ.computable.
+        2: eapply computable.
         2: cbn.
         eapply computable_ident.
         intros ? ? []. firstorder subst. firstorder.
@@ -309,9 +390,9 @@ Section jump.
 End jump.
 
 Notation "A '´'" := (J A) (at level 20, format "A ´").
-Notation "­∅" := (fun _:nat => False).
+Notation "­{0}" := (fun x:nat => x=0).
 
-Fixpoint jump_n Q n :=
+Fixpoint jump_n {Part : partiality} Q n :=
   match n with
   | 0 => Q
   | S n => J (jump_n Q n)

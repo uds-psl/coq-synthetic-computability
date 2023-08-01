@@ -37,6 +37,7 @@ This library contains results on synthetic computability theory.
 - A definition of oracle computability and Turing reducibility in `TuringReducibility/OracleComputability.v`
 - A proof of Post's theorem (`PT`) in `TuringReducibility/SemiDec.v`
 - A proof of Post's theorem about the arithmetical hierarchy in `PostsTheorem/PostsTheorem.v`
+- A proof of the Kleene-Post theorem in `PostsTheorem/KleenePostTheorem.v`
 
 ## Installation
 
@@ -44,7 +45,7 @@ This library contains results on synthetic computability theory.
 opam switch create coq-synthetic-computability --packages=ocaml-variants.4.14.0+options,ocaml-option-flambda
 eval $(opam env)
 opam repo add coq-released https://coq.inria.fr/opam/released
-opam install coq.8.17 coq-stdpp.1.8.0
+opam install coq.8.17.0 coq-equations.1.3+8.17 coq-stdpp.1.8.0
 cd theories
 make
 make install

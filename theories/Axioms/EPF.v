@@ -49,16 +49,19 @@ Proof.
     destruct seval; congruence.
 Qed.
 
+Import EmbedNatNotations.
+
 Lemma EPF_iff_nonparametric {Part : partiality} :
   EPF ↔ EPF_nonparam.    
 Proof.
   split.
   - intros [θ H]. exists θ. intros f. destruct (H (fun _ => f)) as [c Hc].
     exists (c 0). eapply Hc.
-  - intros [θ EPF]. exists (fun ic x => let (i, c) := unembed ic in θ c (embed (i, x))). intros f.
-    destruct (EPF (fun x => let (k, l) := unembed x in f k l)) as [c Hc].
-    exists (fun i => embed (i, c)). intros i x. rewrite embedP.
-    rewrite (Hc ⟨i,x⟩). rewrite embedP. reflexivity.
+  - intros [θ' EPF]. exists (fun! ⟨c, i⟩ => fun x => θ' c (embed (i, x))). intros f.
+    pose (g := (fun! ⟨i, x⟩ => f i x)).
+    destruct (EPF g) as [c Hc].
+    exists (fun i => ⟨c, i⟩). intros i x. rewrite embedP.
+    subst g. rewrite (Hc ⟨i,x⟩). rewrite embedP. reflexivity.
 Qed.
 
 Definition EPF_bool `{partiality} :=
