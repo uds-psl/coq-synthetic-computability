@@ -531,5 +531,8 @@ Qed.
 
 Print Assumptions KleenePost.
 
+Lemma computable_nat_rec (Q A O : Type) (F : Functional Q A (nat * O) O) (o0 : O) :
+  OracleComputable F -> OracleComputable (fun R n => @nat_rect (fun _ => O -> Prop) (fun o => o0 = o) (fun n r o => exists o', r o' /\ F R (n, o') o) n).
+
 End Part.
 
