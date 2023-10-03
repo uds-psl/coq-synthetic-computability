@@ -275,15 +275,15 @@ Section jump.
     - unfold J. reflexivity.
   Qed.
 
+  (** Complement not semi-decidable ***)
+
   Lemma not_semidecidable_compl_J Q : ~ oracle_semi_decidable Q (compl (J Q)).
   Proof.
-    intros (F & Hcomp & H). 
+    intros (F & Hcomp & H).
     specialize (surjective Hcomp) as [c Hc].
     unfold J in H. specialize (H c).
     rewrite <- Hc in H. tauto.
   Qed.
-
-  (** Complement not semi-decidable ***)
 
   Definition 𝒥 Q := fun! ⟨c, x⟩ =>  Ξ c (char_rel Q) x.
 
@@ -306,6 +306,12 @@ Section jump.
       specialize (Hc (char_rel Q)). cbn in Hc. firstorder.
     - intros H % Turing_to_sdec.
       eapply not_semidecidable_compl_J; eassumption.
+  Qed.
+
+  Lemma not_turing_red_J Q: ~ (J Q ⪯ᴛ Q).
+  Proof.
+    intros H % Turing_to_sdec_compl.
+    eapply not_semidecidable_compl_J; eassumption.
   Qed.
 
   (** # <a id="J_self_J_m_red" /> #*)

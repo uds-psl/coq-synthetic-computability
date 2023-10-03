@@ -786,6 +786,25 @@ Proof.
   - firstorder.
 Qed.
 
+
+Lemma Turing_to_sdec_compl {Part : partiality} {X Y} (q : Y -> Prop) (p : X -> Prop) :
+  red_Turing p q ->
+  OracleSemiDecidable q (compl p).
+Proof.
+  intros [F [HF H2]].
+  exists (fun R x o => F R x false). split.
+  - eapply OracleComputable_ext.
+    eapply computable_bind. eapply HF.
+    eapply computable_if with (test := snd).
+    eapply computable_nothing.
+    eapply computable_ret with (v := tt).
+    cbn; split.
+    + intros [[]]; firstorder.
+    + destruct o. exists false; firstorder.
+  - firstorder.
+Qed.
+
+
 Lemma OracleSemiDecidable_refl {Part : partiality} X (Q : X -> Prop) :
   OracleSemiDecidable Q Q.
 Proof.
