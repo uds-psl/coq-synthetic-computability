@@ -24,7 +24,7 @@ Convention:
 **)
 
 
-(* definition of limit ciomputable *)
+(* Definition of limit ciomputable *)
 
   Definition limit_computable {X} (P: X -> Prop) :=
     exists f: X -> nat -> bool, forall x,
@@ -104,31 +104,6 @@ Section LimitLemma1.
     apply PT; try assumption.
     apply Dec.nat_eq_dec.
   Qed.
-
-(*
-  (** Move to lowsimple.v **)
-
-  Definition low (P: nat -> Prop) := P´ ⪯ᴛ ­{0}^(1).
-
-  Lemma lowness (P: nat -> Prop) :
-    low P -> ~ ­{0}^(1) ⪯ᴛ P.
-  Proof.
-    intros H IH.
-    eapply not_turing_red_J with (Q := P).
-    eapply Turing_transitive; [apply H| easy].
-  Qed.
-
-  Lemma limit_jump_lowness (A: nat -> Prop) :
-    LEM_Σ 1 ->
-    definite (­{0}^(1)) ->
-    LimitComputable (A´) -> ~ ­{0}^(1) ⪯ᴛ A.
-  Proof.
-    intros LEM defK H IH.
-    apply lowness with (P := A); [|apply IH].
-    pose (P := fun (v: vec nat 1) => A´ (hd v)).
-    eapply Turing_transitive; [|apply (@limit_turing_red _ P LEM defK)].
-  Admitted.
-  *)
 
 End LimitLemma1.
 

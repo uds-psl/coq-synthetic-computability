@@ -330,7 +330,7 @@ Section jump.
     reflexivity. 
   Qed.
 
-  Lemma red_m_iff_semidec_jump (P : nat -> Prop) (Q : nat -> Prop): 
+  Lemma red_m_iff_semidec_jump (P : nat -> Prop) (Q : nat -> Prop):
     oracle_semi_decidable Q P <-> P ⪯ₘ (J Q).
   Proof.
     split.
