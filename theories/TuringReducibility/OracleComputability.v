@@ -812,7 +812,9 @@ Qed.
 
 Lemma interrogation_equiv_evalt Q A I O :
   forall (τ : I -> list A ↛ (Q + O)) (f : Q ↛ A) (i : I) (o : O),
-    (exists (qs : list Q) (ans : list A), interrogation (τ i) (fun x y => f x =! y) qs ans /\ τ i ans =! inr o) <-> (exists n : nat, evalt (τ i) f n =! inr o).
+  (exists (qs : list Q) (ans : list A),
+  interrogation (τ i) (fun x y => f x =! y) qs ans /\ τ i ans =! inr o) <->
+  (exists n : nat, evalt (τ i) f n =! inr o).
 Proof.
   intros τ f i o. split.
   + intros (qs & ans & Hi & Hout).
@@ -820,6 +822,176 @@ Proof.
     cbn. rewrite app_nil_r. psimpl.
   + intros [n H]. eapply evalt_to_interrogation in H as (? & ? & ? & ? & ?); eauto.
 Qed.
+
+
+Fixpoint evalt_comp {Q A O} (tau : list A ↛ (Q + O))
+  (f : Q -> A) (n : nat) (step: nat): option (Q + O) :=
+  match (seval (tau []) step) with
+    | Some x => match n, x with
+               | 0, inl q => Some (inl q)
+               | S n, inl q => evalt_comp (fun l => tau (f q :: l)) f n step
+               | _, inr o => Some (inr o) end
+    | None => None end.
+
+
+Lemma evalt_comp_ext {Q A O} τ τ' f n m:
+  (forall l n, seval (τ l) n = seval (τ' l) n) ->
+  evalt_comp τ f n m = @evalt_comp Q A O τ' f n m.
+Proof.
+  intro Heq; induction n in τ, τ', Heq |- *.
+  - cbn. now rewrite <- Heq.
+  - cbn. rewrite <- Heq.
+    destruct (seval (A:=Q + O) (τ []) m); cbn.
+    destruct s; eauto. easy.
+Qed.
+
+Lemma list_cons_or {X} (l l1: list X) a :
+  l `prefix_of` l1 ++ [a] ->
+  l `prefix_of` l1 \/ l = l1 ++ [a].
+Proof.
+Admitted.
+
+Lemma interrogation_ter {Q A O} tau f l lv v:
+  @interrogation Q A O tau (fun x y => f x = y) l lv ->
+  tau lv =! v ->
+  exists m, forall ans_, prefix ans_ lv -> exists v, seval (tau ans_) m = Some v.
+Proof.
+  intros H1 H2.
+  induction H1 in H2, v |-*.
+  - rewrite seval_hasvalue in H2.
+    destruct H2 as [m Hm]. exists m.
+    intros ans_ Hans_. exists v.
+    apply prefix_nil_inv in Hans_.
+    rewrite Hans_. easy.
+  - rewrite seval_hasvalue in H2.
+    destruct H2 as [m Hm].
+    destruct (IHinterrogation (Ask q) H) as [m' Hm'].
+    exists (max m m').
+    intros ans_ Hans_.
+    destruct (list_cons_or _ _ _ Hans_) as [h| ->].
+    + destruct (Hm' ans_ h) as [v' Hv'].
+      exists v'. eapply seval_mono.
+      eauto. lia.
+    + exists v. eapply seval_mono; [eauto| lia].
+Qed.
+
+Lemma evalt_comp_n_mono {Q A O} (tau: (list A) ↛ (Q + O)) f n m o :
+  evalt_comp tau f n m = Some (Output o) ->
+  forall n', n' >= n -> evalt_comp tau f n' m = Some (Output o).
+Proof.
+  intros H n' Hn'.
+  induction n.
+  
+Admitted.
+
+Lemma evalt_comp_step_mono {Q A O} (tau: (list A) ↛ (Q + O)) f n m o :
+  evalt_comp tau f n m = Some o ->
+  forall m', m' >= m -> evalt_comp tau f n m' = Some o.
+Proof.
+  intros H m' Hm'.
+  induction n in H, tau, o |-*.
+  - cbn in *.
+    destruct (seval (A:=Q + O) (tau []) m) eqn: E; try congruence.
+    assert (seval (A:=Q + O) (tau []) m' = (Some s)) as ->.
+    eapply seval_mono. exact E. lia.
+    easy.
+  - cbn in *.
+    destruct (seval (A:=Q + O) (tau []) m) eqn: E.
+    + assert (seval (A:=Q + O) (tau []) m' = Some s) as ->.
+      eapply seval_mono. exact E. lia.
+      destruct s.
+      now apply IHn.
+      exact H.
+    + congruence.
+Qed.
+
+Require Import Coq.Program.Equality.
+
+Lemma interrogation_plus_comp {Q A O} tau f n m l lv v2:
+  @interrogation Q A O tau (fun x y => f x = y) l lv ->
+  (forall ans_, prefix ans_ lv -> exists v, seval (tau ans_) m = Some v) ->
+  evalt_comp (fun l' => tau (lv ++ l')) f n m = Some v2 ->
+  evalt_comp tau f (length l + n) m = Some v2.
+Proof.
+  intros H H1. revert n. dependent induction H.
+  - cbn. eauto.
+  - intros.
+    cbn -[evalt]. rewrite app_length. cbn -[evalt].
+    replace (length qs + 1 + n) with (length qs + (S n)) by lia.
+    eapply IHinterrogation. intros; apply H2.
+    etransitivity. exact H4.
+    now eapply prefix_app_r.
+    cbn. rewrite app_nil_r.
+    destruct (H2 ans).
+    now eapply prefix_app_r.
+    assert (exists m, seval (tau ans) m = Some x).
+    now exists m.
+    rewrite <- seval_hasvalue in H5.
+    assert (x = Ask q).
+    eapply hasvalue_det; eauto.
+    rewrite H4, H6, H1.
+    rewrite <- H3. eapply evalt_comp_ext.
+    intros; now list_simplifier.
+Qed.
+
+Lemma interrogation_evalt_comp {Q A O} tau f l lv v:
+  @interrogation Q A O tau (fun x y => f x = y) l lv ->
+  tau lv =! v ->
+  exists n step, evalt_comp tau f n step = Some v.
+Proof.
+  intros H1 h2.
+  destruct (interrogation_ter _ _ _ _ _ H1 h2) as [step Hstep].
+  exists (length l + 0).
+  exists step. eapply interrogation_plus_comp; eauto.
+    cbn. rewrite app_nil_r. 
+    destruct (Hstep lv) as [v' Hv'].
+    reflexivity.
+    assert (exists k, seval (A:=Q + O) (tau lv) k = Some v').
+    exists step. easy.
+    rewrite <- seval_hasvalue in H.
+    assert (v' = v).
+    eapply hasvalue_det; eauto.
+    rewrite Hv', H0.
+    destruct v; done.
+Qed.
+
+Lemma evalt_comp_index_mono {Q A O} tau f l lv v:
+  @interrogation Q A O tau (fun x y => f x = y) l lv ->
+  tau lv =! v ->
+  exists a b,
+  forall g, @interrogation Q A O tau (fun x y => g x = y) l lv ->
+  evalt_comp tau g a b = Some v.
+Proof.
+  intros H h.
+  destruct (interrogation_evalt_comp _ _ _ _ _ H h) as (a&b&Hab).
+  exists a, b. intros g Hg.
+  induction a.
+  - cbn in *. destruct (seval (A:=Q + O) (tau []) b).
+    + now destruct s.
+    + discriminate.
+  - cbn in *.
+    destruct (seval (tau []) b); [|done].
+    destruct s; [|done].
+Admitted.
+
+Lemma interrogation_evalt_comp_limit {Q A O} tau f l lv v:
+  (exists K, forall k, k >= K ->
+             @interrogation Q A O tau (fun x y => (f k) x = y) l lv) ->
+  tau lv =! Output v ->
+  exists N, forall n, n >= N -> evalt_comp tau (f n) n n = Some (Output v).
+Proof.
+  intros [k h1] h2.
+  assert (interrogation tau (fun x y => f k x = y) l lv) as H.
+  apply h1. lia.
+  destruct (evalt_comp_index_mono _ _ _ _ _ H h2) as (a & b & Hab).
+  exists (max (max a b) k).
+  intros n Hn.
+  eapply evalt_comp_step_mono.
+  eapply evalt_comp_n_mono.
+  eapply Hab. apply h1.
+  all: lia.
+Qed.
+
 
 (** ** Closure properties of Oracle computability  *)
 
@@ -862,7 +1034,6 @@ Proof.
   cbn. firstorder subst; psimpl.
 Qed.
 
-(** Computability of constant functions *)
 Lemma computable_ret A Q I O v :
   @OracleComputable Q A I O (fun f i o => o = v).
 Proof.
@@ -1276,6 +1447,7 @@ Proof.
     + intros []; cbn; firstorder.
 Qed.
 
+
 (** Turing reduction transports partial computability - relying on the evalt function from above *)
 Lemma Turing_transports_computable_strong {Q A I O} F tau :
   (∀ (R : Q → A → Prop) (x : I) (o : O), F R x o ↔ (∃ (qs : list Q) (ans : list A), interrogation (tau x) R qs ans ∧ tau x ans =! Output o)) ->
@@ -1345,6 +1517,7 @@ Proof.
   intros [tau H].
   destruct (Turing_transports_computable_strong F tau) as [F' ]; eauto.
 Qed.
+
 
 (** Transport of decidability -- which is equivalent to Markov's principle *)
 Definition char_rel_fun {X Y} (f : X -> Y) := (fun x b => f x = b).

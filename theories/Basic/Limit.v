@@ -31,11 +31,11 @@ Convention:
 
   Definition limit_computable {X} (P: X -> Prop) :=
     exists f: X -> nat -> bool, forall x,
-      (P x <-> exists N, forall n, n > N -> f x n = true) /\
-        (~ P x <-> exists N, forall n, n > N -> f x n = false).
+      (P x <-> exists N, forall n, n >= N -> f x n = true) /\
+        (~ P x <-> exists N, forall n, n >= N -> f x n = false).
 
   Definition limit_computable'' {X} (P: X -> bool -> Prop) :=
-    exists f: X -> nat -> bool, forall x y, P x y <-> exists N, forall n, n > N -> f x n = y.
+    exists f: X -> nat -> bool, forall x y, P x y <-> exists N, forall n, n >= N -> f x n = y.
 
   Lemma limit''_limit {X} (P: X -> Prop): limit_computable'' (char_rel P) -> limit_computable P.
   Proof.
@@ -73,18 +73,6 @@ Convention:
   cbn. split; intro h1; destruct (g x) eqn: E; try easy.
   now apply Hg in E. intro E'. apply Hg in E'. congruence.
   Qed.
-
-  Lemma limit_impl {X} (P: X -> Prop) : limit_computable' (char_rel P) -> limit_computable P.
-  Proof.
-    intros [f Hf].
-    unfold limit_computable''.
-  Admitted.
-
-
-
-
-
-
 
 
 
@@ -127,15 +115,15 @@ Section LimitLemma1.
     limit_computable P -> isΣsem 2 P /\ isΣsem 2 (compl P).
   Proof.
     intros [f H]; split; eapply char_Σ2.
-    - exists (fun N n x => if le_dec n N then true else f x n).
+    - exists (fun N n x => if lt_dec n N then true else f x n).
       intro w. destruct (H w) as [-> _]; split; intros [N Hn]; exists N.
-      + intro m. destruct (le_dec m N); try apply Hn; lia.
-      + intros n He. specialize (Hn n); destruct (le_dec n N); auto; lia.
-    - exists (fun N n x => if le_dec n N then true else negb (f x n)).
+      + intro m. destruct (lt_dec m N); try apply Hn; lia.
+      + intros n He. specialize (Hn n); destruct (lt_dec n N); auto; lia.
+    - exists (fun N n x => if lt_dec n N then true else negb (f x n)).
       intro w. destruct (H w) as [_ ->]; split; intros [N Hn]; exists N.
-      + intro m. destruct (le_dec m N); [auto| rewrite (Hn m); lia].
+      + intro m. destruct (lt_dec m N); [auto| rewrite (Hn m); lia].
       + intros n He. specialize (Hn n).
-        destruct (le_dec n N); auto; [lia|destruct (f w n); easy].
+        destruct (lt_dec n N); auto; [lia|destruct (f w n); easy].
   Qed.
 
   Lemma limit_semi_dec_K {k: nat} (P: vec nat k -> Prop) :
@@ -215,6 +203,11 @@ Section Σ1Approximation.
     exists P_ : nat -> A -> bool,
     forall L, exists c, forall c', c' >= c -> approximation_list P (P_ c') L.
 
+  Definition approximation_Σ1_strong {A} (P: A -> Prop) :=
+     exists P_ : nat -> A -> bool,
+       (forall L, exists c, forall c', c' >= c -> approximation_list P (P_ c') L) /\
+       (forall tau q a, @interrogation _ _ _ bool tau (char_rel P) q a -> exists n, forall m, m >= n -> interrogation tau (fun q a => P_ m q = a) q a).
+
   Lemma semi_dec_approximation_Σ1 {X} (P: X -> Prop) :
     definite P ->
     semi_decidable P -> approximation_Σ1 P.
@@ -237,8 +230,31 @@ Section Σ1Approximation.
         rewrite Hc; eauto.
   Qed.
 
+  Lemma semi_dec_approximation_Σ1_strong {X} (P: X -> Prop) :
+    definite P ->
+    semi_decidable P -> approximation_Σ1_strong P.
+  Proof.
+    intros defP semiP.
+    destruct (semi_dec_approximation_Σ1 defP semiP) as [P_ HP_].
+    exists P_; split; [apply HP_|].
+    intros tau q ans Htau.
+    destruct (HP_ q) as [w Hw].
+    exists w. intros m Hm. rewrite interrogation_ext.
+    exact Htau. eauto.
+    intros q_ a H1.
+    specialize (Hw m Hm q_ H1).
+    unfold char_rel; cbn.
+    destruct a; eauto; split; intro h2.
+    intro h. rewrite Hw in h. congruence.
+    firstorder.
+  Qed.
+
   Lemma approximation_Σ1_halting : definite K -> approximation_Σ1 K.
   Proof. now intros H; apply semi_dec_approximation_Σ1, semi_dec_halting. Qed.
+
+  Lemma approximation_Σ1_halting_strong: definite K -> approximation_Σ1_strong K.
+  Proof. now intros H; apply semi_dec_approximation_Σ1_strong, semi_dec_halting. Qed.
+
 
 End Σ1Approximation.
 
@@ -268,12 +284,6 @@ Section LimitLemma2.
       now apply ret_hasvalue'.
     Qed.
 
-    Variable F: nat ↛ bool -> nat ↛ bool.
-
-    Definition Phi x n := if (seval (F (char_K_ n) x) n) is Some t then t else true.
-
-    Check cont_to_cont.
-
   End Construction.
 
   Theorem turing_red_K_lim (P: nat -> Prop) :
@@ -283,74 +293,58 @@ Section LimitLemma2.
     limit_computable'' (char_rel P).
   Proof.
     intros [F [H HF]] defK defP.
-    remember H as H'; remember defK as defK'.
-    destruct (approximation_Σ1_halting defK') as [k_ Hk_].
-    destruct H' as [tau Htau].
-    specialize (Turing_transports_computable F H) as [F' HPhi].
+    destruct (approximation_Σ1_halting_strong defK) as [k_ [Hk_1 Hk_2]].
+    destruct H as [tau Htau].
     pose (char_K_ n := char_K_ k_ n).
     pose (K_ n := K_ k_ n).
-    pose (Phi := Phi k_ F').
-    specialize (fun n => HPhi (char_K_ n) (K_ n) (pcomputes_K_ _ _)).
-    unfold pcomputes in HPhi.
-(*
-    assert ({g : nat -> nat -> bool |
-              forall n x y, (forall s, s >= n -> g x s = y) <->  }) as Lemma1.
+    pose (Phi x n := evalt_comp (tau x) (k_ n) n n).
+    assert (forall x y, char_rel P x y -> exists N : nat, forall n : nat, n >= N -> (evalt_comp (tau x) (k_ n)) n n = Some (inr y)) as HL.
     {
-      exists (fun x s => if (seval (Phi (char_K_ s) x) s) is Some t then t else true).
-      intros n x y; split.
-      - intros. apply HPhi.
-        rewrite seval_hasvalue. admit.
-      - intros. 
+    intros x y H.
+    rewrite HF in H.
+    rewrite Htau in H.
+    destruct H as (qs & ans & Hint & Out).
+    specialize (Hk_2 (tau x) qs ans Hint).
+    destruct Hk_2 as [nth Hnth].
+    assert (interrogation (tau x)
+              (fun (q : nat) (a : bool) => (k_ nth) q = a) qs ans) as Hnthbase.
+    eapply Hnth. lia.
+    edestruct (interrogation_evalt_comp_limit (tau x) k_ qs ans y) as [L Hlimt].
+    exists nth. intros. eapply Hnth. easy.
+    eapply Out.
+    exists L. intros. now apply Hlimt.
     }
-
-
-    apply limit_impl.
-    exists (fun x n => Phi (char_K_ n) x).
-*)
-    assert (forall x y, char_rel P x y -> exists N : nat, forall n : nat, n > N -> Phi x n = y) as HL.
-    { intros x y H1. rewrite HF in H1.
-      destruct (cont_to_cont _ H _ _ _ H1) as [lm Hlm].
-      destruct (Hk_ lm) as [nth_K Hnth_K].
-      assert (forall n, n > nth_K -> F (K_ n) x y); [intros n1 Hn1|].
-      apply Hlm; intros i' o' h1 h2.
-      assert (approximation_list K (k_ n1) lm).
-      apply Hnth_K; lia. unfold approximation_list in H0.
-      specialize (H0 i' h1).
-      cbn in h2. destruct o'.
-      now apply H0. destruct (k_ n1 i') eqn: E; [|easy].
-      now exfalso; apply h2; rewrite H0.
-      (** TODO **)
-      (*
-      exists nth_K; intros n1 Hn1.
-      unfold pcomputes in HPhi.
-      rewrite (HPhi n1 x y).
-      now apply H0. } *)
-      admit.
+    assert (exists f, forall x y, char_rel P x y -> exists N : nat, forall n : nat, n >= N -> f x n = y) as [f HL'].
+    {
+    exists (fun x n => match (Phi x n) with
+               | Some (inr y) => y | _ => false end).
+    intros x y Hxy%HL.
+    destruct (Hxy) as [N HN].
+    exists N; intros.
+    unfold Phi. rewrite HN; eauto.
     }
-    exists Phi. intros x y; split; intro H1.
-    - now apply HL.
-    - destruct y; cbn.
+    exists f. intros x y; split.
+    - now intros; apply HL'.
+    - intro H0. destruct y; cbn.
       destruct (defP x); [easy|].
       assert (char_rel P x false); [easy|].
-      apply HL in H2.
-      destruct H1 as [N1 HN1].
-      destruct H2 as [N2 HN2].
+      apply HL' in H1.
+      destruct H0 as [N1 HN1].
+      destruct H1 as [N2 HN2].
       specialize (HN1 (S (max N1 N2))).
       specialize (HN2 (S (max N1 N2))).
       enough (true = false) by congruence.
       rewrite <- HN1, HN2; lia.
       destruct (defP x); [|easy].
       assert (char_rel P x true); [easy|].
-      apply HL in H2.
-      destruct H1 as [N1 HN1].
-      destruct H2 as [N2 HN2].
+      apply HL' in H1.
+      destruct H0 as [N1 HN1].
+      destruct H1 as [N2 HN2].
       specialize (HN1 (S (max N1 N2))).
       specialize (HN2 (S (max N1 N2))).
       enough (true = false) by congruence.
       rewrite <- HN2, HN1; lia.
   Qed.
-
-
 
 
 End LimitLemma2.
