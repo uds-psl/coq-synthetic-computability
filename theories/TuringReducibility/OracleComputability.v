@@ -849,7 +849,22 @@ Lemma list_cons_or {X} (l l1: list X) a :
   l `prefix_of` l1 ++ [a] ->
   l `prefix_of` l1 \/ l = l1 ++ [a].
 Proof.
-Admitted.
+  induction l in l1 |-*; intros.
+  - left. eapply prefix_nil.
+  - destruct l1.
+    + right. list_simplifier.
+      set (H' := H).
+      apply prefix_cons_inv_2, prefix_nil_inv in H' as ->.
+      apply prefix_cons_inv_1 in H as ->.
+      done.
+    + list_simplifier.
+      set (H' := H).
+      apply prefix_cons_inv_2 in H'.
+      apply prefix_cons_inv_1 in H as ->.
+      destruct (IHl _ H') as [h1 | ->].
+      ++ left. by eapply prefix_cons.
+      ++ now right.
+Qed.
 
 Lemma interrogation_ter {Q A O} tau f l lv v:
   @interrogation Q A O tau (fun x y => f x = y) l lv ->
@@ -875,14 +890,6 @@ Proof.
     + exists v. eapply seval_mono; [eauto| lia].
 Qed.
 
-Lemma evalt_comp_n_mono {Q A O} (tau: (list A) ↛ (Q + O)) f n m o :
-  evalt_comp tau f n m = Some (Output o) ->
-  forall n', n' >= n -> evalt_comp tau f n' m = Some (Output o).
-Proof.
-  intros H n' Hn'.
-  induction n.
-  
-Admitted.
 
 Lemma evalt_comp_step_mono {Q A O} (tau: (list A) ↛ (Q + O)) f n m o :
   evalt_comp tau f n m = Some o ->
@@ -934,6 +941,43 @@ Proof.
     intros; now list_simplifier.
 Qed.
 
+Lemma interrogation_plus_comp {Q A O} tau f n m l lv v2:
+  @interrogation Q A O tau (fun x y => f x = y) l lv ->
+  (forall ans_, prefix ans_ lv -> exists v, seval (tau ans_) m = Some v) ->
+  evalt_comp (fun l' => tau (lv ++ l')) f n m = Some v2 ->
+  evalt_comp tau f (length l + n) m = Some v2.
+Proof.
+  intros H H1. revert n. dependent induction H.
+  - cbn. eauto.
+  - intros.
+    cbn -[evalt]. rewrite app_length. cbn -[evalt].
+    replace (length qs + 1 + n) with (length qs + (S n)) by lia.
+    eapply IHinterrogation. intros; apply H2.
+    etransitivity. exact H4.
+    now eapply prefix_app_r.
+    cbn. rewrite app_nil_r.
+    destruct (H2 ans).
+    now eapply prefix_app_r.
+    assert (exists m, seval (tau ans) m = Some x).
+    now exists m.
+    rewrite <- seval_hasvalue in H5.
+    assert (x = Ask q).
+    eapply hasvalue_det; eauto.
+    rewrite H4, H6, H1.
+    rewrite <- H3. eapply evalt_comp_ext.
+    intros; now list_simplifier.
+Qed.
+
+Lemma evalt_comp_n_mono {Q A O} (tau: (list A) ↛ (Q + O)) f n m o :
+  evalt_comp tau f n m = Some (Output o) ->
+  forall n', n' >= n -> evalt_comp tau f n' m = Some (Output o).
+Proof.
+  intros H n' Hn'.
+  induction n.
+  - admit.
+  - cbn in H. 
+Admitted.
+
 Lemma interrogation_evalt_comp {Q A O} tau f l lv v:
   @interrogation Q A O tau (fun x y => f x = y) l lv ->
   tau lv =! v ->
@@ -943,7 +987,7 @@ Proof.
   destruct (interrogation_ter _ _ _ _ _ H1 h2) as [step Hstep].
   exists (length l + 0).
   exists step. eapply interrogation_plus_comp; eauto.
-    cbn. rewrite app_nil_r. 
+    cbn. rewrite app_nil_r.
     destruct (Hstep lv) as [v' Hv'].
     reflexivity.
     assert (exists k, seval (A:=Q + O) (tau lv) k = Some v').
@@ -962,17 +1006,23 @@ Lemma evalt_comp_index_mono {Q A O} tau f l lv v:
   forall g, @interrogation Q A O tau (fun x y => g x = y) l lv ->
   evalt_comp tau g a b = Some v.
 Proof.
-  intros H h.
-  destruct (interrogation_evalt_comp _ _ _ _ _ H h) as (a&b&Hab).
-  exists a, b. intros g Hg.
-  induction a.
-  - cbn in *. destruct (seval (A:=Q + O) (tau []) b).
-    + now destruct s.
-    + discriminate.
-  - cbn in *.
-    destruct (seval (tau []) b); [|done].
-    destruct s; [|done].
-Admitted.
+  intros H1 h2.
+  destruct (interrogation_ter _ _ _ _ _ H1 h2) as [step Hstep].
+  exists (length l + 0).
+  exists step.
+  intros.
+  eapply interrogation_plus_comp; eauto.
+    cbn. rewrite app_nil_r.
+    destruct (Hstep lv) as [v' Hv'].
+    reflexivity.
+    assert (exists k, seval (A:=Q + O) (tau lv) k = Some v').
+    exists step. easy.
+    rewrite <- seval_hasvalue in H0.
+    assert (v' = v).
+    eapply hasvalue_det; eauto.
+    rewrite Hv', H2.
+    destruct v; done.
+Qed.
 
 Lemma interrogation_evalt_comp_limit {Q A O} tau f l lv v:
   (exists K, forall k, k >= K ->
