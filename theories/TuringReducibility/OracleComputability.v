@@ -941,41 +941,11 @@ Proof.
     intros; now list_simplifier.
 Qed.
 
-Lemma interrogation_plus_comp {Q A O} tau f n m l lv v2:
-  @interrogation Q A O tau (fun x y => f x = y) l lv ->
-  (forall ans_, prefix ans_ lv -> exists v, seval (tau ans_) m = Some v) ->
-  evalt_comp (fun l' => tau (lv ++ l')) f n m = Some v2 ->
-  evalt_comp tau f (length l + n) m = Some v2.
-Proof.
-  intros H H1. revert n. dependent induction H.
-  - cbn. eauto.
-  - intros.
-    cbn -[evalt]. rewrite app_length. cbn -[evalt].
-    replace (length qs + 1 + n) with (length qs + (S n)) by lia.
-    eapply IHinterrogation. intros; apply H2.
-    etransitivity. exact H4.
-    now eapply prefix_app_r.
-    cbn. rewrite app_nil_r.
-    destruct (H2 ans).
-    now eapply prefix_app_r.
-    assert (exists m, seval (tau ans) m = Some x).
-    now exists m.
-    rewrite <- seval_hasvalue in H5.
-    assert (x = Ask q).
-    eapply hasvalue_det; eauto.
-    rewrite H4, H6, H1.
-    rewrite <- H3. eapply evalt_comp_ext.
-    intros; now list_simplifier.
-Qed.
-
 Lemma evalt_comp_n_mono {Q A O} (tau: (list A) ↛ (Q + O)) f n m o :
   evalt_comp tau f n m = Some (Output o) ->
   forall n', n' >= n -> evalt_comp tau f n' m = Some (Output o).
 Proof.
-  intros H n' Hn'.
-  induction n.
-  - admit.
-  - cbn in H. 
+  
 Admitted.
 
 Lemma interrogation_evalt_comp {Q A O} tau f l lv v:
@@ -2002,3 +1972,4 @@ End part.
 
 Notation "P ⪯ᴛ Q" := (red_Turing P Q) (at level 50).
 
+Search evalt.
