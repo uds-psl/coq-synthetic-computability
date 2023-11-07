@@ -23,9 +23,6 @@ Convention:
 
  **)
 
-  Definition limit_computable' {X} (P: X -> bool -> Prop) :=
-    exists f: X -> nat ↛ bool, forall x y, P x y <-> exists N, forall n, n > N -> f x n =! y.
-
 
   (* Definition of limit ciomputable *)
 
@@ -34,48 +31,16 @@ Convention:
       (P x <-> exists N, forall n, n >= N -> f x n = true) /\
         (~ P x <-> exists N, forall n, n >= N -> f x n = false).
 
-  Definition limit_computable'' {X} (P: X -> bool -> Prop) :=
+  Definition char_rel_limit_computable {X} (P: X -> bool -> Prop) :=
     exists f: X -> nat -> bool, forall x y, P x y <-> exists N, forall n, n >= N -> f x n = y.
 
-  Lemma limit''_limit {X} (P: X -> Prop): limit_computable'' (char_rel P) -> limit_computable P.
+  Lemma char_rel_limit_equv {X} (P: X -> Prop):
+    char_rel_limit_computable (char_rel P) <-> limit_computable P.
   Proof.
-    intros [f Hf].
-    exists f; intros x; split.
-    - now rewrite (Hf x true).
-    - now rewrite (Hf x false).
+    split; intros [f Hf]; exists f; intros x.
+    - split; firstorder.
+    - intros []; destruct (Hf x) as [h1 h2]; eauto.
   Qed.
-
-  Definition Post := forall X (p : X -> Prop), semi_decidable p -> semi_decidable (compl p) -> decidable p.
-
-  Lemma try {X} (f: X ↛ bool) (P: X -> Prop): Post ->
-                                        (forall x y, (char_rel P) x y <-> f x =! y) ->
-                                        (exists f, forall x y, (char_rel P) x y <-> f x = y).
-  Proof.
-    intros PT H2.
-    assert (decidable P).
-  { apply PT.
-    unfold semi_decidable, semi_decider.
-    exists (fun x n => if seval (f x ) n is Some t then t else false).
-    intro x. rewrite (H2 x true); split.
-    - intros H'%seval_hasvalue.  destruct H' as [n1 Hn1].
-      exists n1. now rewrite Hn1.
-    - intros [n1 Hn1]; rewrite seval_hasvalue.
-      exists n1. destruct (seval (f x) n1) as [|[]]; try congruence.
-    - exists (fun x n => if seval (f x) n is Some t then negb t else false).
-      intro x. rewrite (H2 x false); split.
-      intros H'%seval_hasvalue.  destruct H' as [n1 Hn1].
-      exists n1. now rewrite Hn1.
-      intros [n1 Hn1]; rewrite seval_hasvalue.
-      exists n1. destruct (seval (f x) n1) as [|[]]; try congruence.
-      destruct b; easy. }
-      destruct H as [g Hg].
-  exists g; intros x []. cbn; apply Hg.
-  cbn. split; intro h1; destruct (g x) eqn: E; try easy.
-  now apply Hg in E. intro E'. apply Hg in E'. congruence.
-  Qed.
-
-
-
 
   (* Naming the halting problem as K *)
   Notation K := (­{0}^(1)).
@@ -290,9 +255,10 @@ Section LimitLemma2.
     P ⪯ᴛ K ->
     definite K ->
     definite P ->
-    limit_computable'' (char_rel P).
+    limit_computable P.
   Proof.
     intros [F [H HF]] defK defP.
+    rewrite <- char_rel_limit_equv.
     destruct (approximation_Σ1_halting_strong defK) as [k_ [Hk_1 Hk_2]].
     destruct H as [tau Htau].
     pose (char_K_ n := char_K_ k_ n).
@@ -345,6 +311,5 @@ Section LimitLemma2.
       enough (true = false) by congruence.
       rewrite <- HN2, HN1; lia.
   Qed.
-
 
 End LimitLemma2.

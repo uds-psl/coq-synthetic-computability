@@ -1,5 +1,6 @@
 From SyntheticComputability Require Import partial Dec.
 From stdpp Require Import list.
+Require Import Coq.Program.Equality.
 Import PartialTactics.
 
 Lemma list_find_repeat_not {Y} P D x n :
@@ -824,6 +825,8 @@ Proof.
 Qed.
 
 
+(** A total computable version of evalt **)
+
 Fixpoint evalt_comp {Q A O} (tau : list A ↛ (Q + O))
   (f : Q -> A) (n : nat) (step: nat): option (Q + O) :=
   match (seval (tau []) step) with
@@ -890,6 +893,7 @@ Proof.
     + exists v. eapply seval_mono; [eauto| lia].
 Qed.
 
+(** Basic property of evalt_comp **)
 
 Lemma evalt_comp_step_mono {Q A O} (tau: (list A) ↛ (Q + O)) f n m o :
   evalt_comp tau f n m = Some o ->
@@ -912,15 +916,13 @@ Proof.
     + congruence.
 Qed.
 
-Require Import Coq.Program.Equality.
-
 Lemma interrogation_plus_comp {Q A O} tau f n m l lv v2:
   @interrogation Q A O tau (fun x y => f x = y) l lv ->
   (forall ans_, prefix ans_ lv -> exists v, seval (tau ans_) m = Some v) ->
-  evalt_comp (fun l' => tau (lv ++ l')) f n m = Some v2 ->
+  evalt_comp (fun l' => tau (lv ++ l')) f n m = Some v2 <->
   evalt_comp tau f (length l + n) m = Some v2.
 Proof.
-  intros H H1. revert n. dependent induction H.
+  intros H H1. split; revert n; dependent induction H.
   - cbn. eauto.
   - intros.
     cbn -[evalt]. rewrite app_length. cbn -[evalt].
@@ -939,14 +941,50 @@ Proof.
     rewrite H4, H6, H1.
     rewrite <- H3. eapply evalt_comp_ext.
     intros; now list_simplifier.
+  - cbn. eauto.
+  - intros.
+    rewrite app_length in H3. cbn in H3.
+    replace (length qs + 1 + n) with (length qs + (S n)) in H3 by lia.
+    eapply IHinterrogation in H3.
+    2: {
+    intros; apply H2.
+    etransitivity. exact H4.
+    now eapply prefix_app_r.
+    }
+    cbn in H3.
+    rewrite app_nil_r in H3.
+    destruct (H2 ans).
+    now eapply prefix_app_r.
+    assert (exists m, seval (tau ans) m = Some x).
+    now exists m.
+    rewrite <- seval_hasvalue in H5.
+    assert (x = Ask q).
+    eapply hasvalue_det; eauto.
+    rewrite H4, H6, H1 in H3.
+    rewrite <- H3. eapply evalt_comp_ext.
+    intros; now list_simplifier.
 Qed.
 
-Lemma evalt_comp_n_mono {Q A O} (tau: (list A) ↛ (Q + O)) f n m o :
-  evalt_comp tau f n m = Some (Output o) ->
-  forall n', n' >= n -> evalt_comp tau f n' m = Some (Output o).
+Lemma evalt_comp_step_length_mono {Q A O} (tau: (list A) ↛ (Q + O)) f qs ans o:
+  @interrogation Q A O tau (fun x y => f x = y) qs ans ->
+  tau ans =! Output o ->
+  exists step n,
+  forall g, @interrogation Q A O tau (fun x y => g x = y) qs ans ->
+  forall n', n <= n' -> evalt_comp tau g n' step = Some (inr o).
 Proof.
-  
-Admitted.
+  intros H1 H2.
+  destruct (interrogation_ter _ _ _ _ _ H1 H2) as [step Hstep].
+  exists step. exists (length qs). intros g Hg n' Hn'.
+  assert (exists v, seval (tau ans) step = Some v) as [v Hv].
+  { eapply Hstep; naive_solver. }
+  assert (v = Output o).
+  { eapply hasvalue_det; [|eapply H2]. rewrite seval_hasvalue. eauto. }
+  eapply Nat.le_exists_sub in Hn' as [k [-> _]].
+  rewrite Nat.add_comm.
+  eapply interrogation_plus_comp; eauto.
+  induction k.
+  all: cbn; rewrite app_nil_r; by rewrite Hv, H.
+Qed.
 
 Lemma interrogation_evalt_comp {Q A O} tau f l lv v:
   @interrogation Q A O tau (fun x y => f x = y) l lv ->
@@ -1003,12 +1041,13 @@ Proof.
   intros [k h1] h2.
   assert (interrogation tau (fun x y => f k x = y) l lv) as H.
   apply h1. lia.
+  destruct (evalt_comp_step_length_mono _ _ _ _ _ H h2) as (a' & b' & Hs).
   destruct (evalt_comp_index_mono _ _ _ _ _ H h2) as (a & b & Hab).
-  exists (max (max a b) k).
+  exists (max b'(max a' (max (max a b) k))).
   intros n Hn.
   eapply evalt_comp_step_mono.
-  eapply evalt_comp_n_mono.
-  eapply Hab. apply h1.
+  eapply (Hs (f n)); eauto.
+  eapply h1.
   all: lia.
 Qed.
 
