@@ -81,7 +81,7 @@ Section Construction.
   Notation "A # B" := (disj A B) (at level 30).
   Notation "A l# B" := (disj__l A B) (at level 30).
 
-  Record Extendsion :=
+  Record Extension :=
   {
       extendP: list nat -> nat -> option nat -> Prop;
       extend_dec: forall l x, Σ y, extendP l x y;
@@ -94,7 +94,7 @@ Section Construction.
     | S n => P_templete E n x \/ E (P_templete E n) n x
     end.
 
-  Fixpoint F_ (E: Extendsion) n l: Prop :=
+  Fixpoint F_ (E: Extension) n l: Prop :=
     match n with
     | O => l = []
     | S n => exists ls a, F_ E n ls /\ (extendP E ls n a) /\ l = if a is Some a then a :: ls else ls
@@ -157,9 +157,11 @@ Section Construction.
   Section SimpleSet.
 
   Definition extend_simple l__n n x :=
-    exists e, mu e (fun alpha => e < n /\ (l__n l# W_ alpha n) /\ mu x (fun beta => W_ alpha n beta /\ 2 * alpha < beta)).
+    exists e, mu e (fun alpha => e < n /\ 
+      (l__n l# W_ alpha n) /\ 
+        mu x (fun beta => W_ alpha n beta /\ 2 * alpha < beta)).
 
-  Definition simple_extendsion: Extendsion.
+  Definition simple_extendsion: Extension.
   Proof.
     exists (fun l n a => forall x, a = Some x <-> extend_simple l n x).
     - intros l x. admit.
