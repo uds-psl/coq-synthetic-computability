@@ -12,10 +12,6 @@ Notation "'Σ' x .. y , p" :=
         format "'[' 'Σ'  '/  ' x  ..  y ,  '/  ' p ']'")
     : type_scope.
 
-Definition disj {X} (A: list X) (B: X -> Prop) := forall x, In x A -> B x -> False.
-Definition intersect {X} (A B: X -> Prop) := forall x, A x -> B x -> False.
-Notation "A # B" := (disj A B) (at level 30).
-
 Section Construction.
   Record Extension :=
   {

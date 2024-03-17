@@ -61,3 +61,5 @@ Proof.
 Qed.
 
 End LowSimplePredicate.
+
+(*** Instance of low simple predicate ***)
