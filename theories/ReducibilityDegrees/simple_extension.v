@@ -742,8 +742,7 @@ Section Assume_EA.
       apply H; first easy.
       firstorder.
     Qed.
-
-
+(* 
     Lemma try1 e:
       non_finite e -> exists s, 
       ( ~~(Pf_ s) # (W[s] e)) \/ 
@@ -764,22 +763,27 @@ Section Assume_EA.
         intro H. apply Hx. intro Hx'.
         admit.
       - 
-    Admitted.
+    Admitted. *)
 
+    Lemma impl_dn (P Q: Prop):
+      (~~ (P -> Q)) <-> (P -> ~~Q) .
+    Proof. split; firstorder. Qed.
+    
+(* 
     Lemma try2:
-      forall e, non_finite e -> exists m, incl_e (Pf_ m) e.
+      forall e, non_finite e -> ~~ exists m, incl_e (Pf_ m) e.
     Proof.
-      strong induction e. intros He.
+      (* strong induction e. intros He.
       destruct (@try3 e H He) as [w [Hw| Hw]].
       specialize (attention_active Hw) as Hw'.
       exists (S w).
       intro Hx. unfold active in Hw'.
       apply Hw'. intros y Hy1 [i [Hie Hi]].
       apply (Hx y Hy1). now exists i.
-      now exists w.
-    Qed.
+      now exists w. *)
+    Admitted. *)
 
-    Lemma P_meet_R_simple : forall e, R_simple P e.
+    (* Lemma P_meet_R_simple : forall e, R_simple P e.
     Proof.
       intros e H3. 
       destruct (try2 H3) as [m Hm].
@@ -790,8 +794,80 @@ Section Assume_EA.
       exists (Pf_ m), m. 
       split; last apply F_func_correctness.
       easy.
+    Abort. *)
+
+    Lemma which_one_is_the_best {X} (P Q: X -> Prop):
+      (forall x, P x -> Q x -> False) <-> (~ exists x, P x /\ Q x) .
+    Proof.
+      split.
+      - intros Hf [x [h1 h2]]. eapply Hf; eauto.
+      - intros Hf x px qx. eapply Hf; eauto.
     Qed.
-  
+
+    Lemma quant_swap {X} (P: X -> Prop):
+      (~ forall x, ~ P x) -> ~~ exists x, P x.
+    Proof. eauto. Qed.
+
+
+    Lemma non_finite_not_bounded e: 
+      non_finite e -> 
+        ~~ exists k, exists x, (W[k] e) x /\ 2 * e < x.
+    Proof.
+      intro H. unfold non_finite in H.
+      intros He.  rewrite non_finite_nat in H.
+      specialize (H (2 * e + 1)).
+      apply H. intros [m [Hm1 [k Hmk]]].
+      apply He. exists k, m; split; last lia.
+      now exists k.
+    Qed.
+(* 
+    Lemma : 
+    forall y, y < e -> ~~ R_simple P y
+      (exists k, exists x, W[k] e x /\ 2 * e < x).
+    Proof.
+      
+    Qed.
+     *)
+    Lemma P_meet_R_simple' : forall e, ~ ~ R_simple P e.
+    Proof.
+      intro e. strong induction e.
+      unfold R_simple. rewrite impl_dn.
+      intros B%non_finite_not_bounded.
+      intros Hi. eapply B. intros (k&x&Hk&Hx).
+      eapply Hi. intros Hin.
+      pose (N := S (max e k)).
+      destruct (Dec (ext_intersect_W (Pf_ N) N e)) as [He|He].
+      - assert (ext_pick (Pf_ N) N e).
+      { unfold ext_pick. split. easy.
+        exists x. split. destruct Hk as [w [Hw1 Hw2]].
+        exists w. split; eauto. lia. eauto. }
+        assert (attention e N).
+        unfold attention. split. lia.
+        split. easy. intros j Hj%H.
+        intros Hj2. apply Hj.
+        intros Hj3.
+        unfold ext_pick in Hj2.
+        admit.
+        eapply attention_active in H1.
+        apply H1. intros y Hy1 [w [_ Hw]].
+        eapply Hin. exists w. eapply Hw.
+        exists (Pf_ (S N)), (S N).
+        split. easy. eapply F_func_correctness. 
+      - eapply He. intros y Hy1 [w [_ Hw]].
+        eapply Hin. exists w. eapply Hw.
+        exists (Pf_ N), N; split.
+        easy. eapply F_func_correctness.
+    Admitted.
+    
+    (* Lemma Good_req Q e: ~~ R_simple Q e -> R_simple Q e.
+    Proof.
+      intros H. unfold R_simple, intersect.
+      rewrite which_one_is_the_best.
+      rewrite <- impl_dn. 
+    Qed. *)
+    
+
+
   End Meet_Requirement.
 
   (* Lemma list_accu e:
@@ -846,7 +922,7 @@ Section Assume_EA.
       - intros [q (Hqenum & Hqinf & Hq)].
         rewrite EA.enum_iff in Hqenum.
         destruct (W_spec Hqenum) as [c HWq].
-        apply (@P_meet_R_simple c).
+        apply (@P_meet_R_simple' c). intros H. apply H.
         intros [l Hqe]; apply Hqinf.
         exists l. intros x Hqx. apply (Hqe x).
         now rewrite HWq in Hqx.
