@@ -66,249 +66,6 @@ Section ComplToBound.
     Qed.
 End ComplToBound.
 
-Section EWO.
-  Variable p: nat -> Prop.
-  Inductive T | (n: nat) : Prop := C (phi: ~p n -> T (S n)).
-
-  Definition T_elim (q: nat -> Type)
-    : (forall n, (~p n -> q (S n)) -> q n) ->
-      forall n, T n -> q n
-    := fun e => fix f n a :=
-      let (phi) := a in
-      e n (fun h => f (S n) (phi h)).
-
-  (*** EWO for Numbers *)
-
-  Lemma TI n :
-    p n -> T n.
-  Proof.
-    intros H. constructor. intros H1. destruct (H1 H).
-  Qed.
-
-  Lemma TD n :
-    T (S n) -> T n.
-  Proof.
-    intros H. constructor. intros _. exact H.
-  Qed.
-
-  Variable p_dec: forall n, dec (p n).
-
-  Definition TE (q: nat -> Type)
-    : (forall n, p n -> q n) ->
-      (forall n, ~p n -> q (S n) -> q n) ->
-      forall n, T n -> q n.
-  Proof.
-    intros e1 e2.
-    apply T_elim. intros n IH.
-    destruct (p_dec n); auto.
-  Qed.
-
-  (** From now on T will only be used through TI, TD, and TE *)
-
-  
-  Lemma T_zero n :
-    T n -> T 0.
-  Proof.
-    induction n as [|n IH].
-    - auto.
-    - intros H. apply IH. apply TD, H.
-  Qed.
-
-  Definition ewo_nat :
-    ex p -> Σ x, p x.
-  Proof.
-    intros H.
-    refine (@TE (fun _ => Σ x, p x) _ _ 0 _).
-    - eauto.
-    - easy.
-    - destruct H as [n H]. apply (@T_zero n), TI, H.
-  Qed.
-  
-End EWO.
-
-Notation unique p := (forall x x', p x -> p x' -> x = x').
-Section LeastWitness.
-    Definition safe p n := forall k, k < n -> ~ p k.
-    Definition least p n := p n /\ safe p n.
-
-    Fact least_unique p : unique (least p).
-    Proof.
-      intros n n' [H1 H2] [H1' H2'].
-      enough (~(n < n') /\ ~(n' < n)) by lia.
-      split; intros H.
-      - eapply H2'; eassumption.
-      - eapply H2; eassumption.
-    Qed.
-
-    Fact safe_O p :
-      safe p 0.
-    Proof.
-      hnf. lia.
-    Qed.
-
-    Fact safe_S p n :
-      safe p n -> ~p n -> safe p (S n).
-    Proof.
-      intros H1 H2 k H3. unfold safe in *.
-      assert (k < n \/ k = n) as [H|H] by lia.
-      - auto.
-      - congruence.
-    Qed.
-
-    Fact safe_char p n :
-      safe p n <-> forall k, p k -> k >= n.
-    Proof.
-      split.
-      - intros H k H1.
-        enough (k < n -> False) by lia.
-        intros H2. apply H in H2. auto.
-      - intros H k H1 H2. apply H in H2. lia.
-    Qed.
-
-    Fact safe_char_S p n :
-      safe p (S n) <-> safe p n /\ ~p n.
-    Proof.
-      split.
-      - intros H. split.
-        + intros k H1. apply H. lia.
-        + apply H. lia.
-      - intros [H1 H2]. apply safe_S; assumption.
-    Qed.
-
-    Fact safe_eq p n k :
-      safe p n -> k <= n -> p k -> k = n.
-    Proof.
-      intros H1 H2 H3. unfold safe in *.
-      enough (~(k < n)) by lia.
-      specialize (H1 k). tauto.
-    Qed.
-
-    Fact E14 x y z :
-      x - y = z <-> least (fun k => x <= y + k) z.
-    Proof.
-      assert (H: least (fun k => x <= y + k) (x - y)).
-      { split; unfold safe; lia. }
-      split. congruence.
-      eapply least_unique, H.
-    Qed.  
-
-    (*** Certifying LWOs *)
-
-  Section LWO.
-      Variable p : nat -> Prop.
-      Variable p_dec : forall x, dec (p x).
-
-    Definition lwo :
-      forall n, (Σ k, k < n /\ least p k) + safe p n.
-    Proof.
-      induction n as [|n IH].
-      - right. apply safe_O.
-      - destruct IH as [[k H1]|H1].
-        + left. exists k. destruct H1 as [H1 H2]. split. lia. exact H2.
-        + destruct (p_dec n).
-          * left. exists n. split. lia. easy.
-          * right. apply safe_S; assumption.
-    Defined.
-
-    Definition lwo' :
-      forall n, (Σ k, k <= n /\ least p k) + safe p (S n).
-    Proof.
-      intros n.
-      destruct (lwo (S n)) as [(k&H1&H2)|H].
-      - left. exists k. split. lia. exact H2.
-      - right.  exact H.
-    Qed.
-
-    Definition least_sig :
-      (Σ x, p x) -> Σ x, (least p) x.
-    Proof.
-      intros [n H].
-      destruct (lwo (S n)) as [(k&H1&H2)|H1].
-      - exists k. exact H2.
-      - exfalso. apply (H1 n). lia. exact H.
-    Qed.
-
-    Definition least_ex :
-      ex p -> ex (least p).
-    Proof.
-      intros [n H].
-      destruct (lwo (S n)) as [(k&H1&H2)|H1].
-      - exists k. exact H2.
-      - exfalso. apply (H1 n). lia. exact H.
-    Qed.
-
-    Definition safe_dec n :
-      dec (safe p n).
-    Proof.
-      destruct (lwo n) as [[k H1]|H1].
-      - right. intros H. exfalso.
-        destruct H1 as [H1 H2]. apply (H k). exact H1. apply H2.
-      - left. exact H1.
-    Defined.
-
-    Definition least_dec n :
-      dec (least p n).
-    Proof.
-      unfold least.
-      destruct (p_dec n) as [H|H].
-      2:{ right. tauto. }
-      destruct (safe_dec n) as [H1|H1].
-      - left. easy.
-      - right. tauto.
-    Qed.
-  End LWO.
-
-    Lemma exists_bounded_dec' P:
-    (forall x, dec (P x)) -> forall k, dec (exists n, n < k /\ P n).
-    Proof.
-      intros Hp k.
-      induction k. right; intros [? [? _]]; lia.
-      destruct IHk as [Hw|Hw].
-      - left. destruct Hw as [x [Hx1 Hx2]]. exists x; split; eauto; lia.
-      - destruct (Hp k). left. exists k; split; eauto; lia.
-        right. intros [x [Hx1 Hx2]].
-        assert (x = k \/ x < k) as [->|Hk] by lia; firstorder.
-    Qed.
-
-    Lemma exists_bounded_dec P:
-      (forall x, dec (P x)) -> forall k, dec (exists n, n <= k /\ P n).
-    Proof.
-      intros Hp k.
-      induction k. destruct (Hp 0). left. exists 0. eauto.
-      right. intros [x [Hx Hx']]. now assert (x=0) as -> by lia.
-      destruct IHk as [Hw|Hw].
-      - left. destruct Hw as [x [Hx1 Hx2]]. exists x; split; eauto; lia.
-      - destruct (Hp (S k)). left. exists (S k); split; eauto; lia.
-        right. intros [x [Hx1 Hx2]].
-        assert (x = S k \/ x <= k) as [->|Hk] by lia; firstorder.
-    Qed.
-
-    Definition bounded (P: nat -> Prop) := Σ N, forall x, P x -> x < N.
-
-    Fact bouned_le (P Q: nat -> Prop) N :
-      (forall x, P x -> x < N) -> 
-      (exists x, P x /\ Q x) <->  exists x, x < N /\ P x /\ Q x.
-    Proof.
-      intros Hn; split.
-      - intros [x Hx]. exists x; intuition eauto.
-      - intros (x&c&Hc). exists x; intuition eauto.
-    Qed.
-
-    Lemma bounded_dec (P Q: nat -> Prop):
-      (forall x, dec (P x)) -> (forall x, dec (Q x)) -> 
-      bounded P -> dec (exists n, P n /\ Q n).
-    Proof.
-      intros H1 H2 [N HN].
-      assert (dec (exists n, n < N /\ P n /\ Q n)) as [H|H].
-      - eapply exists_bounded_dec'. intro; eapply and_dec; eauto.
-      - left. rewrite bouned_le; eauto.
-      - right. intros H'%(@bouned_le _ _ N); easy.
-    Qed.
-    Lemma dec_neg_dec P: dec P -> dec (~ P).
-    Proof. intros [H|H]. right; eauto. now left. Qed.
-
-End LeastWitness.
-
 Section Assume_EA.
 
   Variable φ: nat -> nat -> option nat.
@@ -366,9 +123,11 @@ Section Assume_EA.
 
   End EA_dec.
 
-  Definition disj {X} (A: list X) (B: X -> Prop) := forall x, In x A -> B x -> False.
-  Definition intersect {X} (A B: X -> Prop) := forall x, A x -> B x -> False.
-  Notation "A # B" := (disj A B) (at level 30).
+  Definition disj_list_pred {X} (A: list X) (B: X -> Prop) := forall x, In x A -> B x -> False.
+  Definition disj_pred {X} (A B: X -> Prop) := forall x, A x -> B x -> False.
+  Notation "A # B" := (disj_list_pred A B) (at level 30).
+  Notation "A #ₚ B" := (disj_pred A B) (at level 30).
+
 
   Section Extension.
 
@@ -466,16 +225,21 @@ Section Assume_EA.
     Definition P := F_with simple_extendsion.
 
     Definition non_finite e := ~ exhaustible (W e).
-    Definition incl_e L e := ~ (L # (W e)).
+
+    Fact In_Pf k y: In y (Pf_ k) -> P y .
+    Proof.
+      intros H. exists (Pf_ k), k.
+      split; [easy| apply F_func_correctness].
+    Qed.
 
   End Simple_Extension.
 
   Section Requirements.
-    Definition R_simple_list L e := non_finite e -> incl_e L e.
 
+    Definition R_simple P e := non_finite e -> ~ (W e #ₚ P).
     Definition attention e n := e < n /\ least (ext_pick (Pf_ n) n) e.
     Definition active e n := ~ (Pf_ n) # W[n] e.
-    Definition pick_el (e x: nat) := exists k, attention e k /\ ext_least_choice (Pf_ k) k x.
+    Definition pick_el e x := exists k, attention e k /\ ext_least_choice (Pf_ k) k x.
 
   End Requirements.
 
@@ -504,7 +268,7 @@ Section Assume_EA.
       now apply h2.
     Qed.
 
-    Lemma active_incl e n: active e n -> forall m, n <= m -> active e m .
+    Lemma active_always_active e n: active e n -> forall m, n <= m -> active e m .
     Proof.
       intros H m Hm Hx. apply H. 
       eapply (intersect_mono Hx).
@@ -535,29 +299,40 @@ Section Assume_EA.
     Lemma active_not_attention e k: active e k -> ~ attention e k.
     Proof. now intros h2 [_ [[h _] _]]. Qed.
 
-    Lemma active_hold e k: attention e k -> forall m, k < m -> active e m.
+    Lemma attention_always_active e k: attention e k -> forall m, k < m -> active e m.
     Proof.
-      intros. eapply active_incl.
+      intros. eapply active_always_active.
       apply attention_active. apply H. lia.
     Qed.
 
-    Lemma attention_not_hold e k: attention e k -> forall m, k < m -> ~ attention e m.
+    Lemma attention_always_not_attention e k: 
+      attention e k -> forall m, k < m -> ~ attention e m.
     Proof.
       intros H1 m Hm. eapply active_not_attention.
-      apply (active_hold H1 Hm).
+      apply (attention_always_active H1 Hm).
+    Qed.
+
+    Lemma attention_at_most_once e: ~ ~ (exists s, forall s', s < s' -> ~ attention e s').
+    Proof.
+      ccase (exists k, attention e k) as [[w Hw]|H].
+      - intros H. eapply H. exists w.
+        now eapply attention_always_not_attention.
+      - intros Hk. apply Hk. exists 0.
+        intros k' Hk' Ha.
+        apply H. now exists k'.
     Qed.
 
     Lemma attention_uni e k1 k2 : attention e k1 -> attention e k2 -> k1 = k2.
     Proof.
       intros H1 H2.
-      specialize (fun a b => @active_not_attention _ _ (@active_hold _ _ H1 a b)) as H1'.
-      specialize (fun a b => @active_not_attention _ _ (@active_hold _ _ H2 a b)) as H2'.
+      specialize (fun a b => @active_not_attention _ _ (@attention_always_active _ _ H1 a b)) as H1'.
+      specialize (fun a b => @active_not_attention _ _ (@attention_always_active _ _ H2 a b)) as H2'.
       enough (~ k1 < k2 /\ ~ k2 < k1) by lia; split.
       intro Hk. eapply H1'. apply Hk. easy. 
       intro Hk. eapply H2'. apply Hk. easy.
     Qed.
 
-    Lemma spec_uni e x1 x2: pick_el e x1 -> pick_el e x2 -> x1 = x2 .
+    Lemma pick_el_uni e x1 x2: pick_el e x1 -> pick_el e x2 -> x1 = x2 .
     Proof.
       intros [k [Ht Hk]] [k' [Ht' Hk']].
       assert (k=k') as <-. eapply attention_uni; eauto.
@@ -614,7 +389,7 @@ Section Assume_EA.
         + constructor; last now exact H2. 
           intros In. inv HL.
           apply H4 in In as [y (Hs & h2 & h3)].
-          now rewrite (spec_uni H0 Hs) in H6.
+          now rewrite (pick_el_uni H0 Hs) in H6.
         + cbn. rewrite H. trivial.
         + destruct H3 as [->|].
           * exists a; intuition.
@@ -710,7 +485,7 @@ Section Assume_EA.
       + destruct Dec; cbn; try tauto. exfalso. firstorder.
     Qed.
 
-    Lemma Compl_P_Listing:
+    Lemma compl_P_Listing:
     forall (n: nat) , ~~ exists L, length L >= n /\ NoDup L 
                                   /\ forall x, In x L -> ~ P x.
     Proof.
@@ -725,7 +500,7 @@ Section Assume_EA.
     Lemma P_coinfinite : ~ exhaustible (compl P).
     Proof.
       eapply weakly_unbounded_non_finite.
-      intros n H. eapply Compl_P_Listing with (n := n).
+      intros n H. eapply compl_P_Listing with (n := n).
       intros (l & ? & ? & H2).
       eapply H.
       exists (firstn n l).
@@ -739,33 +514,13 @@ Section Assume_EA.
 
   Section Meet_Requirement.
 
-    Definition R_simple P e := non_finite e -> ~ (intersect (W e) P).
-
-    Lemma R_simple_acc e L:
-      R_simple_list L e -> forall L', incl L L' -> R_simple_list L' e .
-    Proof.
-      intros H L' HL' h1 h2.
-      apply H; first easy.
-      firstorder.
-    Qed.
-
-    Lemma attention_at_most_one e: ~ ~ (exists s, forall s', s < s' -> ~ attention e s').
-    Proof.
-      ccase (exists k, attention e k) as [[w Hw]|H].
-      - intros H. eapply H. exists w.
-        now eapply attention_not_hold.
-      - intros Hk. apply Hk. exists 0.
-        intros k' Hk' Ha.
-        apply H. now exists k'.
-    Qed.
-
-    Lemma attention_at_most_one' k: 
+    Lemma attention_at_most_once_bound k: 
       ~ ~ exists s, (forall e, e < k -> forall s', s < s' -> ~ attention e s').
     Proof.
       induction k.
       - intros H. apply H. exists 42. intros ??. lia. 
       - intros H. apply IHk. intros [s Hs]; clear IHk.
-        specialize (@attention_at_most_one k) as Hk.
+        specialize (@attention_at_most_once k) as Hk.
         apply Hk. intros [sk Hsk]; clear Hk.
         set (max sk s) as N.
         eapply H. exists N. intros e He.
@@ -775,8 +530,7 @@ Section Assume_EA.
     Qed.
 
     Lemma non_finite_not_bounded e: 
-      non_finite e -> 
-        ~~ exists k, exists x, (W[k] e) x /\ 2 * e < x.
+      non_finite e -> ~~ exists k, exists x, (W[k] e) x /\ 2 * e < x.
     Proof.
       intro H. unfold non_finite in H.
       intros He.  rewrite non_finite_nat in H.
@@ -786,9 +540,9 @@ Section Assume_EA.
       now exists k.
     Qed.
 
-    Lemma Pick_leas N e : 
-      e < N ->
-      (exists w, w < e /\ ext_pick (Pf_ N) N w) -> (exists w, w < e /\ attention w N).
+    Lemma ext_pick_attention N e: 
+      e < N -> (exists w, w < e /\ ext_pick (Pf_ N) N w) -> 
+      (exists w, w < e /\ attention w N).
     Proof.
       intros HeN [w (Hw1 & Hw2)].
       assert (exists w, ext_pick (Pf_ N) N w) by now exists w.
@@ -800,12 +554,12 @@ Section Assume_EA.
       exists k. do 2 (split; first lia). eapply Hk.
     Qed.
 
-    Lemma non_finite_e_attention e:
+    Lemma non_finite_attention e:
       non_finite e -> ~ ~ (exists k, ~ ext_intersect_W (Pf_ k) k e \/ attention e k) .
     Proof.
       intros H He.
       eapply (non_finite_not_bounded H); intros (b & x & Hxb1 & Hxb2).
-      eapply (@attention_at_most_one' e); intros [s Hs].
+      eapply (@attention_at_most_once_bound e); intros [s Hs].
       eapply He. 
       pose (N := S (max (max b s)  e)).
       destruct (Dec (ext_intersect_W (Pf_ N) N e)) as [He'|He'].
@@ -816,181 +570,33 @@ Section Assume_EA.
         split. lia. split. easy.
         intros w HEw Hw.
         assert (exists w, w < e /\ ext_pick (Pf_ N) N w).
-        now exists w. eapply Pick_leas in H1.
+        now exists w. eapply ext_pick_attention in H1.
         destruct H1 as [g [HEg Hg]].
         eapply (Hs g HEg); last apply Hg. lia. lia.
       - exists N. now left.
-  Qed.
-
-  Lemma impl_dn (P Q: Prop): (~~ (P -> Q)) <-> (P -> ~~Q) .
-  Proof. split; firstorder. Qed.
-
-  Lemma P_meet_R_simple' : forall e, ~ ~ R_simple P e.
-  Proof.
-    intros e.
-    unfold R_simple. rewrite impl_dn.
-    intros He He'.
-    eapply (non_finite_e_attention He).
-    intros [k [H|H]].
-    - apply He'. intros x.
-      apply H. unfold ext_intersect_W.
-      intros y Hy1 [w Hy2].
-      apply (x y). now exists w.
-      exists (Pf_ k), k; split; eauto.
-      eapply F_func_correctness.
-    - eapply attention_active in H.
-      unfold active in H.
-      apply He'. intros x.
-      apply H. intros y Hy1 [w Hy2].
-      apply (x y). now exists w.
-      exists (Pf_ (S k)), (S k); split; eauto.
-      eapply F_func_correctness.
-  Qed.
-  
-    
-    
-    
-(* 
-    Lemma try1 e:
-      non_finite e -> exists s, 
-      ( ~~(Pf_ s) # (W[s] e)) \/ 
-        (ext_intersect_W (Pf_ s) e s /\ exists x, 2 * e < x /\ (W[s] e) x).
-    Proof.
-      (* intros H HI. unfold inifite in H. *)
-      (* rewrite non_finite_spec in H. *)
-    Admitted.
-
-    Lemma try3 e: 
-      (forall n, n < e -> non_finite n -> exists k, incl_e (Pf_ k) n) -> 
-      non_finite e ->
-      exists w, attention e w \/ incl_e (Pf_ w) e.
-    Proof.
-      intros He Hinfe.
-      destruct (try1 Hinfe) as [w [ Hx| Hw]].
-      - exists w. right. unfold incl_e.
-        intro H. apply Hx. intro Hx'.
-        admit.
-      - 
-    Admitted. *)
-
-
-(* 
-    Lemma try2:
-      forall e, non_finite e -> ~~ exists m, incl_e (Pf_ m) e.
-    Proof.
-      (* strong induction e. intros He.
-      destruct (@try3 e H He) as [w [Hw| Hw]].
-      specialize (attention_active Hw) as Hw'.
-      exists (S w).
-      intro Hx. unfold active in Hw'.
-      apply Hw'. intros y Hy1 [i [Hie Hi]].
-      apply (Hx y Hy1). now exists i.
-      now exists w. *)
-    Admitted. *)
-
-    (* Lemma P_meet_R_simple : forall e, R_simple P e.
-    Proof.
-      intros e H3. 
-      destruct (try2 H3) as [m Hm].
-      intros Hin. apply Hm.
-      intros x Hx Hx'.
-      apply (Hin x Hx').
-      unfold P. unfold F_with.
-      exists (Pf_ m), m. 
-      split; last apply F_func_correctness.
-      easy.
-    Abort. *)
-(* 
-    Lemma which_one_is_the_best {X} (P Q: X -> Prop):
-      (forall x, P x -> Q x -> False) <-> (~ exists x, P x /\ Q x) .
-    Proof.
-      split.
-      - intros Hf [x [h1 h2]]. eapply Hf; eauto.
-      - intros Hf x px qx. eapply Hf; eauto.
     Qed.
 
-    Lemma quant_swap {X} (P: X -> Prop):
-      (~ forall x, ~ P x) -> ~~ exists x, P x.
-    Proof. eauto. Qed.
- *)
-
-    (* Lemma P_meet_R_simple' : forall e, ~ ~ R_simple P e.
+    Lemma ext_intersect_W_intersect k e: 
+      ~ (Pf_ k # W[k] e) -> W e #ₚ P -> False.
     Proof.
-      intro e. strong induction e.
-      unfold R_simple. rewrite impl_dn.
-      intros B%non_finite_not_bounded.
-      intros Hi. eapply B. intros (k&x&Hk&Hx).
-      eapply Hi. intros Hin.
-      pose (N := S (max e k)).
-      destruct (Dec (ext_intersect_W (Pf_ N) N e)) as [He|He].
-      - assert (ext_pick (Pf_ N) N e).
-      { unfold ext_pick. split. easy.
-        exists x. split. destruct Hk as [w [Hw1 Hw2]].
-        exists w. split; eauto. lia. eauto. }
-        assert (attention e N).
-        unfold attention. split. lia.
-        split. easy. intros j Hj%H.
-        intros Hj2. apply Hj.
-        intros Hj3.
-        unfold ext_pick in Hj2.
-        admit.
-        eapply attention_active in H1.
-        apply H1. intros y Hy1 [w [_ Hw]].
-        eapply Hin. exists w. eapply Hw.
-        exists (Pf_ (S N)), (S N).
-        split. easy. eapply F_func_correctness. 
-      - eapply He. intros y Hy1 [w [_ Hw]].
-        eapply Hin. exists w. eapply Hw.
-        exists (Pf_ N), N; split.
-        easy. eapply F_func_correctness.
-    Admitted. *)
-    
-    (* Lemma Good_req Q e: ~~ R_simple Q e -> R_simple Q e.
-    Proof.
-      intros H. unfold R_simple, intersect.
-      rewrite which_one_is_the_best.
-      rewrite <- impl_dn. 
-    Qed. *)
-    
+      unfold ext_intersect_W.
+      intros H1 H2. apply H1.
+      intros y Hy1 [w Hy2].
+      eapply (H2 y). now exists w.
+      eapply (In_Pf Hy1).
+    Qed.
 
+    Lemma P_meet_R_simple : forall e, R_simple P e.
+    Proof.
+      intros e He. intros He'.
+      eapply (non_finite_attention He).
+      intros [k [H|H]].
+      - eapply ext_intersect_W_intersect; eauto.
+      - eapply attention_active in H.
+        eapply ext_intersect_W_intersect; eauto.
+    Qed.
 
   End Meet_Requirement.
-
-  (* Lemma list_accu e:
-    (forall k, k < e -> inifite k -> exists L, incl_e L k /\ exists n, F_ simple_extendsion n L) ->
-    exists m L, F_ simple_extendsion m L /\ forall n, n < e -> R_simple_list L n.
-  Proof.
-    intros. induction e.
-    { exists 0, []; split; first econstructor. intros n Hn. lia. }
-    destruct IHe as [m [HL' [Hm HL2']]].
-    { intros n Hn He. apply H. lia. easy. }
-    pose (H e).
-    (* destruct (H e) as [L [HL1 HL2]]; first lia. *)
-    (* destruct HL2 as [k Hk].  *)
-    
-    (* destruct (dec_le m k).
-    + exists k, L; split; eauto.
-      intros n Hn. assert (n = e \/ n < e) as [->|H'] by lia.
-      apply HL1. eapply R_simple_acc. apply HL2'; first easy.
-      eapply F_mono; eauto.
-    + exists m, HL'; split; eauto.
-      intros n Hn.  assert (n = e \/ n < e) as [->|H'] by lia.
-      eapply R_simple_acc. apply HL1. eapply F_mono; eauto with lia.
-      now eapply HL2'.
-  Qed. *)
-  Admitted. *)
-
-
-  (* Lemma eventually_attention e m L: 
-    inifite e -> 
-    (forall n : nat, n < e -> inifite n -> incl_e L n -> F_ simple_extendsion m L) -> 
-    exists k, attention e k.
-  Proof.
-    intros H1 H2.
-    unfold attention. 
-    
-  Admitted. *)
-
 
   Section Result.
 
@@ -998,7 +604,6 @@ Section Assume_EA.
     Proof.
       apply F_with_semi_decidable.
     Qed.
-
 
     Lemma P_simple : simple P.
     Proof.
@@ -1008,7 +613,7 @@ Section Assume_EA.
       - intros [q (Hqenum & Hqinf & Hq)].
         rewrite EA.enum_iff in Hqenum.
         destruct (W_spec Hqenum) as [c HWq].
-        apply (@P_meet_R_simple' c). intros H. apply H.
+        apply (@P_meet_R_simple c).
         intros [l Hqe]; apply Hqinf.
         exists l. intros x Hqx. apply (Hqe x).
         now rewrite HWq in Hqx.
@@ -1020,14 +625,12 @@ Section Assume_EA.
 
 End Assume_EA.
 
-
 Require SyntheticComputability.Axioms.EA.
 
 Lemma EA_correctness: Σ φ, EA φ.
 Proof.
-  Import SyntheticComputability.Axioms.EA.Assume_EA.
-    exists φ.
-    intros P HP%SyntheticComputability.Axioms.EA.enum_iff.
+    Import SyntheticComputability.Axioms.EA.Assume_EA.
+    exists φ. intros P HP%SyntheticComputability.Axioms.EA.enum_iff.
     rewrite W_spec in HP. destruct HP as [c Hc].
     exists c. intros x. unfold W in Hc.
     apply Hc.
