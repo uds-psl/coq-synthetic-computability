@@ -375,4 +375,3 @@ Section LeastWitness.
   Proof. intros [H|H]. right; eauto. now left. Qed.
 
 End LeastWitness.
-

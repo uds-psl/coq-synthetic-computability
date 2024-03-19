@@ -478,7 +478,7 @@ Section Assume_EA.
     - intros [H1 H1'] % in_filter_iff.
       destruct Dec; cbn in H1'; try congruence.
       enough (x <= b).
-      + intuition.
+      + firstorder.
       + apply in_seq in H1. lia.
     - intros [H1 H2]. eapply in_filter_iff. split.
       + apply in_seq; lia.
@@ -605,7 +605,7 @@ Section Assume_EA.
       apply F_with_semi_decidable.
     Qed.
 
-    Lemma P_simple : simple P.
+    Theorem P_simple : simple P.
     Proof.
       unfold simple; repeat split.
       - rewrite EA.enum_iff. now apply P_semi_decidable.
@@ -622,6 +622,69 @@ Section Assume_EA.
     Qed.
 
   End Result.
+
+  Section Effectively_Simple.
+
+    Definition effectively_simple P := 
+      simple P /\  exists f, 
+        forall e, (forall x, W e x -> (compl P) x) -> forall x, W e x -> x < (f e).
+
+    Lemma attention_pick e k: attention e k -> exists x, x > 2*e /\ P x /\ W e x.
+    Proof.
+      intros [He H].
+      edestruct (ext_pick_witness) as [x Hx].
+      { destruct H. eapply e0. }
+      assert (P_ (S k) (Pf_ (S k))) by apply F_func_correctness.
+      inv H0. cbn in H4. assert (ext_least_choice l k x) as Hwitness.
+      exists e. assert (Pf_ k = l) as <-.
+      eapply F_uni. apply F_func_correctness. apply H3.
+      split; first easy. split; first easy. easy.
+      assert (x = a) as ->. eapply (@extend_uni simple_extendsion); cbn; eauto.
+      exists a. split. destruct H4, H0, H1, H4, H4.
+      assert (x=e) as HE.
+      { eapply least_unique; last eapply H.
+      enough (l=(Pf_ k)) as -> by easy. eapply F_uni; eauto. apply F_func_correctness. }
+      lia. split. exists (Pf_ (S k)), (S k); split; eauto. now rewrite <- H2.
+      apply F_func_correctness. destruct H4, H0, H1, H4, H4, H4, H4.
+      assert (x=e) as HE.
+      { eapply least_unique; last eapply H.
+      enough (l=(Pf_ k)) as -> by easy. eapply F_uni; eauto. apply F_func_correctness. }
+      exists x0; congruence.
+      exfalso. eapply (H3 x); exists e; do 2 (split; eauto). 
+      enough ((Pf_ k) = (Pf_ (S k))) as <- by easy. 
+      assert (F_ simple_extendsion k (Pf_ k)) by apply F_func_correctness.
+      eapply F_uni; eauto.
+    Qed.
+  
+    Theorem P_effectively_simple: effectively_simple P.
+    Proof.
+      split; first apply P_simple.
+      exists (fun e => 2 * e + 1).
+      intros e He x Hex. enough (~ 2 * e < x) by lia.
+      intros Hex'.
+      assert (W e #ₚ P).
+      { intros y Hy1 Hy2. now apply (He y). }
+      assert (forall k, (Pf_ k) # W[k] e).
+      { intros k y Hy1 [w [_ Hy2]]. eapply (H y). exists w; eauto.
+        exists (Pf_ k), k; split; eauto. apply F_func_correctness. }
+      enough (exists k, attention e k) as [k Hk].
+      (* apply H1. intros [k Hk]. *)
+      eapply attention_pick in Hk.
+      destruct Hk as [y (Hx1&Hx2&Hx3)].
+      eapply (He y); eauto.   
+      { unfold attention.
+        assert (exists k, least (ext_pick (Pf_ k) k) e /\ e < k).
+        { destruct Hex as [k Hk].
+          pose (S (max e k)) as N. 
+          unfold ext_pick. exists N. split. split. split. admit.
+          exists x. unfold ext_has_wit. split; last easy.
+          exists k; split; eauto. lia. 2: {lia. } admit.
+        }
+      admit.
+      }
+    Admitted.
+
+  End Effectively_Simple.
 
 End Assume_EA.
 
