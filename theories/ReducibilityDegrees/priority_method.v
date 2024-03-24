@@ -12,8 +12,7 @@ Notation "'Σ' x .. y , p" :=
         format "'[' 'Σ'  '/  ' x  ..  y ,  '/  ' p ']'")
     : type_scope.
 
-Section Construction.
-  Record Extension :=
+  Class Extension :=
   {
       extendP: list nat -> nat -> nat -> Prop;
       extend_dec: forall l x, (Σ y, extendP l x y) + (forall y, ~ extendP l x y);
@@ -22,10 +21,14 @@ Section Construction.
 
   Inductive F_ (E: Extension) : nat -> list nat -> Prop :=
     | Base : F_ E O []
-    | ExtendS n l a : F_ E n l -> extendP E l n a -> F_ E (S n) (a::l)
-    | ExtendN n l   : F_ E n l -> (forall a, ~ extendP E l n a) -> F_ E (S n) l.
+    | ExtendS n l a : F_ E n l -> extendP l n a -> F_ E (S n) (a::l)
+    | ExtendN n l   : F_ E n l -> (forall a, ~ extendP l n a) -> F_ E (S n) l.
 
-  Lemma F_uni E : forall n l1 l2, F_ E n l1 -> F_ E n l2 -> l1 = l2 .
+Section Construction.
+
+  Variable E: Extension.
+
+  Lemma F_uni: forall n l1 l2, F_ E n l1 -> F_ E n l2 -> l1 = l2 .
   Proof.
     intros n l1 l2.
     dependent induction n.
@@ -40,7 +43,7 @@ Section Construction.
       now apply IHn.
   Qed.
 
-  Lemma F_mono E n m l1 l2: F_ E n l1 -> F_ E m l2 -> n <= m -> incl l1 l2.
+  Lemma F_mono n m l1 l2: F_ E n l1 -> F_ E m l2 -> n <= m -> incl l1 l2.
   Proof.
       intros H1 H2 HE.
       revert H1 H2; induction HE in l2 |-*; intros H1 H2.
@@ -49,61 +52,61 @@ Section Construction.
         specialize (IHHE l H1 H0). eauto.
   Qed.
 
-  Lemma F_pop E n x l: F_ E n (x::l) -> exists m, F_ E m l.
+  Lemma F_pop n x l: F_ E n (x::l) -> exists m, F_ E m l.
   Proof.
     intros H. dependent induction H. 
     - now exists n.
     - eapply IHF_. eauto.
   Qed.
   
-  Lemma F_pick E n x l: F_ E n (x::l) -> exists m, F_ E m l /\ extendP E l m x.
+  Lemma F_pick n x l: F_ E n (x::l) -> exists m, F_ E m l /\ extendP l m x.
   Proof.
     intros H. dependent induction H.
     - exists n; eauto.
     - eapply IHF_; eauto.
   Qed.
 
-  Lemma F_computable E : Σ f: nat -> list nat, 
+  Lemma F_computable : Σ f: nat -> list nat, 
     forall n, F_ E n (f n) /\ length (f n) <= n.
   Proof.
     set (F := fix f x :=
            match x with
            | O => []
-           | S x => match (extend_dec E) (f x) x with
+           | S x => match extend_dec (f x) x with
                    | inr _ => f x
                    | inl aH => (projT1 aH) :: (f x)
                    end
            end).
     exists F. induction n; simpl.
     - split. constructor. easy.
-    - destruct (extend_dec E (F n) n); split.
+    - destruct (extend_dec (F n) n); split.
       + eapply ExtendS; first apply IHn. now destruct s.
       + cbn. destruct IHn. lia.
       + now eapply ExtendN.
       + destruct IHn. lia.
   Qed.
 
-  Definition F_func E := projT1 (F_computable E).
-  Lemma F_func_correctness {E}: forall n, F_ E n (F_func E n).
+  Definition F_func := projT1 F_computable.
+  Lemma F_func_correctness: forall n, F_ E n (F_func n).
   Proof.
     intros n; unfold F_func. 
-    destruct (F_computable E) as [f H].
+    destruct F_computable as [f H].
     now destruct (H n).
   Qed.
 
-  Lemma F_func_correctness' {E}: forall n, length (F_func E n) <= n.
+  Lemma F_func_correctness': forall n, length (F_func n) <= n.
   Proof.
     intros n; unfold F_func. 
-    destruct (F_computable E) as [f H].
+    destruct F_computable as [f H].
     now destruct (H n).
   Qed.
 
-  Definition F_with E x := exists l n, In x l /\ (F_ E n l).
+  Definition F_with x := exists l n, In x l /\ (F_ E n l).
 
-  Lemma F_with_semi_decidable E: semi_decidable (F_with E).
+  Lemma F_with_semi_decidable: semi_decidable F_with.
   Proof.
     unfold semi_decidable, semi_decider.
-    destruct (F_computable E) as [f Hf ].
+    destruct F_computable as [f Hf ].
     exists (fun x n => (Dec (In x (f n)))).
     intros x. split.
     - intros (l & n & Hxl & Hl).
@@ -373,5 +376,18 @@ Section LeastWitness.
   Qed.
   Lemma dec_neg_dec P: dec P -> dec (~ P).
   Proof. intros [H|H]. right; eauto. now left. Qed.
+
+  Lemma forall_bounded_dec P e: 
+    (forall x, dec (P x)) -> dec(forall i, i <= e -> P i).
+  Proof.
+    intros H.
+    induction e. destruct (H 0); [left|right]; intros.
+    now inv H0. intros H'. apply n, H'. lia.
+    destruct IHe as [H1|H1].
+    destruct (H (S e)); [left|right]; intros.
+    inv H0; first easy. now apply H1.
+    intros H0. apply n. apply H0. easy.
+    right. intro H'. apply H1. intros. apply H'. lia. 
+  Qed.
 
 End LeastWitness.
