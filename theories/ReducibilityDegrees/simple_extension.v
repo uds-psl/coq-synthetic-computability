@@ -128,13 +128,24 @@ Section Assume_EA.
   Notation "A # B" := (disj_list_pred A B) (at level 30).
   Notation "A #ₚ B" := (disj_pred A B) (at level 30).
 
+  Lemma extra_bounded f m: Σ b, forall n, n < m -> f n < b.
+  Proof.
+    induction m.
+    - exists 42. intros. inv H. 
+    - destruct IHm as [b' Hb'].
+      exists (S (max b' (f m))).
+      intros ? H. inv H. lia. specialize (Hb' n H1). lia.
+  Qed.
+
+  Section Assume_WALL.
+    Variable wall: nat -> list nat -> nat -> nat.
 
   Section Extension.
 
     Definition ext_intersect_W L n e := L # W[n] e.
-    Definition ext_has_wit n e x := (W[n] e) x /\ 2 * e < x.
-    Definition ext_pick L n e := ext_intersect_W L n e /\ exists x, ext_has_wit n e x.
-    Definition ext_choice L n e x :=  e < n /\ least (ext_pick L n) e /\ least (ext_has_wit n e) x.
+    Definition ext_has_wit L n e x := (W[n] e) x /\ 2 * e < x /\ forall i, i <= e -> wall i L n < x.
+    Definition ext_pick L n e := ext_intersect_W L n e /\ exists x, ext_has_wit L n e x.
+    Definition ext_choice L n e x :=  e < n /\ least (ext_pick L n) e /\ least (ext_has_wit L n e) x.
     Definition ext_least_choice L n x :=  exists e, ext_choice L n e x.
 
   End Extension.
@@ -144,22 +155,19 @@ Section Assume_EA.
     #[export]Instance ext_intersect_W_dec L n e: dec (ext_intersect_W L n e).
     Proof.
       apply BaseLists.list_forall_dec.
-      intro x. eapply dec_neg_dec, exists_bounded_dec.
-      intros y. apply W_dec.
-    Qed.  
+      intro x. eapply dec_neg_dec, exists_bounded_dec; eauto.
+    Qed. 
 
-    #[export]Instance ext_has_wit_dec n e x : dec (ext_has_wit n e x).
-    Proof.
-      unfold ext_has_wit. apply and_dec.
-      apply exists_bounded_dec. intro; apply W_dec.
-      apply Pigeonhole.dec_lt.
-    Qed.
+    #[export] Instance ext_wall L n e x: dec (forall i, i <= e -> wall i L n < x).
+    Proof. eapply forall_bounded_dec; eauto. Qed.
+    
+    #[export]Instance ext_has_wit_dec L n e x : dec (ext_has_wit L n e x).
+    Proof. apply and_dec; first apply exists_bounded_dec; eauto. Qed.
 
-    #[export]Instance ext_has_wit_exists_dec n e : dec (exists x, ext_has_wit n e x).
+    #[export]Instance ext_has_wit_exists_dec L n e : dec (exists x, ext_has_wit L n e x).
     Proof.
       unfold ext_has_wit. eapply bounded_dec; last eapply W_bounded_bounded.
-      intro x; eapply W_bounded_dec.
-      intro x; eapply lt_dec.
+      intro x; eapply W_bounded_dec; eauto. eauto.
     Qed.
 
     #[export]Instance ext_pick_dec L n e : dec (ext_pick L n e).
@@ -168,12 +176,11 @@ Section Assume_EA.
       unfold ext_has_wit.
       eapply bounded_dec; last apply W_bounded_bounded.
       intros x. eapply exists_bounded_dec.
-      intro; apply W_dec.
-      apply lt_dec.
+      intro; apply W_dec. eauto.
     Qed.
 
     #[export]Instance ext_pick_exists_dec L n: dec (exists e, e < n /\ least (ext_pick L n) e).
-    Proof.
+    Proof. 
       eapply exists_bounded_dec'. intro x.
       eapply least_dec. intros y.
       eapply ext_pick_dec.
@@ -200,10 +207,9 @@ Section Assume_EA.
         exists e. split; eauto.
     Qed.
 
-    Fact ext_least_choice_uni l x y1 y2:
-      ext_least_choice l x y1 -> ext_least_choice l x y2 -> y1 = y2.
+    Fact ext_least_choice_uni l x: unique (ext_least_choice l x).
     Proof.
-      intros [? (h1 & h2 & h3)] [? (h1' & h2' & h3')].
+      intros y1 y2 [? (h1 & h2 & h3)] [? (h1' & h2' & h3')].
       assert (x0 = x1) as ->. eapply least_unique; eauto.
       eapply least_unique; eauto.
     Qed.
@@ -212,41 +218,45 @@ Section Assume_EA.
 
   Section Simple_Extension.
 
-    Definition simple_extendsion: Extension.
-    Proof.
+  Instance simple_extension: Extension.
+  Proof.
       unshelve econstructor.
       - exact ext_least_choice.
       - apply ext_least_choice_dec.
       - apply ext_least_choice_uni.
-    Defined.
+  Defined.
 
-    Definition P_ := F_ simple_extendsion.
-    Definition Pf_ := F_func simple_extendsion.
-    Definition P := F_with simple_extendsion.
+    Definition P_ := F_ simple_extension.
+    Definition P_func := F_func simple_extension.
+    Definition P := F_with simple_extension.
 
     Definition non_finite e := ~ exhaustible (W e).
 
-    Fact In_Pf k y: In y (Pf_ k) -> P y .
+    Fact In_Pf k y: In y (P_func k) -> P y.
     Proof.
-      intros H. exists (Pf_ k), k.
+      intros H. exists (P_func k), k.
       split; [easy| apply F_func_correctness].
     Qed.
 
+    Definition lim_to (f: list nat -> nat -> nat) b := (exists n, forall m, n <= m -> f (P_func m) m = b).
+
   End Simple_Extension.
+
+  Hypothesis wall_spec: forall e, exists b, lim_to (wall e) b.
 
   Section Requirements.
 
     Definition R_simple P e := non_finite e -> ~ (W e #ₚ P).
-    Definition attention e n := e < n /\ least (ext_pick (Pf_ n) n) e.
-    Definition active e n := ~ (Pf_ n) # W[n] e.
-    Definition pick_el e x := exists k, attention e k /\ ext_least_choice (Pf_ k) k x.
+    Definition attend e n := e < n /\ least (ext_pick (P_func n) n) e.
+    Definition act e n := ~ (P_func n) # W[n] e.
+    Definition pick_el e x := exists k, attend e k /\ ext_least_choice (P_func k) k x.
 
   End Requirements.
 
   Section Requirements_Facts.
 
     Lemma ext_pick_witness L n e:
-      ext_pick L n e -> exists x, least (ext_has_wit n e) x.
+      ext_pick L n e -> exists x, least (ext_has_wit L n e) x.
     Proof.
       intros [H1 H2].
       eapply least_ex. intro; eapply ext_has_wit_dec.
@@ -268,7 +278,7 @@ Section Assume_EA.
       now apply h2.
     Qed.
 
-    Lemma active_always_active e n: active e n -> forall m, n <= m -> active e m .
+    Lemma act_always_act e n: act e n -> forall m, n <= m -> act e m .
     Proof.
       intros H m Hm Hx. apply H. 
       eapply (intersect_mono Hx).
@@ -276,67 +286,67 @@ Section Assume_EA.
       now eapply W_incl.
     Qed.
 
-    Lemma attention_active e k: attention e k -> active e (S k).
+    Lemma attend_act e k: attend e k -> act e (S k).
     Proof.
       intros [He H] Hcontr.
       edestruct (ext_pick_witness) as [x Hx].
       { destruct H. eapply e0. }
       apply (Hcontr x).
-      assert (P_ (S k) (Pf_ (S k))) by apply F_func_correctness.
+      assert (P_ (S k) (P_func (S k))) by apply F_func_correctness.
       inv H0. cbn in H4. assert (ext_least_choice l k x) as Hwitness.
-      exists e. assert (Pf_ k = l) as <-.
+      exists e. assert (P_func k = l) as <-.
       eapply F_uni. apply F_func_correctness. apply H3.
       split; first easy. split; first easy. easy.
-      assert (x = a) as ->. eapply (@extend_uni simple_extendsion); cbn; eauto.
+      assert (x = a) as ->. eapply (@extend_uni simple_extension); cbn; eauto.
       eauto. exfalso. eapply (H3 x). cbn.
-      exists e. enough ((Pf_ k) = (Pf_ (S k))) as <-. 
+      exists e. enough ((P_func k) = (P_func (S k))) as <-. 
       split; first easy. easy.
-      assert (F_ simple_extendsion k (Pf_ k)) by apply F_func_correctness.
+      assert (F_ simple_extension k (P_func k)) by apply F_func_correctness.
       eapply F_uni; eauto.
       firstorder.
     Qed.
 
-    Lemma active_not_attention e k: active e k -> ~ attention e k.
+    Lemma act_not_attend e k: act e k -> ~ attend e k.
     Proof. now intros h2 [_ [[h _] _]]. Qed.
 
-    Lemma attention_always_active e k: attention e k -> forall m, k < m -> active e m.
+    Lemma attend_always_act e k: attend e k -> forall m, k < m -> act e m.
     Proof.
-      intros. eapply active_always_active.
-      apply attention_active. apply H. lia.
+      intros. eapply act_always_act.
+      apply attend_act. apply H. lia.
     Qed.
 
-    Lemma attention_always_not_attention e k: 
-      attention e k -> forall m, k < m -> ~ attention e m.
+    Lemma attend_always_not_attend e k: 
+      attend e k -> forall m, k < m -> ~ attend e m.
     Proof.
-      intros H1 m Hm. eapply active_not_attention.
-      apply (attention_always_active H1 Hm).
+      intros H1 m Hm. eapply act_not_attend.
+      apply (attend_always_act H1 Hm).
     Qed.
 
-    Lemma attention_at_most_once e: ~ ~ (exists s, forall s', s < s' -> ~ attention e s').
+    Lemma attend_at_most_once e: ~ ~ (exists s, forall s', s < s' -> ~ attend e s').
     Proof.
-      ccase (exists k, attention e k) as [[w Hw]|H].
+      ccase (exists k, attend e k) as [[w Hw]|H].
       - intros H. eapply H. exists w.
-        now eapply attention_always_not_attention.
+        now eapply attend_always_not_attend.
       - intros Hk. apply Hk. exists 0.
         intros k' Hk' Ha.
         apply H. now exists k'.
     Qed.
 
-    Lemma attention_uni e k1 k2 : attention e k1 -> attention e k2 -> k1 = k2.
+    Lemma attend_uni e: unique (attend e).
     Proof.
-      intros H1 H2.
-      specialize (fun a b => @active_not_attention _ _ (@attention_always_active _ _ H1 a b)) as H1'.
-      specialize (fun a b => @active_not_attention _ _ (@attention_always_active _ _ H2 a b)) as H2'.
+      intros k1 k2 H1 H2.
+      specialize (fun a b => @act_not_attend _ _ (@attend_always_act _ _ H1 a b)) as H1'.
+      specialize (fun a b => @act_not_attend _ _ (@attend_always_act _ _ H2 a b)) as H2'.
       enough (~ k1 < k2 /\ ~ k2 < k1) by lia; split.
       intro Hk. eapply H1'. apply Hk. easy. 
       intro Hk. eapply H2'. apply Hk. easy.
     Qed.
 
-    Lemma pick_el_uni e x1 x2: pick_el e x1 -> pick_el e x2 -> x1 = x2 .
+    Lemma pick_el_uni e: unique (pick_el e).
     Proof.
-      intros [k [Ht Hk]] [k' [Ht' Hk']].
-      assert (k=k') as <-. eapply attention_uni; eauto.
-      eapply (@extend_uni simple_extendsion); cbn; eauto.
+      intros x1 x2 [k [Ht Hk]] [k' [Ht' Hk']].
+      assert (k=k') as <-. eapply attend_uni; eauto.
+      eapply (@extend_uni simple_extension); cbn; eauto.
     Qed.
 
   End Requirements_Facts.
@@ -351,12 +361,13 @@ Section Assume_EA.
       - clear IHL Hin.
         destruct (F_pick Hk) as [k' [Hk' [e He]]].
         exists e. split. 
-        exists k'. split; unfold attention.
-        + destruct He; intuition eauto. enough (Pf_ k' = L) as -> by eauto.
+        exists k'. split; unfold attend.
+        + destruct He; intuition eauto. enough (P_func k' = L) as -> by eauto.
           eapply F_uni. apply F_func_correctness. easy.
-        + exists e. unfold ext_choice. destruct He; intuition eauto. 
-          enough (Pf_ k' = L) as -> by eauto.
-          eapply F_uni. apply F_func_correctness. easy.
+        + exists e. unfold ext_choice.
+          enough (P_func k' = L) as -> by eauto.
+          eapply F_uni. apply F_func_correctness.
+          destruct He; intuition eauto. 
         + destruct He. destruct H0. destruct H1. destruct H1.
           lia.
       - destruct (F_pop Hk) as [m' Hm']. 
@@ -414,7 +425,7 @@ Section Assume_EA.
     Lemma PredNoDupListTo_NNExist p:
       forall b, ~~ exists L, PredListTo p L b /\ NoDup L.
     Proof.
-      destruct (F_computable simple_extendsion) as [f Hf].
+      destruct (F_computable simple_extension) as [f Hf].
       induction b; intros H.
       - ccase (p 0) as [H0 | H0]; apply H.
         + exists [0]. split; try split.
@@ -508,19 +519,40 @@ Section Assume_EA.
       - rewrite firstn_length. lia.
       - now eapply firstn_NoDup.
       - intros ? ? % firstn_In. now eapply H2.
-      Qed.
+    Qed.
 
   End Compl_P_non_finite.
 
   Section Meet_Requirement.
 
-    Lemma attention_at_most_once_bound k: 
-      ~ ~ exists s, (forall e, e < k -> forall s', s < s' -> ~ attention e s').
+  Lemma wall_of_wall' e: exists w, forall x, wall e (P_func x) x < w.
+  Proof.
+    destruct (wall_spec e) as [v [k Hk]].
+    destruct (@extra_bounded (fun k => wall e (P_func k) k) k) as [w Hw].
+    exists (S (max v w)). intros x.
+    destruct (Dec (x < k)). apply Hw in l. lia.
+    assert (wall e (P_func x) x = v). apply Hk. lia. lia.
+  Qed.
+
+  Lemma wall_of_wall e: exists w, forall i x, i <= e -> wall i (P_func x) x < w.
+  Proof.
+    induction e.
+    - destruct (wall_of_wall' 0) as [w Hw]. exists w.
+      intros i x ?. inv H. trivial.
+    - destruct IHe as [w IHe].
+      destruct (wall_of_wall' (S e)) as [w' Hw].
+      exists (S (max w w')). intros i x H.
+      inv H. specialize (Hw x). lia. 
+      specialize (IHe i x H1). lia.
+  Qed.
+
+    Lemma attend_at_most_once_bound k: 
+      ~ ~ exists s, (forall e, e < k -> forall s', s < s' -> ~ attend e s').
     Proof.
       induction k.
       - intros H. apply H. exists 42. intros ??. lia. 
       - intros H. apply IHk. intros [s Hs]; clear IHk.
-        specialize (@attention_at_most_once k) as Hk.
+        specialize (@attend_at_most_once k) as Hk.
         apply Hk. intros [sk Hsk]; clear Hk.
         set (max sk s) as N.
         eapply H. exists N. intros e He.
@@ -530,22 +562,25 @@ Section Assume_EA.
     Qed.
 
     Lemma non_finite_not_bounded e: 
-      non_finite e -> ~~ exists k, exists x, (W[k] e) x /\ 2 * e < x.
+      non_finite e -> ~~ exists k, exists x, (W[k] e) x /\ 2 * e < x /\ 
+        (forall n, forall i, i <= e -> wall i (P_func n) n < x).
     Proof.
       intro H. unfold non_finite in H.
       intros He.  rewrite non_finite_nat in H.
-      specialize (H (2 * e + 1)).
+      destruct (wall_of_wall e) as [w Hw].
+      pose (N := max (2*e + 1) w). specialize (H N).
       apply H. intros [m [Hm1 [k Hmk]]].
-      apply He. exists k, m; split; last lia.
-      now exists k.
+      apply He. exists k, m.
+      repeat split. now exists k.
+      lia. intros n i Hie. specialize (Hw i n Hie). lia.
     Qed.
 
-    Lemma ext_pick_attention N e: 
-      e < N -> (exists w, w < e /\ ext_pick (Pf_ N) N w) -> 
-      (exists w, w < e /\ attention w N).
+    Lemma ext_pick_attend N e: 
+      e < N -> (exists w, w < e /\ ext_pick (P_func N) N w) -> 
+      (exists w, w < e /\ attend w N).
     Proof.
       intros HeN [w (Hw1 & Hw2)].
-      assert (exists w, ext_pick (Pf_ N) N w) by now exists w.
+      assert (exists w, ext_pick (P_func N) N w) by now exists w.
       eapply least_ex in H; last eauto.
       destruct H as [k Hk]. assert (k <= w).
       { enough (~ k > w) by lia. intro Hkw.
@@ -554,30 +589,31 @@ Section Assume_EA.
       exists k. do 2 (split; first lia). eapply Hk.
     Qed.
 
-    Lemma non_finite_attention e:
-      non_finite e -> ~ ~ (exists k, ~ ext_intersect_W (Pf_ k) k e \/ attention e k) .
+    Lemma non_finite_attend e:
+      non_finite e -> ~ ~ (exists k, ~ ext_intersect_W (P_func k) k e \/ attend e k) .
     Proof.
       intros H He.
-      eapply (non_finite_not_bounded H); intros (b & x & Hxb1 & Hxb2).
-      eapply (@attention_at_most_once_bound e); intros [s Hs].
-      eapply He. 
-      pose (N := S (max (max b s)  e)).
-      destruct (Dec (ext_intersect_W (Pf_ N) N e)) as [He'|He'].
+      eapply (non_finite_not_bounded H); intros (b & x & (Hx1 & Hx2 & Hx3)).
+      eapply (@attend_at_most_once_bound e); intros [s Hs].
+      pose (N := S (max (max b s)  e)). apply He.
+      destruct (Dec (ext_intersect_W (P_func N) N e)) as [He'|He'].
       - exists N. right.
-        assert (ext_pick (Pf_ N) N e).
-        { split; first easy. exists x. split; last easy.
-          eapply W_incl; last apply Hxb1. lia. }
+        assert (ext_pick (P_func N) N e).
+      { split; first easy. exists x. split.
+        eapply W_incl; last apply Hx1. lia.
+        split; first lia. eapply Hx3.
+      }
         split. lia. split. easy.
         intros w HEw Hw.
-        assert (exists w, w < e /\ ext_pick (Pf_ N) N w).
-        now exists w. eapply ext_pick_attention in H1.
+        assert (exists w, w < e /\ ext_pick (P_func N) N w).
+        now exists w. eapply ext_pick_attend in H1.
         destruct H1 as [g [HEg Hg]].
         eapply (Hs g HEg); last apply Hg. lia. lia.
       - exists N. now left.
     Qed.
 
     Lemma ext_intersect_W_intersect k e: 
-      ~ (Pf_ k # W[k] e) -> W e #ₚ P -> False.
+      ~ (P_func k # W[k] e) -> W e #ₚ P -> False.
     Proof.
       unfold ext_intersect_W.
       intros H1 H2. apply H1.
@@ -589,10 +625,10 @@ Section Assume_EA.
     Lemma P_meet_R_simple : forall e, R_simple P e.
     Proof.
       intros e He. intros He'.
-      eapply (non_finite_attention He).
+      eapply (non_finite_attend He).
       intros [k [H|H]].
       - eapply ext_intersect_W_intersect; eauto.
-      - eapply attention_active in H.
+      - eapply attend_act in H.
         eapply ext_intersect_W_intersect; eauto.
     Qed.
 
@@ -623,68 +659,71 @@ Section Assume_EA.
 
   End Result.
 
-  Section Effectively_Simple.
+  End Assume_WALL.
 
-    Definition effectively_simple P := 
-      simple P /\  exists f, 
-        forall e, (forall x, W e x -> (compl P) x) -> forall x, W e x -> x < (f e).
+  Section Instance_of_Wall.
 
-    Lemma attention_pick e k: attention e k -> exists x, x > 2*e /\ P x /\ W e x.
-    Proof.
-      intros [He H].
-      edestruct (ext_pick_witness) as [x Hx].
-      { destruct H. eapply e0. }
-      assert (P_ (S k) (Pf_ (S k))) by apply F_func_correctness.
-      inv H0. cbn in H4. assert (ext_least_choice l k x) as Hwitness.
-      exists e. assert (Pf_ k = l) as <-.
-      eapply F_uni. apply F_func_correctness. apply H3.
-      split; first easy. split; first easy. easy.
-      assert (x = a) as ->. eapply (@extend_uni simple_extendsion); cbn; eauto.
-      exists a. split. destruct H4, H0, H1, H4, H4.
-      assert (x=e) as HE.
-      { eapply least_unique; last eapply H.
-      enough (l=(Pf_ k)) as -> by easy. eapply F_uni; eauto. apply F_func_correctness. }
-      lia. split. exists (Pf_ (S k)), (S k); split; eauto. now rewrite <- H2.
-      apply F_func_correctness. destruct H4, H0, H1, H4, H4, H4, H4.
-      assert (x=e) as HE.
-      { eapply least_unique; last eapply H.
-      enough (l=(Pf_ k)) as -> by easy. eapply F_uni; eauto. apply F_func_correctness. }
-      exists x0; congruence.
-      exfalso. eapply (H3 x); exists e; do 2 (split; eauto). 
-      enough ((Pf_ k) = (Pf_ (S k))) as <- by easy. 
-      assert (F_ simple_extendsion k (Pf_ k)) by apply F_func_correctness.
-      eapply F_uni; eauto.
-    Qed.
-  
-    Theorem P_effectively_simple: effectively_simple P.
-    Proof.
-      split; first apply P_simple.
-      exists (fun e => 2 * e + 1).
-      intros e He x Hex. enough (~ 2 * e < x) by lia.
-      intros Hex'.
-      assert (W e #ₚ P).
-      { intros y Hy1 Hy2. now apply (He y). }
-      assert (forall k, (Pf_ k) # W[k] e).
-      { intros k y Hy1 [w [_ Hy2]]. eapply (H y). exists w; eauto.
-        exists (Pf_ k), k; split; eauto. apply F_func_correctness. }
-      enough (exists k, attention e k) as [k Hk].
-      (* apply H1. intros [k Hk]. *)
-      eapply attention_pick in Hk.
-      destruct Hk as [y (Hx1&Hx2&Hx3)].
-      eapply (He y); eauto.   
-      { unfold attention.
-        assert (exists k, least (ext_pick (Pf_ k) k) e /\ e < k).
-        { destruct Hex as [k Hk].
-          pose (S (max e k)) as N. 
-          unfold ext_pick. exists N. split. split. split. admit.
-          exists x. unfold ext_has_wit. split; last easy.
-          exists k; split; eauto. lia. 2: {lia. } admit.
-        }
-      admit.
-      }
-    Admitted.
+  Definition low_wall (e: nat) (l: list nat) (n: nat) := 42.
+  Lemma low_wall_spec: forall e, exists b, lim_to low_wall (low_wall e) b.
+  Proof. intro e. exists 42. exists 0; intuition. Qed.
 
-  End Effectively_Simple.
+  Definition Pw := P low_wall.
+
+  Theorem P_simple_low_wall: simple Pw.
+  Proof.
+    eapply P_simple. apply low_wall_spec.
+  Qed.
+
+  Definition effectively_simple P := 
+    simple P /\  exists f, 
+      forall e, (forall x, W e x -> (compl P) x) -> forall x, W e x -> x < (f e).
+
+  Lemma attend_pick e k: attend low_wall e k -> exists x, x > 2*e /\ Pw x /\ W e x.
+  Proof.
+    intros [He H].
+    (* edestruct (ext_pick_witness) as [x Hx].
+    { destruct H. eapply e0. }
+    assert (P_ (S k) (Pf_ (S k))) by apply F_func_correctness.
+    inv H0. cbn in H4. assert (ext_least_choice l k x) as Hwitness.
+    exists e. assert (Pf_ k = l) as <-.
+    eapply F_uni. apply F_func_correctness. apply H3.
+    split; first easy. split; first easy. easy.
+    assert (x = a) as ->. eapply (@extend_uni simple_extendsion); cbn; eauto.
+    exists a. split. destruct H4, H0, H1, H4, H4.
+    assert (x=e) as HE.
+    { eapply least_unique; last eapply H.
+    enough (l=(Pf_ k)) as -> by easy. eapply F_uni; eauto. apply F_func_correctness. }
+    lia. split. exists (Pf_ (S k)), (S k); split; eauto. now rewrite <- H2.
+    apply F_func_correctness. destruct H4, H0, H1, H4, H4, H4, H4.
+    assert (x=e) as HE.
+    { eapply least_unique; last eapply H.
+    enough (l=(Pf_ k)) as -> by easy. eapply F_uni; eauto. apply F_func_correctness. }
+    exists x0; congruence.
+    exfalso. eapply (H3 x); exists e; do 2 (split; eauto). 
+    enough ((Pf_ k) = (Pf_ (S k))) as <- by easy. 
+    assert (F_ simple_extendsion k (Pf_ k)) by apply F_func_correctness.
+    eapply F_uni; eauto. *)
+  Admitted.
+
+  Theorem P_effectively_simple: effectively_simple Pw.
+  Proof.
+    split; first apply P_simple. apply low_wall_spec.
+    exists (fun e => 2 * e + 1).
+    intros e He x Hex. enough (~ 2 * e < x) by lia.
+    intros Hex'.
+    assert (W e #ₚ Pw).
+    { intros y Hy1 Hy2. now apply (He y). }
+    (* assert (forall k, (Pf_ low_wall k) # W[k] e).
+    { intros k y Hy1 [w [_ Hy2]]. eapply (H y). exists w; eauto.
+      exists (Pf_ k), k; split; eauto. apply F_func_correctness. }
+    enough (exists k, attend e k) as [k Hk].
+    (* apply H1. intros [k Hk]. *)
+    eapply attend_pick in Hk.
+    destruct Hk as [y (Hx1&Hx2&Hx3)].
+    admit. admit. *)
+  Admitted.
+
+  End Instance_of_Wall.
 
 End Assume_EA.
 
