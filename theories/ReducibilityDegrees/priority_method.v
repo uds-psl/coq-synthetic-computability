@@ -12,11 +12,27 @@ Notation "'Σ' x .. y , p" :=
         format "'[' 'Σ'  '/  ' x  ..  y ,  '/  ' p ']'")
     : type_scope.
 
+Definition inf_exists P := forall n, exists m, m > n /\ P m.
+Notation "'∞∃' x .. y , p" :=
+  (inf_exists (fun x => .. (inf_exists (fun y => p)) ..))
+      (at level 200, x binder, right associativity,
+      format "'[' '∞∃'  '/  ' x  ..  y ,  '/  ' p ']'")
+  : type_scope.
+
+Definition inf_forall (P: nat -> Prop) := exists n, forall m, m > n -> P m.
+Notation "'∞∀' x .. y , p" :=
+  (inf_forall (fun x => .. (inf_forall (fun y => p)) ..))
+      (at level 200, x binder, right associativity,
+      format "'[' '∞∀'  '/  ' x  ..  y ,  '/  ' p ']'")
+  : type_scope.
+
+Notation unique p := (forall x x', p x -> p x' -> x = x').
+
   Class Extension :=
   {
       extendP: list nat -> nat -> nat -> Prop;
       extend_dec: forall l x, (Σ y, extendP l x y) + (forall y, ~ extendP l x y);
-      extend_uni: forall l x y1 y2, extendP l x y1 -> extendP l x y2 -> y1 = y2
+      extend_uni: forall l x, unique (extendP l x)
   }.
 
   Inductive F_ (E: Extension) : nat -> list nat -> Prop :=
@@ -28,9 +44,9 @@ Section Construction.
 
   Variable E: Extension.
 
-  Lemma F_uni: forall n l1 l2, F_ E n l1 -> F_ E n l2 -> l1 = l2 .
+  Lemma F_uni n: unique (F_ E n).
   Proof.
-    intros n l1 l2.
+    intros l1 l2.
     dependent induction n.
     - intros H1 H2. inv H1. now inv H2.
     - intros H1 H2. inv H1; inv H2.
@@ -193,8 +209,6 @@ Section EWO.
   Qed.
   
 End EWO.
-
-Notation unique p := (forall x x', p x -> p x' -> x = x').
 
 Section LeastWitness.
 

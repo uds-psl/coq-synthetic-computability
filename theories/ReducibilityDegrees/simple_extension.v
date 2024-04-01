@@ -322,7 +322,7 @@ Section Assume_EA.
       apply (attend_always_act H1 Hm).
     Qed.
 
-    Lemma attend_at_most_once e: ~ ~ (exists s, forall s', s < s' -> ~ attend e s').
+    Lemma attend_at_most_once e: ~ ~ (∞∀ s, ~ attend e s).
     Proof.
       ccase (exists k, attend e k) as [[w Hw]|H].
       - intros H. eapply H. exists w.
