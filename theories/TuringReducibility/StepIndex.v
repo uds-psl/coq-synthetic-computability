@@ -5,7 +5,7 @@ Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
 From SyntheticComputability Require Import partial Dec.
 Require Import Coq.Program.Equality.
-From stdpp Require Import list.
+From stdpp Require Export list.
 Import PartialTactics.
 
 Notation "'Σ' x .. y , p" :=
@@ -370,13 +370,11 @@ End Limit_Interrogation.
 Section Step_Eval_Spec.
 
   Variable P: nat → Prop.
-  Variable f_: nat → nat → bool.
-  Hypothesis Hf_ : semi_decider f_ P.
-  Hypothesis D_P: definite P.
+  Hypothesis Hf_: Σ f_, semi_decider f_ P.
 
-  Definition f := projT1 (semi_decider_to_stable Hf_).
+  Definition f := projT1 (semi_decider_to_stable (projT2 Hf_)).
   Fact S_P: stable_semi_decider P f.
-  Proof. unfold f. by destruct (semi_decider_to_stable Hf_). Qed.
+  Proof. unfold f. by destruct (semi_decider_to_stable (projT2 Hf_)). Qed.
 
   Definition Φ_ (f: nat → nat → bool) (e x n: nat): option () :=
     match evalt_comp (ξ () e x) (f n) n n with

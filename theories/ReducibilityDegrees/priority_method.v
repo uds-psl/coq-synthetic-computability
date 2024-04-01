@@ -12,20 +12,6 @@ Notation "'Σ' x .. y , p" :=
         format "'[' 'Σ'  '/  ' x  ..  y ,  '/  ' p ']'")
     : type_scope.
 
-Definition inf_exists P := forall n, exists m, m > n /\ P m.
-Notation "'∞∃' x .. y , p" :=
-  (inf_exists (fun x => .. (inf_exists (fun y => p)) ..))
-      (at level 200, x binder, right associativity,
-      format "'[' '∞∃'  '/  ' x  ..  y ,  '/  ' p ']'")
-  : type_scope.
-
-Definition inf_forall (P: nat -> Prop) := exists n, forall m, m > n -> P m.
-Notation "'∞∀' x .. y , p" :=
-  (inf_forall (fun x => .. (inf_forall (fun y => p)) ..))
-      (at level 200, x binder, right associativity,
-      format "'[' '∞∀'  '/  ' x  ..  y ,  '/  ' p ']'")
-  : type_scope.
-
 Notation unique p := (forall x x', p x -> p x' -> x = x').
 
   Class Extension :=
@@ -122,6 +108,21 @@ Section Construction.
   Lemma F_with_semi_decidable: semi_decidable F_with.
   Proof.
     unfold semi_decidable, semi_decider.
+    destruct F_computable as [f Hf ].
+    exists (fun x n => (Dec (In x (f n)))).
+    intros x. split.
+    - intros (l & n & Hxl & Hl).
+      exists n. rewrite Dec_auto; first easy.
+      destruct (Hf n) as [Hf' _].
+      now rewrite (F_uni Hf' Hl).
+    - intros (n & Hn%Dec_true).
+      exists (f n), n; split; eauto.
+      apply Hf.
+  Qed.
+
+
+  Lemma F_with_semi_decider: Σ f, semi_decider f F_with.
+  Proof.
     destruct F_computable as [f Hf ].
     exists (fun x n => (Dec (In x (f n)))).
     intros x. split.
