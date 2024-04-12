@@ -126,7 +126,7 @@ Section Wall.
       - destruct H as [x [H1 H2]].
         destruct (wall e (P_func x) x) as [|k] eqn: H; first done; clear H2.
         exists (S k), x. intros t Ht. induction Ht; first done.
-        rewrite <- (φ_spec1 (F_with_χ (simple_extension η wall)) IHHt).
+        rewrite <- (@φ_spec1 χ _ _ _ _ IHHt).
         reflexivity.
         intros; split.
         + intros K%Dec_true. apply Dec_auto.

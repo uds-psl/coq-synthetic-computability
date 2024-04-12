@@ -102,10 +102,11 @@ Section LimitLemma1.
     all: eauto.
   Qed.
 
+About Σ_semi_decidable_jump.
   (** TODO: LEM_Σ 1 <-> definite K **)
   (* First part of limit lemma *)
 
-  Lemma limit_turing_red_K {k: nat} (P: vec nat k -> Prop) :
+  Lemma limit_turing_red_K' {k: nat} (P: vec nat k -> Prop) :
     LEM_Σ 1 ->
     definite K ->
     limit_computable P ->
@@ -116,8 +117,26 @@ Section LimitLemma1.
     apply Dec.nat_eq_dec.
   Qed.
 
-End LimitLemma1.
+  Search (vec) "hd".
 
+  Fact elim_vec (P: nat -> Prop):
+    P ⪯ₘ (fun x: vec nat 1 => P (hd x)) .
+  Proof. exists (fun x => [x]). now intros x. Qed.
+  Lemma limit_turing_red_K {k: nat} (P: nat -> Prop) :
+    LEM_Σ 1 ->
+    definite K ->
+    limit_computable P ->
+    P ⪯ᴛ K.
+  Proof.
+    intros Hc HK [h Hh].
+    eapply Turing_transitive; last eapply (@limit_turing_red_K' 1); eauto.
+    eapply red_m_impl_red_T. apply elim_vec.
+    exists (fun v n => h (hd v) n). 
+    intros x; split; 
+    destruct (Hh (hd x)) as [Hh1 Hh2]; eauto.
+  Qed.
+
+End LimitLemma1.
 
 Section Σ1Approximation.
 
