@@ -138,7 +138,8 @@ Section Assume_EA.
   Qed.
 
   Section Assume_WALL.
-    Variable wall: nat -> list nat -> nat -> nat.
+    Class Wall := wall: nat → list nat → nat → nat.
+    Variable wall_instance: Wall.
 
   Section Extension.
 

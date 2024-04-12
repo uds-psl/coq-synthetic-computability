@@ -49,6 +49,54 @@ Section Step_Eval.
   Notation Ask q := (inl q).
   Notation Output o := (inr o).
 
+  Lemma prefix_lookup_Some {X} (l1 l2: list X)i x :
+  l1 !! i = Some x → l1 `prefix_of` l2 → l2 !! i = Some x.
+  Proof. intros ? [k ->]. rewrite lookup_app_l; eauto using lookup_lt_Some. Qed.
+
+  Lemma prefix_length_eq {X} (l1 l2: list X) :
+    l1 `prefix_of` l2 → length l2 ≤ length l1 → l1 = l2.
+  Proof.
+    intros Hprefix Hlen. assert (length l1 = length l2).
+    { apply prefix_length in Hprefix. lia. }
+    eapply list_eq_same_length with (length l1); [done..|].
+    intros i x y _ ??. assert (l2 !! i = Some x) by eauto using prefix_lookup_Some.
+    congruence.
+  Qed.
+
+  Lemma interrogation_le_eq (q: Q) (a: A) (τ: tree) R use use' ans ans' v : 
+    functional R →
+    interrogation τ R use ans → τ ans =! Output v →
+    interrogation τ R use' ans' → τ ans' =! Output v →
+    length use ≤ length use' →
+    use = use'.
+  Proof.
+    intros funR H1 H1a H2 H2a E.
+    specialize (interrogation_det _ _ _ _ _ _ funR H1 H2 E) as [HE1 HE2].
+    enough (length use' ≤ length use). 
+    { eapply prefix_length_eq; eauto. }
+    enough (¬ length use < length use') by lia. intros H.
+    unshelve rewrite (interrogation_quantifiers) in H2; eauto. 
+    destruct H2 as (H11&H12).
+    assert (length ans < length ans') as H'.
+    { unshelve rewrite (interrogation_quantifiers) in H1; eauto.
+    destruct H1 as [-> _]. lia. } induction HE2 as [sth Hs].
+    destruct (H12 _ H') as [H12' _]. rewrite Hs in H12'.
+    rewrite take_app in H12'. 
+    specialize (hasvalue_det H12' H1a). congruence.
+  Qed.
+
+  Lemma interrogation_eq (q: Q) (a: A) (τ: tree) R use use' ans ans' v : 
+    functional R →
+    interrogation τ R use ans → τ ans =! Output v →
+    interrogation τ R use' ans' → τ ans' =! Output v →
+    use = use'.
+  Proof.
+    intros funR H1 H1a H2 H2a.
+    assert (length use ≤ length use' ∨ length use' ≤ length use) as [E|E] by lia.
+    eapply interrogation_le_eq; eauto.
+    symmetry. eapply interrogation_le_eq; eauto.
+  Qed.
+
   Fixpoint evalt_comp (τ : tree) (f : Q → A) (step depth: nat): option (Q + O) :=
     match (seval (τ []) depth) with
     | Some x => 
@@ -144,6 +192,29 @@ Section Step_Eval.
       intros; by list_simplifier.
   Qed.
 
+  Lemma evalt_comp_step_mono' τ f n m o:
+    evalt_comp τ f n m = Some (Output o) →
+    evalt_comp τ f (S n) m = Some (Output o) .
+  Proof.
+    induction n in o, τ |-*.
+    - cbn. destruct (seval (τ []) m); last done.
+      by destruct s.
+    - intros H. cbn in H.
+      cbn. destruct (seval (τ []) m); last done.
+      destruct s; last done.
+      apply (IHn _ _ H).
+  Qed.
+
+  Lemma evalt_comp_step_mono'' τ f n m o:
+    evalt_comp τ f n m = Some (Output o) →
+    ∀ n', n ≤ n' → evalt_comp τ f n' m = Some (Output o) .
+  Proof.
+    intros H n' Hn'.
+    induction Hn'; first done.
+    by eapply evalt_comp_step_mono'.
+  Qed.
+  
+
   Lemma evalt_comp_step_mono (τ: tree) f qs ans o:
       interrogation τ (λ x y, f x = y) qs ans →
       τ ans =! Output o →
@@ -159,9 +230,10 @@ Section Step_Eval.
     { eapply hasvalue_det; [|eapply H2]. rewrite seval_hasvalue. eauto. }
     eapply Nat.le_exists_sub in Hn' as [k [-> _]].
     rewrite Nat.add_comm.
-    eapply interrogation_plus_evalt_comp ; eauto.
+    eapply interrogation_plus_evalt_comp; eauto.
     induction k. all: cbn; rewrite app_nil_r; by rewrite Hv, H.
   Qed.
+
 
   Lemma evalt_comp_oracle_approx (τ: tree) f l lv v:
       interrogation τ (λ x y, f x = y) l lv →
@@ -198,64 +270,67 @@ Section Step_Eval.
   Qed.
 
   Lemma evalt_comp_to_interrogation (τ : tree) (f : Q → A) o n depth:
-      evalt_comp τ f n depth = Some (Output o) →
-      Σ (qs : list Q) (ans : list A),
-        length qs ≤ n ∧
-        interrogation τ (λ q a, f q = a) qs ans ∧ 
-        τ ans =! Output o.
+      eq_dec O → eq_dec Q →
+      (Σ qs ans, evalt_comp τ f n depth = Some (Output o) ∧
+      length qs ≤ n ∧ interrogation τ (λ q a, f q = a) qs ans ∧ τ ans =! Output o)
+       + 
+      (evalt_comp τ f n depth ≠ Some (Output o)).
   Proof.
-    intros H.
-    induction n in τ, H |- *.
+    intros eq_dec_O eq_dec_Q.
+    destruct (Dec (evalt_comp τ f n depth = Some (Output o))) as [H|H]; last by right.
+    left. induction n in τ, H |- *.
     * cbn in *. destruct (seval (τ []) depth) eqn: E.
-      exists [], []. repeat split. eauto. econstructor.
-      destruct s. congruence. rewrite seval_hasvalue.
+      exists [], []. repeat split; eauto. econstructor.
+      destruct s. congruence.  rewrite seval_hasvalue.
       by exists depth; injection H as ->. congruence.
     * cbn in *.  destruct (seval (τ []) depth) eqn: E; try congruence.
       destruct s; try congruence.
-      - eapply (IHn (λ l, τ (f q :: l))) in H as (qs & ans & H3 & H1 & H2).
-        exists (q :: qs), (f q :: ans). split; eauto. cbn; lia. repeat split.
+      - eapply (IHn (λ l, τ (f q :: l))) in H as (qs & ans & H3 & H1 & H2 & H').
+        exists (q :: qs), (f q :: ans). split; last split; eauto. cbn; lia. repeat split.
         eapply interrogation_app with (q1 := [q]) (a1 := [f q]).
         eapply Interrogate with (qs := []) (ans := []); eauto. econstructor.
         rewrite seval_hasvalue. by exists depth.
         eauto. eauto.
-      - exists [], []. repeat split. cbn. lia. eauto. econstructor.
+      - exists [], []. repeat split; try split; cbn. easy. lia. eauto. econstructor.
         rewrite seval_hasvalue.
         by exists depth; injection H as ->.
   Qed.
 
-  Lemma evalt_comp_limit_interrogation (τ: tree) f v:
-      (∞∀ n, evalt_comp τ (f n) n n = Some (Output v)) →
-      (∞∀ k, ∃ l lv, τ lv =! Output v ∧ interrogation τ (λ x y, f k x = y) l lv).
+  Lemma final_fact (τ: tree) n m f g use ans v:
+    evalt_comp τ f n m = Some (Output v) →
+    interrogation τ (λ x y, f x = y) use ans → 
+    interrogation τ (λ x y, g x = y) use ans →
+    τ ans =! Output v → 
+    evalt_comp τ g n m = Some (Output v).
   Proof.
-    intros [w Hw].
-    exists w. intros m Hm.
-    specialize (Hw m Hm) as H.
-    destruct (evalt_comp_to_interrogation H) as (qs&ans&Hl&Hans&Hans').
-    exists qs, ans. split; eauto.
-  Qed.
+    intros Hf H1 H2 Ho.
+  Admitted.
 
 End Step_Eval.
 
 Section Use_Function.
 
-  Definition list_interp (L: list nat) (q: nat): bool := Dec (In q L).
-
-  Lemma try (O: Type) (τ: tree)  n m (v: nat + O) L:
-    evalt_comp τ (list_interp L) n m = Some v → Σ k,
-    ∀ x, k < x → evalt_comp τ (list_interp (x::L)) n m = Some v.
+  Lemma use_function {Q O: Type} (τ: (list bool) ↛ (Q + O)) (f: Q → bool) n m v:
+    eq_dec O → eq_dec Q →
+    (Σ use, 
+    evalt_comp τ f n m = Some (inr v) ∧
+    ∀ P, (∀ q, q ∈ use → P q ↔ f q = true) → 
+      ∃ ans, interrogation τ (char_rel P) use ans ∧ τ ans =! inr v)  +
+    (evalt_comp τ f n m ≠ Some (inr v)).
   Proof.
-    induction n in v |-*.
-    - exists 42. intros x Hx.
-      unfold evalt_comp in *. by destruct (seval (τ []) m).
-    - intros H. destruct (evalt_comp τ (list_interp L) n m) eqn: E; last first.
-      admit.
-      destruct s; last first.
-      (* specialize (evalt_comp_step_mono ). *)
-      (* exists 42. intros H. 
-      destruct v as [i|].
-      exists (S (max i k)). intros Hi x Hx.
-  *)
-  Abort.
+    intros h1 h2. 
+    destruct (evalt_comp_to_interrogation τ f v n m) as [(qs&ans&H3&_&H1&H2)|H]; try done.
+    left. exists qs. split; first easy. intros P HqP.
+    exists ans; split; last done.
+    eapply interrogation_ext; [eauto| |apply H1].
+    intros q' [|] Hqa'%elem_of_list_In; cbn; first by rewrite HqP.
+    specialize (HqP q' Hqa'). split.
+    - intros H. destruct (f q') eqn: E; last done.
+      enough (P q') by easy. by rewrite HqP.
+    - intros H H'%HqP. congruence.
+    - right. done.
+  Qed.
+
 
 End Use_Function.
 
@@ -365,16 +440,10 @@ Section Limit_Interrogation.
     rewrite in_app_iff; right; econstructor. done.
   Qed.
 
+
 End Limit_Interrogation.
 
 Section Step_Eval_Spec.
-
-  Variable P: nat → Prop.
-  Hypothesis Hf_: Σ f_, semi_decider f_ P.
-
-  Definition f := projT1 (semi_decider_to_stable (projT2 Hf_)).
-  Fact S_P: stable_semi_decider P f.
-  Proof. unfold f. by destruct (semi_decider_to_stable (projT2 Hf_)). Qed.
 
   Definition Φ_ (f: nat → nat → bool) (e x n: nat): option () :=
     match evalt_comp (ξ () e x) (f n) n n with
@@ -382,24 +451,140 @@ Section Step_Eval_Spec.
     | _ => None 
     end.
 
-  Lemma Φ_spec_1 e x:
-    Ξ e (char_rel P) x → (∞∀ n, Φ_ f e x n = Some ()).
+  Definition φ (f: nat → bool) (e x n: nat) :=
+    if use_function (ξ () e x) f n n () unit_eq_dec nat_eq_dec 
+      is inl H then S (list_max (projT1 H))
+      else 0.
+
+  Variable P: nat → Prop.
+  Variable decider: nat → nat → bool.
+  Hypothesis S_P: stable_semi_decider P decider.
+
+  Fact phi_iff_evalt f e x n :
+    Φ_ f e x n = Some () ↔ evalt_comp (ξ () e x) (f n) n n = Some (inr ()).
+  Proof.
+    unfold Φ_. destruct (evalt_comp (ξ () e x) (f n) n n) eqn: E; [destruct s|].
+    - split; congruence.
+    - destruct u. done.
+    - split; congruence.
+  Qed.
+
+  Theorem Φ_spec e x:
+    Ξ e (char_rel P) x → (∞∀ n, Φ_ decider e x n = Some ()).
   Proof.
     unfold Ξ, rel. intros (qs & ans & Ha & Hb).
     specialize (@S_approx_Σ1 _ _ _ S_P () (ξ _ e x) qs ans Ha) as H.
     eapply interrogation_evalt_comp_limit in H; last apply Hb.
     destruct H as [w Hw].
     exists w; intros m Hm. unfold Φ_. specialize (Hw m Hm).
-    destruct (evalt_comp (ξ () e x) (f m) m m).
+    destruct (evalt_comp (ξ () e x) (decider m) m m).
     destruct s. by injection Hw.
     by destruct u. congruence.
+  Qed. 
+
+  Notation "A ≡{ k }≡ B" := (∀ x, x ≤ k → A x ↔ B x) (at level 30).
+  Definition to_pred (f: nat → bool) x := f x = true.
+
+  Theorem φ_spec e x n p:
+    Φ_ decider e x n = Some () →
+    p ≡{φ (decider n) e x n}≡ to_pred (decider n) →
+    Ξ e (char_rel p) x.
+  Proof.
+    intros H2 H1. rewrite phi_iff_evalt in H2. unfold φ in H1. 
+    destruct (use_function (ξ () e x) (decider n) n n _ _ _) as [(ans&Hans)|H]; last done.
+    exists ans. eapply Hans.
+    intros q [i Hq]%elem_of_list_lookup_1. rewrite H1; first done.
+    simpl. enough (q ≤ list_max (ans)) by lia.
+    eapply implementation.list_max_lookup. 
+    eapply Hq.
   Qed.
 
-  Lemma Φ_spec: 
-    Σ Φ_, ∀ e x, Ξ e (char_rel P) x → (∞∀ n, Φ_ f e x n = Some ()).
-  Proof. exists Φ_; intros e x; apply Φ_spec_1. Qed.
+  Lemma φ_spec0_1 e x n:
+    φ (decider n) e x n ≠ 0 → Φ_ decider e x n = Some ().
+  Proof.
+    unfold φ, Φ_. intros H. 
+    destruct (use_function (ξ () e x) (decider n) n n () unit_eq_dec nat_eq_dec).
+    - clear H. by destruct s as (_&->&_). 
+    - congruence.
+  Qed.
+
+  Lemma φ_spec0_2 e x n:
+    Φ_ decider e x n = Some () → φ (decider n) e x n ≠ 0.
+  Proof.
+    unfold φ, Φ_. intros H. 
+    destruct (use_function (ξ () e x) (decider n) n n () unit_eq_dec nat_eq_dec).
+    - lia.
+    - destruct (evalt_comp (ξ () e x) (decider n) n n); last eauto.
+      destruct s; eauto. destruct u. congruence.
+  Qed.
+
+  Theorem φ_spec0 e x n: φ (decider n) e x n ≠ 0 ↔ Φ_ decider e x n = Some ().
+  Proof. split; [apply φ_spec0_1|apply φ_spec0_2]. Qed.
+
+  Theorem φ_spec0' e x n: φ (decider n) e x n = 0 ↔ Φ_ decider e x n = None.
+  Proof.
+    destruct (φ_spec0 e x n) as [H1 H2]. split; intros H.
+    - destruct (φ (decider n) e x n); eauto.
+      destruct (Φ_ decider e x n); eauto.
+      destruct u; eauto. enough (0≠0) by congruence.
+      by eapply H2.
+    - destruct (Φ_ decider e x n); try congruence.
+      destruct (φ (decider n) e x n); eauto.
+      enough (None = Some ()) by congruence.
+      by eapply H1.
+  Qed.
+
+  Fact char_rel_boring n:
+    ∀ q a, char_rel (decider n) q a ↔ (λ x y, decider n x = y) q a.
+  Proof. intros. unfold char_rel. destruct a, (decider n q); intuition. Qed. 
+
+  Theorem φ_spec1 e x n k :
+    φ (decider n) e x n = S k →
+    to_pred (decider n) ≡{k}≡ to_pred (decider (S n)) →
+    φ (decider (S n)) e x (S n) = S k.
+  Proof.
+    intros H H2. unfold φ in *.
+    destruct (use_function (ξ () e x) (decider n) n n) 
+      as [(use & Hu1 & Hu2)|]; last congruence. simpl in *.
+
+    assert (∀ q, q ∈ use → decider (S n) q ↔ decider n q = true) as boring1.
+      { intros q Hq. destruct (H2 q). apply elem_of_list_lookup_1 in Hq.
+      destruct Hq as [i Hi]. injection H; intros <-.
+      by eapply implementation.list_max_lookup.
+      unfold to_pred in *. destruct (decider (S n) q); intuition. }
+
+    assert (∀ q a, In q use → char_rel (decider n) q a ↔ char_rel (decider (S n)) q a) as boring2.
+      { intros q a Hq. destruct (H2 q). rewrite <-elem_of_list_In in Hq.
+        apply elem_of_list_lookup_1 in Hq. destruct Hq as [i Hi].
+        injection H; intros <-. by eapply implementation.list_max_lookup.
+        unfold to_pred, char_rel in *.  
+        destruct a, (decider (S n) q), (decider n q); intuition. }
+
+    destruct (Hu2 (decider (S n)) boring1) as [ans (Hans & Hans1)].
+
+    destruct (use_function (ξ () e x) (decider (S n)) (S n) (S n)) as [(use' & Hu1' & Hu2')|HSn].
+    + destruct (Hu2' (decider (S n))) as [ans' (Hans' & Hans1')].
+      { intros; destruct (decider (S n) q); intuition. }
+      enough (use = use') as Hanseq. 
+      { cbn. rewrite <- Hanseq. apply H. }
+      assert (functional (char_rel (decider (S n)))) as _H_. 
+      { intros ?[][]; unfold to_pred, char_rel; eauto. }
+      by edestruct (interrogation_eq 42 true _H_ Hans Hans1 Hans' Hans1').
+    + exfalso; apply HSn. 
+      assert (interrogation (ξ () e x) (λ q a, decider n q = a) use ans) as Hansn.
+      { eapply interrogation_ext; last apply Hans; first done. intros.
+        rewrite <- char_rel_boring. by apply boring2. }
+      assert (n ≤ S n) as _H_ by lia.
+      unshelve eapply (evalt_comp_depth_mono _ _H_).
+      eapply (evalt_comp_step_mono').
+      assert (interrogation (ξ () e x) (λ q a, decider (S n) q = a) use ans) as HansSn.
+      { eapply interrogation_ext; last apply Hans; first done. intros; by rewrite char_rel_boring. }
+      clear Hu2 S_P HSn boring1 boring2 H H2 _H_ Hans.
+      eapply final_fact; eauto.
+  Qed.
 
 End Step_Eval_Spec.
+
 
 
 

@@ -1,4 +1,5 @@
 From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions Limit simple.
+From stdpp Require Export list.
 Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Shared.Pigeonhole.
@@ -105,6 +106,16 @@ Section Construction.
 
   Definition F_with x := exists l n, In x l /\ (F_ E n l).
 
+  Lemma F_func_F_with x: F_with x ↔ ∃ n, In x (F_func n).
+  Proof.
+    split. intros (l&n&H1&H2).
+    exists n. assert (l = F_func n) as ->.
+    { eapply F_uni. apply H2. apply F_func_correctness. }
+    done. intros [n Hn]. exists (F_func n), n; split; first done.
+    apply F_func_correctness.
+  Qed.
+  
+
   Lemma F_with_semi_decidable: semi_decidable F_with.
   Proof.
     unfold semi_decidable, semi_decider.
@@ -120,6 +131,18 @@ Section Construction.
       apply Hf.
   Qed.
 
+  Lemma F_with_top x: F_with x <-> exists l n, (F_ E n l) /\ (F_ E (S n) (x::l)) /\ extendP l n x.
+  Proof.
+    split; last first.
+    { intros (l&n&H1&H2&H3). exists (x::l), (S n). eauto. }
+    intros [l [n [Hln Hn]]].
+    induction Hn. inversion Hln.
+    - destruct (Dec (x=a)) as [->|Ex].
+      exists l, n; split; first easy. split.
+      econstructor; easy. easy.
+      eapply IHHn. destruct Hln; congruence.
+    - now eapply IHHn.
+  Qed.
 
   Lemma F_with_semi_decider: Σ f, semi_decider f F_with.
   Proof.
@@ -133,6 +156,22 @@ Section Construction.
     - intros (n & Hn%Dec_true).
       exists (f n), n; split; eauto.
       apply Hf.
+  Qed.
+
+  Definition χ n x: bool := Dec (In x (F_func n)).
+  Definition stable {Q} (f: nat → Q → bool) :=
+    ∀ q n m, n ≤ m → f n q = true → f m q = true.
+  Definition stable_semi_decider {Q} P (f: nat → Q → bool) :=
+    semi_decider (λ x n, f n x) P ∧ stable f.
+
+  Lemma F_with_χ : stable_semi_decider F_with χ.
+  Proof.
+    split. split. 
+    - intros [n Hn]%F_func_F_with. by exists n; apply Dec_auto.
+    - intros [n Hn%Dec_true]. rewrite F_func_F_with. by exists n.
+    - intros x n m Hn Hm%Dec_true.
+      apply Dec_auto. enough (incl (F_func n) (F_func m)). eauto.
+      eapply F_mono; last exact Hn; apply F_func_correctness.
   Qed.
 
 End Construction.
