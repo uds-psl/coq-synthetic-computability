@@ -192,6 +192,30 @@ Section Step_Eval.
       intros; by list_simplifier.
   Qed.
 
+  Lemma interrogation_plus_evalt_comp_1 (τ: tree) f n m l lv v:
+    interrogation τ (λ x y, f x = y) l lv →
+    evalt_comp τ f (length l + n) m = Some v →
+    evalt_comp (λ l', τ (lv ++ l')) f n m = Some v.
+  Proof.
+    intros H. revert n; dependent induction H; try eauto.
+    intros. rewrite app_length in H2. cbn in H2.
+    replace (length qs + 1 + n) with (length qs + (S n)) in H2 by lia.
+    eapply IHinterrogation in H2.
+    cbn in H2. rewrite app_nil_r in H2.
+    destruct (seval (τ ans) m) eqn: E; last done.
+    destruct s.
+    2: { exfalso. enough (Output o = Ask q) by done.
+    eapply hasvalue_det; eauto.
+    eapply seval_hasvalue. by exists m. }
+    rewrite <- H2. eapply evalt_comp_ext.
+    assert (q = q0) as [=<-].
+    { assert (τ ans =! Ask q0) by (eapply seval_hasvalue; by exists m).
+      by specialize (hasvalue_det H0 H3) as [=<-].  } 
+    intros l_ n_. rewrite H1.
+    by replace ((ans ++ [a]) ++ l_) with (ans ++ a :: l_) by by list_simplifier.
+  Qed.
+
+
   Lemma evalt_comp_step_mono' τ f n m o:
     evalt_comp τ f n m = Some (Output o) →
     evalt_comp τ f (S n) m = Some (Output o) .
@@ -296,6 +320,77 @@ Section Step_Eval.
         by exists depth; injection H as ->.
   Qed.
 
+  Lemma evalt_comp_step (τ: tree) f n m v qs ans q:
+    interrogation τ (λ x y, f x = y) qs ans →
+    length qs = n →
+    τ ans =! Ask q →
+    evalt_comp τ f n m = Some (Ask q) ∧ seval (τ (f q::ans)) m = Some v →
+    evalt_comp τ f (S n) m = Some v.
+  Proof.
+    intros HIn HE Hans [H1 H2].
+    rewrite <- HE in *.
+    replace (length qs) with (length qs + 0) in H1 by lia.
+    eapply interrogation_plus_evalt_comp_1 in H1; last done.
+    induction HIn.
+    - simpl in *. admit.
+    - admit.
+  Admitted.
+
+  Lemma evalt_comp_roll_back (τ: tree) f n m v qs ans q a:
+    interrogation τ (λ x y, f x = y) (qs++[q]) (ans++[a]) →
+    length qs = n →
+    evalt_comp τ f (S n) m = Some v ↔ 
+    evalt_comp τ f n m = Some (Ask q) ∧ seval (τ (f q::ans)) m = Some v.
+  Proof.
+    intro H. inv H.
+    { exfalso. by apply app_cons_not_nil in H1. }
+    apply app_inj_tail in H0. destruct H0 as [H61 H62].
+    apply app_inj_tail in H1. destruct H1 as [H71 H72]. subst.
+    intros H. subst.
+    split; cbn.
+  Admitted.
+ 
+  
+
+  Lemma final_fact_gen (τ: tree) m f g use ans:
+  interrogation τ (λ x y, f x = y) use ans → 
+  interrogation τ (λ x y, g x = y) use ans → 
+  ∀ v n,
+    evalt_comp τ f n m = Some v →
+    length use = n →
+    (∀ u, u ∈ use -> f u = g u) →
+    evalt_comp τ g n m = Some v.
+  Proof.
+    induction 1; intros.
+    { subst. simpl in *. done. }
+    assert (interrogation τ (λ x y, f x = y) (qs ++ [q]) (ans ++ [a])) by
+      (econstructor; eauto). 
+
+    (* prepare the hypothesis *)
+    rewrite last_length in *.
+    destruct n; first congruence.
+    destruct (evalt_comp_roll_back m v H6 eq_refl) as [Hc1 _].
+    destruct (evalt_comp_roll_back m v H2 eq_refl) as [_ Hc2].
+    assert (length qs = n) as H' by lia. subst.
+    destruct (Hc1 H3) as (Hc&Hcq).
+
+    inv H2. 
+    (* inverse the second interrogation *)
+    { exfalso. by apply app_cons_not_nil in H7. }
+    apply app_inj_tail in H1. destruct H1 as [H61 H62].
+    apply app_inj_tail in H7. destruct H7 as [H71 H72]. subst.
+    specialize (IHinterrogation H8 (Ask q) (length qs) Hc eq_refl).
+
+    (* inverse the goal *)
+    apply Hc2. split.
+    + eapply IHinterrogation. intros. eapply H5. 
+      rewrite elem_of_app; by left.
+    + enough (g q = f q) as -> by done.
+      symmetry. eapply H5.
+      rewrite elem_of_app. right.
+      by rewrite elem_of_list_singleton.
+  Qed.
+
   Lemma final_fact (τ: tree) n m f g use ans v:
     evalt_comp τ f n m = Some (Output v) →
     interrogation τ (λ x y, f x = y) use ans → 
@@ -304,6 +399,7 @@ Section Step_Eval.
     evalt_comp τ g n m = Some (Output v).
   Proof.
     intros Hf H1 H2 Ho.
+    eapply (final_fact_gen H1 H2 Hf).
   Admitted.
 
 End Step_Eval.
@@ -579,7 +675,7 @@ Section Step_Eval_Spec.
       eapply (evalt_comp_step_mono').
       assert (interrogation (ξ () e x) (λ q a, decider (S n) q = a) use ans) as HansSn.
       { eapply interrogation_ext; last apply Hans; first done. intros; by rewrite char_rel_boring. }
-      clear Hu2 S_P HSn boring1 boring2 H H2 _H_ Hans.
+      clear Hu2 S_P HSn boring1 boring2 H H2 _H_ Hans. 
       eapply final_fact; eauto.
   Qed.
 
