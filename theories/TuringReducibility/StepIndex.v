@@ -46,6 +46,35 @@ Section Step_Eval.
   Context {Q A O: Type}.
   Definition tree := (list A) ↛ (Q + O).
 
+  Print red_Turing.
+
+  Definition red_Turing' (X Y : Type) (p : X → Prop) (q : Y → Prop) :=
+    ∃ r : Functional Y bool X bool, OracleComputable r
+      ∧ (∀ (x : X) (b : bool), char_rel p x b -> r (char_rel q) x b).
+
+  Lemma red_Turing_equive (X Y : Type) (p : X → Prop) (q : Y → Prop):
+    definite p → red_Turing p q ↔ red_Turing' p q.
+  Proof.
+    intros H. split.
+    - intros [r [Hr1 Hr2]]. exists r; split; eauto.
+      intros x b Hxb. by apply Hr2.
+    - intros [r [Hr1 Hr2]]. exists r; split; eauto.
+      intros x b. 
+      assert (functional (r (char_rel q))).
+      apply OracleComputable_functional; eauto.
+      apply char_rel_functional.
+      specialize (H0 x).
+      split. by apply Hr2.
+      intros Hr. destruct b.
+      destruct (H x); first done.
+      specialize (Hr2 x false H1).
+      firstorder.
+      destruct (H x); last done.
+      specialize (Hr2 x true H1).
+      firstorder.
+  Qed.
+  
+
   Notation Ask q := (inl q).
   Notation Output o := (inr o).
 
@@ -349,9 +378,15 @@ Section Step_Eval.
     intros H. subst.
     split; cbn.
   Admitted.
- 
-  
 
+  Lemma evalt_comp_step_length (τ: tree) f n m v qs ans:
+    interrogation τ (λ x y, f x = y) qs ans →
+    τ ans =! Output v →
+    evalt_comp τ f n m = Some (Output v) →
+    length ans ≤ n.
+  Proof.
+  Admitted.
+  
   Lemma final_fact_gen (τ: tree) m f g use ans:
   interrogation τ (λ x y, f x = y) use ans → 
   interrogation τ (λ x y, g x = y) use ans → 
@@ -399,6 +434,7 @@ Section Step_Eval.
     evalt_comp τ g n m = Some (Output v).
   Proof.
     intros Hf H1 H2 Ho.
+    specialize (evalt_comp_step_length H1 Ho Hf) as Hn.
     eapply (final_fact_gen H1 H2 Hf).
   Admitted.
 
@@ -520,6 +556,17 @@ Section Limit_Interrogation.
         rewrite Hc; eauto.
   Qed.
 
+  Lemma approx_Σ1_list_rev: (∀ L, ∞∀ c, approx_list (g c) L) → definite P.
+  Proof.
+    intros H x.
+    destruct (H [x]) as [k Hk].
+    destruct (Hk k (le_n k) x); first done.
+    destruct (g k x) eqn: E.
+    left. apply H1. easy.
+    right. intro H'. 
+    by apply H0 in H'.
+  Qed.
+
   Definition S_approx_Σ1_rev: definite P → ∀ O, approx_Σ1_rev O g.
   Proof.
     intros defp O τ qs ans [w Hw].
@@ -536,8 +583,8 @@ Section Limit_Interrogation.
     rewrite in_app_iff; right; econstructor. done.
   Qed.
 
-
 End Limit_Interrogation.
+
 
 Section Step_Eval_Spec.
 

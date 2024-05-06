@@ -1,4 +1,4 @@
-From SyntheticComputability Require Import ArithmeticalHierarchySemantic PostsTheorem reductions SemiDec TuringJump OracleComputability Definitions partial.
+From SyntheticComputability Require Import ArithmeticalHierarchySemantic PostsTheorem reductions SemiDec TuringJump OracleComputability Definitions partial Pigeonhole.
 
 Require Import Vectors.VectorDef Arith.Compare_dec Lia.
 Import Vector.VectorNotations.
@@ -34,13 +34,41 @@ Convention:
   Definition char_rel_limit_computable {X} (P: X -> bool -> Prop) :=
     exists f: X -> nat -> bool, forall x y, P x y <-> exists N, forall n, n >= N -> f x n = y.
 
-  Lemma char_rel_limit_equv {X} (P: X -> Prop):
+  Definition char_rel_limit_computable' {X} (P: X -> bool -> Prop) :=
+    exists f: X -> nat -> bool, forall x y, P x y -> exists N, forall n, n >= N -> f x n = y.    
+
+  Lemma char_rel_limit_equiv {X} (P: X -> Prop):
     char_rel_limit_computable (char_rel P) <-> limit_computable P.
   Proof.
     split; intros [f Hf]; exists f; intros x.
     - split; firstorder.
     - intros []; destruct (Hf x) as [h1 h2]; eauto.
   Qed.
+
+  Lemma char_rel_limit_equiv' {X} (P: X -> Prop):
+    definite P -> char_rel_limit_computable (char_rel P) <-> char_rel_limit_computable' (char_rel P) .
+  Proof.
+    intros HP; split.
+    - intros [f Hf]. exists f; intros.
+      destruct (Hf x y) as [Hf' _].
+      now apply Hf'.
+    - intros [f Hf]. exists f. intros x y.
+      split. intro H. now apply Hf.
+      intros [N HN]. destruct (HP x).
+      destruct y; [easy|].
+      destruct (Hf x true H) as [N' HfN].
+      intros _. enough (true = false) by congruence.
+      specialize (HN (max N N')).
+      specialize (HfN (max N N')).
+      rewrite <- HN, <- HfN; eauto; lia.
+      destruct y; [|easy].
+      destruct (Hf x false H) as [N' HfN]. 
+      enough (true = false) by congruence.
+      specialize (HN (max N N')).
+      specialize (HfN (max N N')).
+      rewrite <- HN, <- HfN; eauto; lia.
+  Qed.
+  
 
   (* Naming the halting problem as K *)
   Notation K := (­{0}^(1)).
@@ -117,8 +145,6 @@ About Σ_semi_decidable_jump.
     apply Dec.nat_eq_dec.
   Qed.
 
-  Search (vec) "hd".
-
   Fact elim_vec (P: nat -> Prop):
     P ⪯ₘ (fun x: vec nat 1 => P (hd x)) .
   Proof. exists (fun x => [x]). now intros x. Qed.
@@ -191,6 +217,10 @@ Section Σ1Approximation.
      exists P_ : nat -> A -> bool,
        (forall L, exists c, forall c', c' >= c -> approximation_list P (P_ c') L) /\
        (forall tau q a, @interrogation _ _ _ bool tau (char_rel P) q a -> exists n, forall m, m >= n -> interrogation tau (fun q a => P_ m q = a) q a).
+
+  Definition approximation_Σ1_weak {A} (P: A -> Prop) :=
+    exists P_ : nat -> A -> bool,
+      (forall tau q a, @interrogation _ _ _ bool tau (char_rel P) q a -> exists n, forall m, m >= n -> interrogation tau (fun q a => P_ m q = a) q a).
 
   Lemma semi_dec_approximation_Σ1 {X} (P: X -> Prop) :
     definite P ->
@@ -277,8 +307,8 @@ Section LimitLemma2.
     limit_computable P.
   Proof.
     intros [F [H HF]] defK defP.
-    rewrite <- char_rel_limit_equv.
-    destruct (approximation_Σ1_halting_strong defK) as [k_ [Hk_1 Hk_2]].
+    rewrite <- char_rel_limit_equiv.
+    destruct (approximation_Σ1_halting_strong defK) as [k_ [_ Hk_2]].
     destruct H as [tau Htau].
     pose (char_K_ n := char_K_ k_ n).
     pose (K_ n := K_ k_ n).

@@ -17,6 +17,9 @@ Definition inf_exists (P: nat → Prop) := ∀ n, ∃ m, n ≤ m ∧ P m.
 
   Notation "f ↓" := (f = Some ()) (at level 30).
 
+  Global Instance dec_le: ∀ m n, dec (m ≤ n).
+  Proof. intros n m; destruct (le_gt_dec n m); [by left|right; lia]. Qed.
+
 Section Requirements_Lowness_Correctness.
 
   Variable P: nat → Prop.
@@ -30,13 +33,12 @@ Section Requirements_Lowness_Correctness.
 
   Definition Ω e n := Φ_ e e n.
 
+  Section classic_logic.
+
   Hypothesis N_requirements: ∀ e, (∞∃ n, Ω e n ↓) → Ξ e (char_rel P) e.
 
   Hypothesis LEM_Σ_2: 
-      ∀ (P: nat → nat → Prop), (∀ n m, dec (P n m)) → dec (∃ n, ∀ m, P n m).
-
-  #[export]Instance dec_le: ∀ m n, dec (m ≤ n).
-  Proof. intros n m; destruct (le_gt_dec n m); [by left|right; lia]. Qed.
+      ∀ (P: nat → nat → Prop), (∀ n m, dec (P n m)) → (∃ n, ∀ m, P n m) ∨ ¬ (∃ n, ∀ m, P n m).
 
   Lemma limit_case e: (∞∀ n, Ω e n ↓) ∨ (∞∀ n, ¬ Ω e n ↓).
   Proof.
@@ -48,12 +50,12 @@ Section Requirements_Lowness_Correctness.
     exists w; apply Hw; exact 42.
     assert (∀ n, i ≤ n → ~ Ω e n ↓).
     { intros m Hm HM. eapply h1. exists m; eauto. }
-    exfalso. by eapply n; exists i.
-  Qed.
+    exfalso. eapply H0. by exists i.
+    Qed.
 
   Definition limit_decider e n: bool := Dec (Ω e n ↓).
 
-  Lemma Jump_limit :limit_computable (P´).
+  Lemma Jump_limit : limit_computable (P´).
   Proof.
     exists limit_decider; split; intros.
     - unfold J. split. 
@@ -77,6 +79,80 @@ Section Requirements_Lowness_Correctness.
       enough (¬ Ω x N ↓) by eauto.
       eapply Dec_false. eapply Hw. lia.  
   Qed.
+    
+  End classic_logic.
+
+  Section intuitionistic_logic.
+  Hypothesis N_requirements: ∀ e, (∞∃ n, Ω e n ↓) → ¬¬ Ξ e (char_rel P) e.
+
+  Lemma N_requirements': ∀ e, ¬¬ ((∞∃ n, Ω e n ↓) → Ξ e (char_rel P) e).
+  Proof. firstorder. Qed.
+
+  Fact dn_or (R Q: Prop): (¬¬ R ∨ ¬¬ Q) → ¬¬ (R ∨ Q).
+  Proof. firstorder. Qed.
+  Lemma not_not_limit_case e: ~ ~ ((∞∀ n, Ω e n ↓) ∨ (∞∀ n, ¬ Ω e n ↓)).
+  Proof.
+    ccase (∃ n, ∀ m, n ≤ m → ¬ Ω e m ↓) as [H1|H1].
+    apply dn_or. { right. eauto. }
+    ccase (∀ i, ∃ n, i ≤ n ∧ Ω e n ↓) as [H2|H2].
+    intros H_. apply (@N_requirements' e).
+    intros N_requirements'.
+    apply H_. left. apply Φ_spec, N_requirements'. intros i.
+    { destruct (H2 i) as [w Hw]. exists w. apply Hw.  }
+    exfalso. clear P S_P N_requirements.
+    apply H2. intros i.
+  Admitted.
+  
+    Definition not_not_limit_computable {X} (P: X -> Prop) :=
+      exists f: X -> nat -> bool, 
+        forall x, ~~
+        ((P x <-> exists N, forall n, n >= N -> f x n = true) /\
+          (~ P x <-> exists N, forall n, n >= N -> f x n = false)).
+
+    Fact dn_and (R Q: Prop): (¬¬ R ∧ ¬¬ Q) → ¬¬ (R ∧ Q).
+    Proof. firstorder. Qed.
+
+    Lemma not_not_Jump_limit : not_not_limit_computable (P´).
+    Proof.
+      exists limit_decider; intro x.
+      apply dn_and.      
+      split; intros.
+      - unfold J. intros H_.
+        eapply (@N_requirements' x). intros N_requirements'.
+        apply H_. split.
+        intros [w Hw]%Φ_spec; exists w; intros??.
+        apply Dec_auto. by eapply Hw.
+        intros [N HN].
+        eapply N_requirements'. 
+        intros m. exists (S N + m); split; first lia.
+        eapply Dec_true. eapply HN. lia.
+      - unfold J. intros H_.
+        eapply (@N_requirements' x). intros N_requirements'.
+        eapply (@not_not_limit_case x).
+        intros [[k Hk]|h2].
+        apply H_. split.
+        enough (Ξ x (char_rel P) x) by easy.
+        eapply N_requirements'. intros m. exists (S k + m).
+        split; first lia. eapply Hk. lia.
+        intro H. destruct H as [w Hw].
+        intros [k' Hneg]%Φ_spec.
+        set (N := S (max w k')).
+        assert (Ω x N ↓). { eapply Hneg. lia. }
+        enough (¬ Ω x N ↓) by eauto.
+        eapply Dec_false. eapply Hw. lia.  
+        apply H_. split. 
+        destruct h2 as [w Hw]. exists w.
+        intros. specialize (Hw n H0). unfold limit_decider.
+        destruct (Dec _); eauto.
+        intro H. destruct H as [w Hw].
+        intros [k Hneg]%Φ_spec.
+        set (N := S (max w k)).
+        assert (Ω x N ↓). { eapply Hneg. lia. }
+        enough (¬ Ω x N ↓) by eauto.
+        eapply Dec_false. eapply Hw. lia.  
+    Qed.
+    
+End intuitionistic_logic.
 
 End Requirements_Lowness_Correctness.
 
@@ -110,9 +186,6 @@ Section Wall.
       by eapply H5.
     Qed. 
 
-    Hypothesis NoIdea: ∀ (P: nat → Prop) (k: nat), 
-        (∀ x, k ≤ x → P x) ∨ (∃ x, k ≤ x ∧ ¬ P x).
-
     Definition χ := χ (simple_extension η wall).
     Definition P_Φ := (Φ_ χ).
     Definition P_Ω := (Ω χ).
@@ -120,10 +193,14 @@ Section Wall.
     Fact wall_convergence e : ¬¬ ∃ b : nat, lim_to η wall (wall e) b.
     Proof.
       intros H_.
-      destruct (@eventally_wall e). intros [N HN]. apply H_; clear H_.
-      destruct (NoIdea (λ m, wall e (P_func m) m = 0) N).
-      - exists 0. exists N. intros. by apply H.
-      - destruct H as [x [H1 H2]].
+      destruct (@eventally_wall e). intros [N HN].
+      assert (∀ m, dec (wall e (P_func m) m = 0)) as HD by eauto.
+      ccase (∀ x, N ≤ x → wall e (P_func x) x = 0) as [H'|H'].
+      - apply H_; clear H_. exists 0. exists N. intros. by apply H'.
+      - enough (~~∃ x, N ≤ x ∧ wall e (P_func x) x ≠ 0) as H__.
+        apply H__. intros H''.
+        clear H'. destruct H'' as [x [H1 H2]].
+        apply H_; clear H_.
         destruct (wall e (P_func x) x) as [|k] eqn: H; first done; clear H2.
         exists (S k), x. intros t Ht. induction Ht; first done.
         rewrite <- (@φ_spec1 χ _ _ _ _ IHHt).
@@ -147,11 +224,14 @@ Section Wall.
             enough (F_func (simple_extension η wall) m = F_func (simple_extension η wall) (S m)) as -> by eauto. 
             eapply F_uni; first apply F_func_correctness.
             assumption.
+        + intro H.
+          apply H'. intros x Hx.
+          assert (∀ n m: nat, ~~n=m → n=m).
+           { intros n m Hnm. destruct (Dec (n=m)); eauto.
+              exfalso. by apply Hnm. }
+          apply H0. intros Hmn.
+          apply H. now exists x; split.
     Qed.
-
-    Hypothesis DN: ∀ P, ¬ ¬ P → P.
-    Fact P_simple: simple P.
-    Proof. eapply P_simple; first apply EA. intro e. apply DN, wall_convergence. Qed.
 
     Lemma N_requirements: ∀ e, (∞∃ n, P_Ω e n ↓) → ¬ ¬ Ξ e (char_rel P) e.
     Proof.
@@ -166,7 +246,7 @@ Section Wall.
       - intros (L & m & HL & HLs &HP).
         assert (L = P_func m) as E. { eapply F_uni. apply HL. apply F_func_correctness. }
         assert (x::L = P_func (S m)) as E'. { eapply F_uni. apply HLs. apply F_func_correctness. }
-        apply Dec_auto.  destruct (Dec (S m ≤ k)) as [E_|E_].
+        apply Dec_auto. destruct (Dec (S m ≤ k)) as [E_|E_].
         enough (incl (P_func (S m)) (P_func k)). rewrite <-E' in H.
         eauto. eapply F_mono; last apply E_; apply F_func_correctness.
         assert (N ≤ m) as Em by lia. rewrite E in HP. specialize (HN m Em x HP).
@@ -181,17 +261,22 @@ Section Wall.
       - intros H%Dec_true.
         eapply F_with_top. exists (F_func _ k), k; split; eauto.
         eapply F_func_correctness.
-  Qed.
+    Qed.
+  
+    (* Should be enough if we use DNE_Σ_2 to drop out ¬¬ for both
+        eventally_wall and wall_convergence *)
+    Fact P_simple: simple P.
+    Proof. eapply P_simple; first apply EA. intro e. apply wall_convergence. Qed.
 
     Hypothesis LEM_Σ_2: 
-      ∀ (P: nat → nat → Prop), (∀ n m, dec (P n m)) → dec (∃ n, ∀ m, P n m).
+      ∀ (P: nat → nat → Prop), (∀ n m, dec (P n m)) → (∃ n, ∀ m, P n m) ∨ ¬ (∃ n, ∀ m, P n m).  
 
+    Hypothesis DN: ∀ P, ¬ ¬ P → P.
     Fact jump_P_limit: limit_computable (P´).
     Proof.
       eapply Jump_limit; last done. apply F_with_χ.
       intros e He. eapply DN, N_requirements; eauto.
     Qed.
-
 End Wall.
 
 

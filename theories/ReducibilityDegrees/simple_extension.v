@@ -243,7 +243,7 @@ Section Assume_EA.
 
   End Simple_Extension.
 
-  Hypothesis wall_spec: forall e, exists b, lim_to (wall e) b.
+  Hypothesis wall_spec: forall e, ~~ exists b, lim_to (wall e) b.
 
   Section Requirements.
 
@@ -526,25 +526,27 @@ Section Assume_EA.
 
   Section Meet_Requirement.
 
-  Lemma wall_of_wall' e: exists w, forall x, wall e (P_func x) x < w.
+  Lemma wall_of_wall' e: ~~ exists w, forall x, wall e (P_func x) x < w.
   Proof.
-    destruct (wall_spec e) as [v [k Hk]].
+    intro H_. apply (@wall_spec e). intros [v [k Hk]].
+    apply H_.
     destruct (@extra_bounded (fun k => wall e (P_func k) k) k) as [w Hw].
     exists (S (max v w)). intros x.
     destruct (Dec (x < k)). apply Hw in l. lia.
     assert (wall e (P_func x) x = v). apply Hk. lia. lia.
   Qed.
 
-  Lemma wall_of_wall e: exists w, forall i x, i <= e -> wall i (P_func x) x < w.
+  Lemma wall_of_wall e: 
+      ~~ exists w, forall i x, i <= e -> wall i (P_func x) x < w.
   Proof.
-    induction e.
-    - destruct (wall_of_wall' 0) as [w Hw]. exists w.
+    intro H_. induction e.
+    - apply (@wall_of_wall' 0). intros [w Hw]. apply H_. exists w.
       intros i x ?. inv H. trivial.
-    - destruct IHe as [w IHe].
-      destruct (wall_of_wall' (S e)) as [w' Hw].
-      exists (S (max w w')). intros i x H.
-      inv H. specialize (Hw x). lia. 
-      specialize (IHe i x H1). lia.
+    - apply IHe. intros [w IHe_].
+      apply (@wall_of_wall' (S e)). intros [w' Hw'].
+      apply H_. exists (S (max w w')). intros i x H.
+      inv H. specialize (Hw' x). lia. 
+      specialize (IHe_ i x H1). lia.
   Qed.
 
     Lemma attend_at_most_once_bound k: 
@@ -568,7 +570,7 @@ Section Assume_EA.
     Proof.
       intro H. unfold non_finite in H.
       intros He.  rewrite non_finite_nat in H.
-      destruct (wall_of_wall e) as [w Hw].
+      apply (@wall_of_wall e). intros [w Hw].
       pose (N := max (2*e + 1) w). specialize (H N).
       apply H. intros [m [Hm1 [k Hmk]]].
       apply He. exists k, m.
@@ -665,8 +667,8 @@ Section Assume_EA.
   Section Instance_of_Wall.
 
   Definition low_wall (e: nat) (l: list nat) (n: nat) := 42.
-  Lemma low_wall_spec: forall e, exists b, lim_to low_wall (low_wall e) b.
-  Proof. intro e. exists 42. exists 0; intuition. Qed.
+  Lemma low_wall_spec: forall e, ~~ exists b, lim_to low_wall (low_wall e) b.
+  Proof. intro e. intros H_; apply H_. exists 42. exists 0; intuition. Qed.
 
   Definition Pw := P low_wall.
 

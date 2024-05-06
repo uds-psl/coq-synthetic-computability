@@ -47,6 +47,15 @@ Section LowFacts.
     eapply Turing_transitive; [apply H| easy].
   Qed.
 
+  Lemma DN_lowness (P: nat -> Prop) :
+    ~ ~ low P -> ~ K ⪯ᴛ P.
+  Proof.
+    intros H_ IH.
+    apply H_. intros H.
+    eapply not_turing_red_J with (Q := P).
+    eapply Turing_transitive; [apply H| easy].
+  Qed.
+
   Lemma limit_jump_lowness (A: nat -> Prop) :
     LEM_Σ 1 ->
     definite K ->
@@ -76,19 +85,26 @@ Section LowFacts.
   Variable η: nat -> nat -> option nat.
   Hypothesis EA: 
     forall P, semi_decidable P -> exists e, forall x, P x <-> exists n, η e n = Some x.
+
+  (* Use to eliminate ~~Φ *)
+  (* should be able to weaker to DNE_Σ_2 *)
+  Hypothesis DN: forall P, ~ ~ P -> P.
+
+  (* Use to prove limit computable from N requirements *)
+  Hypothesis LEM_Σ_2: 
+  forall (P: nat -> nat -> Prop), 
+    (forall n m, dec (P n m)) -> 
+      (exists n, forall m, P n m) \/ ~ (exists n, forall m, P n m).
+
+  (* Use to prove Limit Lemma *)
   Hypothesis LEM_Σ_1: LEM_Σ 1.
   Hypothesis def_K: definite K.
-  Hypothesis sth: forall (P: nat -> Prop) (k: nat), 
-    (forall x, k <= x -> P x) \/ (exists x, k <= x /\ ~ P x).
-  Hypothesis DN: forall P, ~ ~ P -> P.
-  Hypothesis LEM_Σ_2: 
-    forall (P: nat -> nat -> Prop), (forall n m, dec (P n m)) -> dec (exists n, forall m, P n m).
 
   Theorem a_sol_Post's_problem: exists P, sol_Post's_problem P.
   Proof.
     eexists. eapply low_simple_correct; split.
     - eapply limit_turing_red_K; eauto. exact 42.
-      apply jump_P_limit; eauto. 
+      apply jump_P_limit; eauto.  
     - eapply P_simple; eauto. 
   Qed.
 
