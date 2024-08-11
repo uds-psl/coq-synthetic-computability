@@ -5,10 +5,13 @@ Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
 Require Export SyntheticComputability.ReducibilityDegrees.low_wall.
 Require Import Arith.
+Require Import SyntheticComputability.PostsTheorem.PostsTheorem.
 Require Import Vectors.VectorDef Arith.Compare_dec Lia.
 Import Vector.VectorNotations.
+Require Import stdpp.list.
 
 Local Notation vec := Vector.t.
+
 
 
 (* ########################################################################## *)
@@ -78,6 +81,8 @@ Section LowFacts.
     split; [destruct H2 as [H2 _]; eauto| now apply lowness].
   Qed.
 
+
+
     (*** Instance of low simple predicate ***)
 
   Section LowSimplePredicate.
@@ -86,17 +91,17 @@ Section LowFacts.
   Hypothesis EA: 
     forall P, semi_decidable P -> exists e, forall x, P x <-> exists n, η e n = Some x.
 
-  (* Use to eliminate ~~Φ *)
+  (* Used to eliminate ~~Φ *)
   (* should be able to weaker to DNE_Σ_2 *)
   Hypothesis DN: forall P, ~ ~ P -> P.
 
-  (* Use to prove limit computable from N requirements *)
+  (* Used to prove limit computable from N requirements *)
   Hypothesis LEM_Σ_2: 
   forall (P: nat -> nat -> Prop), 
     (forall n m, dec (P n m)) -> 
       (exists n, forall m, P n m) \/ ~ (exists n, forall m, P n m).
 
-  (* Use to prove Limit Lemma *)
+  (* Used to prove Limit Lemma *)
   Hypothesis LEM_Σ_1: LEM_Σ 1.
   Hypothesis def_K: definite K.
 
@@ -110,5 +115,22 @@ Section LowFacts.
 
   End LowSimplePredicate.
 
-End LowFacts.
+  Section LowSimplePredicate2.
 
+  Variable η: nat → nat → option nat.
+  Hypothesis EA: 
+    forall P, semi_decidable P → exists e, forall x, P x ↔ exists n, η e n = Some x.
+
+  Hypothesis LEM_Σ_1: LEM_Σ 1.
+
+  Theorem a_sol_Post's_problem_2: exists P, sol_Post's_problem P.
+  Proof.
+    eexists. eapply low_simple_correct; split.
+    - eapply limit_turing_red_K; eauto. exact 42.
+      apply jump_P_limit_2; eauto.
+    - eapply P_simple; eauto.
+  Qed.
+
+  End LowSimplePredicate2.
+
+End LowFacts.

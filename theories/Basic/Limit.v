@@ -92,6 +92,41 @@ Section LimitLemma1.
   Variable list_bool_nat_inv : forall l, nat_to_list_bool (list_bool_to_nat l) = l.
   Variable nat_list_bool_inv : forall n, list_bool_to_nat (nat_to_list_bool n) = n.
 
+
+  Section def_K.
+
+    Hypothesis LEM_Σ_1: LEM_Σ 1.
+
+    Lemma semi_dec_def {X} (p: X -> Prop):
+      semi_decidable p -> definite p.
+    Proof.
+      intros [f Hf]. unfold semi_decider in Hf.
+      destruct level1 as (_&H2&_).
+      assert principles.LPO as H by now rewrite <- H2.
+      intro x. destruct (H (f x)).
+      left. now rewrite Hf.
+      right. intros [k Hk]%Hf.
+      apply H0. now exists k.
+    Qed.
+
+    Lemma def_K: definite K.
+    Proof.
+      apply semi_dec_def. 
+      assert (isΣsem 1 (@jumpNK _ 1 1)).
+      eapply jump_in_Σn; eauto.
+      assert (@jumpNK _ 1 1 ≡ₘ ­{0}^(1)).
+      apply jumpNKspec.
+      rewrite <- semi_dec_iff_Σ1 in H.
+      destruct H0 as [_ [f Hf]].
+      unfold reduces_m in Hf.
+      destruct H as [g Hg].
+      unfold semi_decider in Hg.
+      exists (fun x => g (f x)).
+      split. now intros H%Hf%Hg. now intros H%Hg%Hf.
+    Qed.
+
+  End def_K.
+
   (* Extensionality of Σ2, i.e. P t iff ∃ x. ∀ y. f(x, y, t) = true *)
 
   Lemma char_Σ2 {k: nat} (P: vec nat k -> Prop) :
@@ -130,10 +165,6 @@ Section LimitLemma1.
     all: eauto.
   Qed.
 
-About Σ_semi_decidable_jump.
-  (** TODO: LEM_Σ 1 <-> definite K **)
-  (* First part of limit lemma *)
-
   Lemma limit_turing_red_K' {k: nat} (P: vec nat k -> Prop) :
     LEM_Σ 1 ->
     definite K ->
@@ -150,11 +181,11 @@ About Σ_semi_decidable_jump.
   Proof. exists (fun x => [x]). now intros x. Qed.
   Lemma limit_turing_red_K {k: nat} (P: nat -> Prop) :
     LEM_Σ 1 ->
-    definite K ->
     limit_computable P ->
     P ⪯ᴛ K.
   Proof.
-    intros Hc HK [h Hh].
+    intros Hc [h Hh].
+    specialize (def_K Hc) as Hk.
     eapply Turing_transitive; last eapply (@limit_turing_red_K' 1); eauto.
     eapply red_m_impl_red_T. apply elim_vec.
     exists (fun v n => h (hd v) n). 

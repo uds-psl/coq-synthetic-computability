@@ -69,6 +69,14 @@ Section Construction.
     - eapply IHF_; eauto.
   Qed.
 
+  Lemma F_pick' n x l: F_ E n (x::l) -> exists m, m < n ∧ F_ E m l ∧ extendP l m x.
+    Proof.
+      intros H. dependent induction H.
+      - exists n; eauto.
+      - destruct (IHF_ x l eq_refl) as [m (Hm1&Hm2&Hm3)].
+        exists m; eauto.
+    Qed.
+
   Lemma F_computable : Σ f: nat -> list nat, 
     forall n, F_ E n (f n) /\ length (f n) <= n.
   Proof.
@@ -445,3 +453,54 @@ Section LeastWitness.
   Qed.
 
 End LeastWitness.
+
+
+Section logic.
+
+  Definition pdec p := p ∨ ¬ p.
+
+  Definition Π_1_lem := ∀ p : nat -> Prop,
+    (∀ x, dec (p x)) -> pdec (∀ x, p x).
+  Definition Σ_1_dne := ∀ p : nat -> Prop,
+    (∀ x, dec (p x)) -> (¬¬ ∃ x, p x) → ∃ x, p x.
+  Definition Σ_1_lem := ∀ p: nat → Prop,
+    (∀ x, dec (p x)) -> pdec (∃ x, p x).
+
+  Hypothesis LEM1: LEM_Σ 1.
+
+  Fact assume_Σ_1_lem: Σ_1_lem .
+  Proof.
+    intros p Hp.
+    destruct level1 as (_&H2&_).
+    assert principles.LPO as H by by rewrite <- H2.
+    destruct (H Hp) as [[k Hk]|H1].
+    - left. exists k. destruct (Hp k); eauto.
+      cbn in Hk. congruence.
+    - right. intros [k Hk]. apply H1. 
+      exists k. destruct (Hp k); eauto.
+  Qed.
+
+  Fact assume_Σ_1_dne: Σ_1_dne.
+  Proof.
+    intros p Hp H.
+    destruct (assume_Σ_1_lem Hp) as [H1|H1]; eauto.
+    exfalso. by apply H.
+  Qed.
+
+  Fact assume_Π_1_lem: Π_1_lem.
+  Proof.
+    intros p Hp.
+    destruct level1 as (_&H2&_).
+    assert principles.LPO as H by by rewrite <- H2.
+    apply principles.LPO_to_WLPO in H.
+    assert (∀ x : nat, dec (¬ p x)) as Hp' by eauto.
+    destruct (H Hp') as [H1|H1].
+    - left. intro x.
+      specialize (H1 x).
+      apply Dec_false in H1.
+      destruct (Hp x); firstorder.
+    - right. intros H3. apply H1. intros n.
+      specialize (H3 n). destruct (Hp' n); firstorder.
+  Qed.
+
+End logic.

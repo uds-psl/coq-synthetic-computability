@@ -147,7 +147,7 @@ Section Assume_EA.
     Definition ext_has_wit L n e x := (W[n] e) x /\ 2 * e < x /\ forall i, i <= e -> wall i L n < x.
     Definition ext_pick L n e := ext_intersect_W L n e /\ exists x, ext_has_wit L n e x.
     Definition ext_choice L n e x :=  e < n /\ least (ext_pick L n) e /\ least (ext_has_wit L n e) x.
-    Definition ext_least_choice L n x :=  exists e, ext_choice L n e x.
+    Definition ext_least_choice L n x := exists e, ext_choice L n e x.
 
   End Extension.
 
@@ -251,6 +251,14 @@ Section Assume_EA.
     Definition attend e n := e < n /\ least (ext_pick (P_func n) n) e.
     Definition act e n := ~ (P_func n) # W[n] e.
     Definition pick_el e x := exists k, attend e k /\ ext_least_choice (P_func k) k x.
+    Definition finish e n := ∀ s, n < s → ¬ attend e s.
+
+    #[export]Instance attend_dec e n: dec (attend e n).
+    Proof.
+      unfold attend. apply and_dec; first eauto.
+      eapply least_dec. intros y.
+      eapply ext_pick_dec.
+    Qed.
 
   End Requirements.
 
@@ -329,6 +337,20 @@ Section Assume_EA.
       - intros H. eapply H. exists w.
         now eapply attend_always_not_attend.
       - intros Hk. apply Hk. exists 0.
+        intros k' Hk' Ha.
+        apply H. now exists k'.
+    Qed.
+
+    Definition done e s := ∀ s', s < s' → ¬ attend e s'.
+
+    Lemma attend_at_most_once_test:
+      LEM_Σ 1 → ∀ e, ∃ s, done e s.
+    Proof.
+      intros Hlem e.
+      assert (pdec (exists k, attend e k)) as [[w Hw]|H].
+      { eapply assume_Σ_1_lem. apply Hlem. eauto. }
+      - exists w. unfold done. by eapply attend_always_not_attend.
+      - exists 0.
         intros k' Hk' Ha.
         apply H. now exists k'.
     Qed.
@@ -564,6 +586,21 @@ Section Assume_EA.
         intros s' Hs'. eapply Hs; lia.
     Qed.
 
+
+  Lemma attend_at_most_once_bound_test: 
+    LEM_Σ 1 → ∀ k, ∃ s, (∀ e, e < k -> ∀ s', s < s' -> ~ attend e s').
+  Proof.
+    intros Hlem. induction k.
+    - exists 42. intros ??. lia. 
+    - destruct IHk as [s Hs].
+      specialize (@attend_at_most_once_test Hlem k) as [sk Hsk].
+      set (max sk s) as N.
+      exists N. intros e He.
+      assert (e = k \/ e < k) as [->|Hek] by lia.
+      intros s' Hs'. eapply Hsk. lia.
+      intros s' Hs'. eapply Hs; lia.
+  Qed.
+
     Lemma non_finite_not_bounded e: 
       non_finite e -> ~~ exists k, exists x, (W[k] e) x /\ 2 * e < x /\ 
         (forall n, forall i, i <= e -> wall i (P_func n) n < x).
@@ -579,18 +616,18 @@ Section Assume_EA.
     Qed.
 
     Lemma ext_pick_attend N e: 
-      e < N -> (exists w, w < e /\ ext_pick (P_func N) N w) -> 
-      (exists w, w < e /\ attend w N).
+      e < N -> ext_pick (P_func N) N e -> 
+      (exists w, w ≤ e /\ attend w N).
     Proof.
-      intros HeN [w (Hw1 & Hw2)].
-      assert (exists w, ext_pick (P_func N) N w) by now exists w.
+      intros HeN H1.
+      assert (exists w, ext_pick (P_func N) N w) by now exists e.
       eapply least_ex in H; last eauto.
-      destruct H as [k Hk]. assert (k <= w).
-      { enough (~ k > w) by lia. intro Hkw.
+      destruct H as [k Hk]. assert (k <= e).
+      { enough (~ k > e) by lia. intro Hkw.
         destruct Hk. rewrite safe_char in H0.
-        specialize (H0 w Hw2). lia. }
+        specialize (H0 e H1). lia. }
       exists k. do 2 (split; first lia). eapply Hk.
-    Qed.
+  Qed.
 
     Lemma non_finite_attend e:
       non_finite e -> ~ ~ (exists k, ~ ext_intersect_W (P_func k) k e \/ attend e k) .
@@ -608,10 +645,9 @@ Section Assume_EA.
       }
         split. lia. split. easy.
         intros w HEw Hw.
-        assert (exists w, w < e /\ ext_pick (P_func N) N w).
-        now exists w. eapply ext_pick_attend in H1.
-        destruct H1 as [g [HEg Hg]].
-        eapply (Hs g HEg); last apply Hg. lia. lia.
+        eapply ext_pick_attend in Hw.
+        destruct Hw as [g [HEg Hg]].
+        eapply Hs; last apply Hg; lia. lia. 
       - exists N. now left.
     Qed.
 
@@ -663,7 +699,7 @@ Section Assume_EA.
   End Result.
 
   End Assume_WALL.
-
+(* 
   Section Instance_of_Wall.
 
   Definition low_wall (e: nat) (l: list nat) (n: nat) := 42.
@@ -726,7 +762,7 @@ Section Assume_EA.
     admit. admit. *)
   Admitted.
 
-  End Instance_of_Wall.
+  End Instance_of_Wall. *)
 
 End Assume_EA.
 
