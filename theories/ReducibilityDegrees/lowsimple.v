@@ -4,6 +4,7 @@ Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
 Require Export SyntheticComputability.ReducibilityDegrees.low_wall.
+Require Export SyntheticComputability.ReducibilityDegrees.simple_extension.
 Require Import Arith.
 Require Import SyntheticComputability.PostsTheorem.PostsTheorem.
 Require Import Vectors.VectorDef Arith.Compare_dec Lia.
@@ -110,27 +111,42 @@ Section LowFacts.
     eexists. eapply low_simple_correct; split.
     - eapply limit_turing_red_K; eauto. exact 42.
       apply jump_P_limit; eauto.  
-    - eapply P_simple; eauto. 
+    - eapply low_wall.P_simple; eauto. 
   Qed.
 
   End LowSimplePredicate.
 
   Section LowSimplePredicate2.
 
-  Variable η: nat → nat → option nat.
-  Hypothesis EA: 
-    forall P, semi_decidable P → exists e, forall x, P x ↔ exists n, η e n = Some x.
+  Lemma EA_correctness: sigT (λ φ, EA φ).
+  Proof.
+      Import SyntheticComputability.Axioms.EA.Assume_EA.
+      exists φ. intros P HP%SyntheticComputability.Axioms.EA.enum_iff.
+      rewrite W_spec in HP. destruct HP as [c Hc].
+      exists c. intros x. unfold W in Hc.
+      apply Hc.
+  Qed.
 
-  Hypothesis LEM_Σ_1: LEM_Σ 1.
+  Definition θ := projT1 EA_correctness.
+  Lemma EA: 
+    ∀ p, semi_decidable p → ∃ e, ∀ x, p x ↔ ∃ n, θ e n = Some x.
+  Proof. intros; unfold θ; destruct (EA_correctness); eauto. Qed.
 
-  Theorem a_sol_Post's_problem_2: exists P, sol_Post's_problem P.
+  Theorem a_sol_Post's_problem_2 (H: LEM_Σ 1): ∃ P, sol_Post's_problem P.
   Proof.
     eexists. eapply low_simple_correct; split.
     - eapply limit_turing_red_K; eauto. exact 42.
       apply jump_P_limit_2; eauto.
-    - eapply P_simple; eauto.
+    - eapply low_wall.P_simple; eauto. exact 
   Qed.
 
+  Corollary a_fact `(LEM_Σ 1): 
+      ∃ p: nat → Prop, ¬ decidable p ∧ enumerable p ∧ ¬ K ⪯ᴛ p.
+  Proof. 
+    by apply a_sol_Post's_problem_2. 
+  Qed.
   End LowSimplePredicate2.
 
 End LowFacts.
+
+Print Assumptions a_fact.

@@ -593,8 +593,6 @@ Section Step_Eval.
       by rewrite elem_of_list_singleton.
   Qed.
 
-
-
   Fact there_is_a_computation (τ: tree) n m f use ans v:
     interrogation τ (λ x y, f x = y) use ans → 
     τ ans =! Output v → 
@@ -1017,8 +1015,6 @@ Section Step_Eval_Spec.
     destruct (use_function (ξ () e x) (decider n) n n) 
       as [(use & Hu1 & Hu2)|]; last congruence. simpl in *.
 
-      (* eapply interrogation_ext; last apply Hans; first done.
-      intros. by rewrite char_rel_boring. } *)
     destruct (evalt_comp (ξ () e x) (decider n) n n) eqn: E1; last congruence.
     destruct s eqn: E2; first congruence.
     destruct u; clear Hu1 E2. 
@@ -1026,7 +1022,6 @@ Section Step_Eval_Spec.
       by by rewrite H'.
     eapply evalt_comp_step_mono'.
     eapply evalt_comp_depth_mono; last exact (le_S _ _ (le_n n)).
-
 
     assert (∀ q, q ∈ use → decider (S n) q ↔ decider n q = true) as boring1.
     { intros q Hq. destruct (H2 q). apply elem_of_list_lookup_1 in Hq.

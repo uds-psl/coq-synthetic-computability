@@ -5,6 +5,7 @@ Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
 Require Import Arith Arith.Compare_dec Lia Coq.Program.Equality List.
 Require Import SyntheticComputability.ReducibilityDegrees.priority_method.
+Import SyntheticComputability.Axioms.EA.Assume_EA.
 Import ListNotations.
 
 Section ComplToBound.
@@ -68,10 +69,17 @@ End ComplToBound.
 
 Section Assume_EA.
 
-  Variable φ: nat -> nat -> option nat.
-  Definition EA := forall P, 
-    semi_decidable P -> exists e, forall x, P x <-> exists n, φ e n = Some x.
-  Hypothesis EA: EA.
+  Definition θ := φ.
+
+  Definition EA_spec := ∀ p, semi_decidable p -> ∃ e, ∀ x, p x <-> ∃ n, φ e n = Some x.
+
+  Lemma EA: EA_spec.
+  Proof.
+    intros P HP%SyntheticComputability.Axioms.EA.enum_iff.
+    rewrite W_spec in HP. destruct HP as [c Hc].
+    exists c. intros x. unfold W in Hc.
+    eapply Hc.
+  Qed.
 
   Definition W_ n e x := φ n e = Some x.
   Definition W e x := exists n, W_ e n x.
@@ -766,13 +774,3 @@ Section Assume_EA.
 
 End Assume_EA.
 
-Require SyntheticComputability.Axioms.EA.
-
-Lemma EA_correctness: Σ φ, EA φ.
-Proof.
-    Import SyntheticComputability.Axioms.EA.Assume_EA.
-    exists φ. intros P HP%SyntheticComputability.Axioms.EA.enum_iff.
-    rewrite W_spec in HP. destruct HP as [c Hc].
-    exists c. intros x. unfold W in Hc.
-    apply Hc.
-Qed.

@@ -341,8 +341,6 @@ Section Wall.
         destruct (Dec (P_Ω e m ↓)); eauto.
     Qed.
 
-    (* Should be enough if we use DNE_Σ_2 to drop out ¬¬ for both
-        eventally_wall and wall_convergence *)
     Fact P_simple_test: simple P.
     Proof. eapply P_simple; first apply EA. intro e.
       intros H. apply H. apply wall_convergence_test. Qed.
