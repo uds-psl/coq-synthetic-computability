@@ -194,18 +194,15 @@ End Requirements_Lowness_Correctness.
 
 Section Wall.
 
-    Variable η: nat → nat → option nat.
-    Hypothesis EA: EA η.
-
     Instance wall_instance: Wall := λ e L n, φ (λ x, Dec (In x L)) e e n.
-    Definition P := P η wall.
-    Definition P_func := P_func η wall.
-    Instance E: Extension := simple_extension η wall.
+    Definition P := P wall.
+    Definition P_func := P_func wall.
+    Instance E: Extension := simple_extension wall.
 
     Fact P_semi_decidable: semi_decidable P.
     Proof. eapply P_semi_decidable. Qed.
 
-    Definition χ := χ (simple_extension η wall).
+    Definition χ := χ (simple_extension wall).
     Definition P_Φ := (Φ_ χ).
     Definition P_Ω := (Ω χ).
 
@@ -214,7 +211,7 @@ Section Wall.
     Hypothesis Σ_1_lem: LEM_Σ 1.
 
     Lemma attend_at_most_once_bound_constructive:  
-      ∀ k, ∃ s, ∀ e, e < k -> ∀ s', s < s' -> ~ attend η wall e s'.
+      ∀ k, ∃ s, ∀ e, e < k -> ∀ s', s < s' -> ~ attend wall e s'.
     Proof. by apply attend_at_most_once_bound_test. Qed.
 
     Lemma eventally_wall_test: 
@@ -224,7 +221,7 @@ Section Wall.
       destruct (@attend_at_most_once_bound_constructive (S e)) as [s Hs].
       exists (S s). intros m Hm x [e_ [He_ He_']].
       destruct (Dec (e_ < e)) as [E|E].
-      { exfalso. enough (attend η wall e_ m).
+      { exfalso. enough (attend wall e_ m).
         unshelve eapply (Hs e_ _ m); eauto; lia.
         split; first lia. destruct He_' as [H _].
         apply H. }
@@ -233,7 +230,7 @@ Section Wall.
       by eapply H5.
     Qed. 
 
-    Fact wall_convergence_test e : ∃ b : nat, lim_to η wall (wall e) b.
+    Fact wall_convergence_test e : ∃ b : nat, lim_to wall (wall e) b.
     Proof.
       destruct (@eventally_wall_test e) as [N HN].
       assert (∀ m, dec (wall e (P_func m) m = 0)) as HD by eauto.
@@ -250,9 +247,9 @@ Section Wall.
         reflexivity.
         intros; split.
         + intros K%Dec_true. apply Dec_auto.
-          enough (incl (F_func (simple_extension η wall) m) (F_func (simple_extension η wall) (S m))).
+          enough (incl (F_func (simple_extension wall) m) (F_func (simple_extension wall) (S m))).
           eauto. eapply F_mono; [apply F_func_correctness|apply F_func_correctness|lia].
-        + intros K%Dec_true. specialize (F_func_correctness (simple_extension η wall) (S m)) as HE.
+        + intros K%Dec_true. specialize (F_func_correctness (simple_extension wall) (S m)) as HE.
           inv HE. 
           * assert (wall e (P_func m) m < a).
             { eapply HN. lia. enough (P_func m = l) as ->. apply H5.
@@ -261,10 +258,10 @@ Section Wall.
             rewrite H6 in H2. destruct (Dec (a = x0)).
             lia. apply Dec_auto. rewrite <- H3 in K.
             destruct K; first done.
-            enough ((F_func (simple_extension η wall) m) = l) as -> by done.
+            enough ((F_func (simple_extension wall) m) = l) as -> by done.
             eapply F_uni; last apply H4; apply F_func_correctness.
           * apply Dec_auto.
-            enough (F_func (simple_extension η wall) m = F_func (simple_extension η wall) (S m)) as -> by eauto. 
+            enough (F_func (simple_extension wall) m = F_func (simple_extension wall) (S m)) as -> by eauto. 
             eapply F_uni; first apply F_func_correctness.
             assumption.
         + eapply assume_Σ_1_dne. apply Σ_1_lem.
@@ -319,9 +316,9 @@ Section Wall.
         eapply (@φ_spec2 χ _ ); eauto.
         intros x Hx; split.
         + intros K%Dec_true. apply Dec_auto.
-          enough (incl (F_func (simple_extension η wall) m) (F_func (simple_extension η wall) (S m))).
+          enough (incl (F_func (simple_extension wall) m) (F_func (simple_extension wall) (S m))).
           eauto. eapply F_mono; [apply F_func_correctness|apply F_func_correctness|lia].
-        + intros K%Dec_true. specialize (F_func_correctness (simple_extension η wall) (S m)) as HE.
+        + intros K%Dec_true. specialize (F_func_correctness (simple_extension wall) (S m)) as HE.
           inv HE. 
           * assert (wall e (P_func m) m < a).
             { eapply HN. lia. enough (P_func m = l) as ->. apply H2.
@@ -331,10 +328,10 @@ Section Wall.
             rewrite H3 in H. destruct (Dec (a = x)).
             lia. apply Dec_auto. rewrite <- H0 in K.
             destruct K; first done.
-            enough ((F_func (simple_extension η wall) m) = l) as -> by done.
+            enough ((F_func (simple_extension wall) m) = l) as -> by done.
             eapply F_uni; last apply H1; apply F_func_correctness.
           * apply Dec_auto.
-            enough (F_func (simple_extension η wall) m = F_func (simple_extension η wall) (S m)) as -> by eauto. 
+            enough (F_func (simple_extension wall) m = F_func (simple_extension wall) (S m)) as -> by eauto. 
             eapply F_uni; first apply F_func_correctness.
             assumption. 
       - right. exists N. intros m Hm.
@@ -342,7 +339,7 @@ Section Wall.
     Qed.
 
     Fact P_simple_test: simple P.
-    Proof. eapply P_simple; first apply EA. intro e.
+    Proof. eapply P_simple. intro e.
       intros H. apply H. apply wall_convergence_test. Qed.
 
     Hypothesis Σ_2_LEM: 
@@ -360,11 +357,11 @@ Section Wall.
     Lemma eventally_wall e:
       ¬¬ (∞∀ s, ∀ x, extendP (P_func s) s x → wall e (P_func s) s < x).
     Proof.
-      intros H_. eapply (@attend_at_most_once_bound η wall (S e)).
+      intros H_. eapply (@attend_at_most_once_bound wall (S e)).
       intros [s Hs]. eapply H_; clear H_.
       exists (S s). intros m Hm x [e_ [He_ He_']].
       destruct (Dec (e_ < e)) as [E|E].
-      { exfalso. enough (attend η wall e_ m).
+      { exfalso. enough (attend wall e_ m).
         unshelve eapply (Hs e_ _ m); eauto; lia.
         split; first lia. destruct He_' as [H _].
         apply H. }
@@ -373,7 +370,7 @@ Section Wall.
       by eapply H5.
     Qed. 
 
-    Fact wall_convergence e : ¬¬ ∃ b : nat, lim_to η wall (wall e) b.
+    Fact wall_convergence e : ¬¬ ∃ b : nat, lim_to wall (wall e) b.
     Proof.
       intros H_.
       destruct (@eventally_wall e). intros [N HN].
@@ -390,9 +387,9 @@ Section Wall.
         reflexivity.
         intros; split.
         + intros K%Dec_true. apply Dec_auto.
-          enough (incl (F_func (simple_extension η wall) m) (F_func (simple_extension η wall) (S m))).
+          enough (incl (F_func (simple_extension wall) m) (F_func (simple_extension wall) (S m))).
           eauto. eapply F_mono; [apply F_func_correctness|apply F_func_correctness|lia].
-        + intros K%Dec_true. specialize (F_func_correctness (simple_extension η wall) (S m)) as HE.
+        + intros K%Dec_true. specialize (F_func_correctness (simple_extension wall) (S m)) as HE.
           inv HE. 
           * assert (wall e (P_func m) m < a).
             { eapply HN. lia. enough (P_func m = l) as ->. apply H5.
@@ -401,10 +398,10 @@ Section Wall.
             rewrite H6 in H2. destruct (Dec (a = x0)).
             lia. apply Dec_auto. rewrite <- H3 in K.
             destruct K; first done.
-            enough ((F_func (simple_extension η wall) m) = l) as -> by done.
+            enough ((F_func (simple_extension wall) m) = l) as -> by done.
             eapply F_uni; last apply H4; apply F_func_correctness.
           * apply Dec_auto.
-            enough (F_func (simple_extension η wall) m = F_func (simple_extension η wall) (S m)) as -> by eauto. 
+            enough (F_func (simple_extension wall) m = F_func (simple_extension wall) (S m)) as -> by eauto. 
             eapply F_uni; first apply F_func_correctness.
             assumption.
         + intro H.
@@ -449,7 +446,7 @@ Section Wall.
     (* Should be enough if we use DNE_Σ_2 to drop out ¬¬ for both
         eventally_wall and wall_convergence *)
     Fact P_simple: simple P.
-    Proof. eapply P_simple; first apply EA. intro e. apply wall_convergence. Qed.
+    Proof. eapply P_simple. intro e. apply wall_convergence. Qed.
 
     Section with_LEM_2.
 

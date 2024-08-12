@@ -70,8 +70,7 @@ End ComplToBound.
 Section Assume_EA.
 
   Definition θ := φ.
-
-  Definition EA_spec := ∀ p, semi_decidable p -> ∃ e, ∀ x, p x <-> ∃ n, φ e n = Some x.
+  Definition EA_spec := ∀ p, semi_decidable p → ∃ e, ∀ x, p x ↔ ∃ n, φ e n = Some x.
 
   Lemma EA: EA_spec.
   Proof.

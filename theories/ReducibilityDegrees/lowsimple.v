@@ -118,26 +118,12 @@ Section LowFacts.
 
   Section LowSimplePredicate2.
 
-  Lemma EA_correctness: sigT (λ φ, EA φ).
-  Proof.
-      Import SyntheticComputability.Axioms.EA.Assume_EA.
-      exists φ. intros P HP%SyntheticComputability.Axioms.EA.enum_iff.
-      rewrite W_spec in HP. destruct HP as [c Hc].
-      exists c. intros x. unfold W in Hc.
-      apply Hc.
-  Qed.
-
-  Definition θ := projT1 EA_correctness.
-  Lemma EA: 
-    ∀ p, semi_decidable p → ∃ e, ∀ x, p x ↔ ∃ n, θ e n = Some x.
-  Proof. intros; unfold θ; destruct (EA_correctness); eauto. Qed.
-
   Theorem a_sol_Post's_problem_2 (H: LEM_Σ 1): ∃ P, sol_Post's_problem P.
   Proof.
     eexists. eapply low_simple_correct; split.
     - eapply limit_turing_red_K; eauto. exact 42.
       apply jump_P_limit_2; eauto.
-    - eapply low_wall.P_simple; eauto. exact 
+    - eapply low_wall.P_simple; eauto.
   Qed.
 
   Corollary a_fact `(LEM_Σ 1): 
@@ -149,4 +135,6 @@ Section LowFacts.
 
 End LowFacts.
 
-Print Assumptions a_fact.
+(* Check a_fact. *)
+(* Print Assumptions a_fact. *)
+
