@@ -4,9 +4,13 @@ Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
 Require Import Arith Arith.Compare_dec Lia Coq.Program.Equality List.
-Require Import SyntheticComputability.ReducibilityDegrees.priority_method.
+Require Import SyntheticComputability.PostsProblem.priority_method.
 Import SyntheticComputability.Axioms.EA.Assume_EA.
 Import ListNotations.
+
+(* ########################################################################## *)
+(** * The Simple Extension *)
+(* ########################################################################## *)
 
 Section ComplToBound.
     Definition complToBound L b : list nat 
@@ -149,6 +153,8 @@ Section Assume_EA.
     Variable wall_instance: Wall.
 
   Section Extension.
+  
+  (** ** Construction *)
 
     Definition ext_intersect_W L n e := L # W[n] e.
     Definition ext_has_wit L n e x := (W[n] e) x /\ 2 * e < x /\ forall i, i <= e -> wall i L n < x.
@@ -254,6 +260,8 @@ Section Assume_EA.
 
   Section Requirements.
 
+    (** ** Requirements *)
+
     Definition R_simple P e := non_finite e -> ~ (W e #ₚ P).
     Definition attend e n := e < n /\ least (ext_pick (P_func n) n) e.
     Definition act e n := ~ (P_func n) # W[n] e.
@@ -270,6 +278,8 @@ Section Assume_EA.
   End Requirements.
 
   Section Requirements_Facts.
+
+    (** ** Verification *)
 
     Lemma ext_pick_witness L n e:
       ext_pick L n e -> exists x, least (ext_has_wit L n e) x.

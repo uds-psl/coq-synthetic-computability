@@ -3,8 +3,8 @@ Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
-Require Export SyntheticComputability.ReducibilityDegrees.low_wall.
-Require Export SyntheticComputability.ReducibilityDegrees.simple_extension.
+Require Export SyntheticComputability.PostsProblem.low_wall.
+Require Export SyntheticComputability.PostsProblem.simple_extension.
 Require Import Arith.
 Require Import SyntheticComputability.PostsTheorem.PostsTheorem.
 Require Import Vectors.VectorDef Arith.Compare_dec Lia.
@@ -13,10 +13,8 @@ Require Import stdpp.list.
 
 Local Notation vec := Vector.t.
 
-
-
 (* ########################################################################## *)
-(** * Low Simple Set *)
+(** * Low Simple Predicates *)
 (* ########################################################################## *)
 
 (** This file contains the definition of low simple set and proves the
@@ -117,6 +115,8 @@ Section LowFacts.
   End LowSimplePredicate.
 
   Section LowSimplePredicate2.
+
+    (** ** A solution to Post's Problem *)
 
   Theorem a_sol_Post's_problem_2 (H: LEM_Σ 1): ∃ P, sol_Post's_problem P.
   Proof.

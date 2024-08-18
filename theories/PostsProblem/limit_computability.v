@@ -7,7 +7,7 @@ Local Notation vec := Vector.t.
 
 
 (* ########################################################################## *)
-(** * Limit Lemma *)
+(** * Limit Computability *)
 (* ########################################################################## *)
 
 (** This file contains the definition of limit computable and proves the
@@ -179,6 +179,9 @@ Section LimitLemma1.
   Fact elim_vec (P: nat -> Prop):
     P ⪯ₘ (fun x: vec nat 1 => P (hd x)) .
   Proof. exists (fun x => [x]). now intros x. Qed.
+
+    (** ** The Limit Lemma 1 *)
+  
   Lemma limit_turing_red_K {k: nat} (P: nat -> Prop) :
     LEM_Σ 1 ->
     limit_computable P ->
@@ -330,6 +333,8 @@ Section LimitLemma2.
     Qed.
 
   End Construction.
+
+    (** ** The Limit Lemma 2 *)
 
   Theorem turing_red_K_lim (P: nat -> Prop) :
     P ⪯ᴛ K ->

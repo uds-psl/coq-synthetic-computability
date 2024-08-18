@@ -4,8 +4,13 @@ Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
 Require Import Arith Arith.Compare_dec Lia Coq.Program.Equality List.
-Require Import SyntheticComputability.ReducibilityDegrees.priority_method.
-Require Import SyntheticComputability.ReducibilityDegrees.simple_extension.
+Require Import SyntheticComputability.PostsProblem.priority_method.
+Require Import SyntheticComputability.PostsProblem.simple_extension.
+
+
+(* ########################################################################## *)
+(** * The Low Wall Function *)
+(* ########################################################################## *)
 
 Definition inf_exists (P: nat → Prop) := ∀ n, ∃ m, n ≤ m ∧ P m.
   Notation "'∞∃' x .. y , p" :=
@@ -34,6 +39,8 @@ Section Requirements_Lowness_Correctness.
   Definition Ω e n := Φ_ e e n.
 
   Section classic_logic.
+
+    (** ** Requirements *)
 
   Hypothesis N_requirements: ∀ e, (∞∃ n, Ω e n ↓) → Ξ e (char_rel P) e.
   Definition limit_decider e n: bool := Dec (Ω e n ↓).
@@ -86,7 +93,7 @@ Section Requirements_Lowness_Correctness.
   End with_LEM_2.
 
   Section with_LEM_1.
-  
+
   Hypothesis convergent: ∀ e, (∞∀ n, Ω e n ↓) ∨ (∞∀ n, ¬ Ω e n ↓).
 
   Lemma Jump_limit_1 : limit_computable (P´).
@@ -194,6 +201,8 @@ End Requirements_Lowness_Correctness.
 
 Section Wall.
 
+  (** ** Construction *)
+
     Instance wall_instance: Wall := λ e L n, φ (λ x, Dec (In x L)) e e n.
     Definition P := P wall.
     Definition P_func := P_func wall.
@@ -206,7 +215,9 @@ Section Wall.
     Definition P_Φ := (Φ_ χ).
     Definition P_Ω := (Ω χ).
 
-    Section TEST.
+    Section Verification.
+
+      (** ** Verification *)
 
     Hypothesis Σ_1_lem: LEM_Σ 1.
 
@@ -214,7 +225,7 @@ Section Wall.
       ∀ k, ∃ s, ∀ e, e < k -> ∀ s', s < s' -> ~ attend wall e s'.
     Proof. by apply attend_at_most_once_bound_test. Qed.
 
-    Lemma eventally_wall_test: 
+    Lemma eventally_wall: 
       ∀ e, (∞∀ s, ∀ x, extendP (P_func s) s x → wall e (P_func s) s < x).
     Proof.
       intros e.
@@ -230,9 +241,9 @@ Section Wall.
       by eapply H5.
     Qed. 
 
-    Fact wall_convergence_test e : ∃ b : nat, lim_to wall (wall e) b.
+    Fact wall_convergence e : ∃ b : nat, lim_to wall (wall e) b.
     Proof.
-      destruct (@eventally_wall_test e) as [N HN].
+      destruct (@eventally_wall e) as [N HN].
       assert (∀ m, dec (wall e (P_func m) m = 0)) as HD by eauto.
       assert (pdec (∀ x, N ≤ x → wall e (P_func x) x = 0)) as [H'|H'].
       { apply assume_Π_1_lem. apply Σ_1_lem. intros x. eauto. }
@@ -274,11 +285,11 @@ Section Wall.
           apply H. now exists x; split.
     Qed.
 
-    Lemma N_requirements_test: ∀ e, (∞∃ n, P_Ω e n ↓) → Ξ e (char_rel P) e.
+    Lemma N_requirements: ∀ e, (∞∃ n, P_Ω e n ↓) → Ξ e (char_rel P) e.
     Proof.
       intros e He.
-      destruct (@eventally_wall_test e) as [N HN].
-      destruct (@wall_convergence_test e) as [B [b Hb]].
+      destruct (@eventally_wall e) as [N HN].
+      destruct (@wall_convergence e) as [B [b Hb]].
       set (M := max N b). destruct (He M) as [k [Hk Hk']].
       eapply (@φ_spec χ e e k); first apply Hk'. 
       intros x Hx. unfold P, simple_extension.P.
@@ -305,7 +316,7 @@ Section Wall.
 
     Lemma convergent e : (∞∀ n, P_Ω e n ↓) ∨ (∞∀ n, ¬ P_Ω e n ↓).
     Proof.
-      destruct (@eventally_wall_test e) as [N HN].
+      destruct (@eventally_wall e) as [N HN].
       assert (pdec (∃ k, N ≤ k ∧ P_Ω e k ↓)) as [[k [Hk HNk]]|H'] by (apply assume_Σ_1_lem; eauto).
       - left. exists k. intros n Hm.
         induction Hm; first done.
@@ -338,9 +349,10 @@ Section Wall.
         destruct (Dec (P_Ω e m ↓)); eauto.
     Qed.
 
-    Fact P_simple_test: simple P.
+    Fact P_simple: simple P.
     Proof. eapply P_simple. intro e.
-      intros H. apply H. apply wall_convergence_test. Qed.
+      intros H. apply H. apply wall_convergence. 
+    Qed.
 
     Hypothesis Σ_2_LEM: 
       ∀ (P: nat → nat → Prop), 
@@ -349,12 +361,12 @@ Section Wall.
     Fact jump_P_limit_test: limit_computable (P´).
     Proof.
       eapply Jump_limit; last done. apply F_with_χ.
-      intros e He. eapply N_requirements_test; eauto.
+      intros e He. eapply N_requirements; eauto.
     Qed.
-    End TEST.
+    End Verification.
     
 
-    Lemma eventally_wall e:
+    Lemma eventally_wall_db e:
       ¬¬ (∞∀ s, ∀ x, extendP (P_func s) s x → wall e (P_func s) s < x).
     Proof.
       intros H_. eapply (@attend_at_most_once_bound wall (S e)).
@@ -368,12 +380,12 @@ Section Wall.
       assert (e ≤ e_) by lia; clear E.
       destruct He_', H1, H1, H1, H1, H3.
       by eapply H5.
-    Qed. 
+    Qed.
 
-    Fact wall_convergence e : ¬¬ ∃ b : nat, lim_to wall (wall e) b.
+    Fact wall_convergence_db e : ¬¬ ∃ b : nat, lim_to wall (wall e) b.
     Proof.
       intros H_.
-      destruct (@eventally_wall e). intros [N HN].
+      destruct (@eventally_wall_db e). intros [N HN].
       assert (∀ m, dec (wall e (P_func m) m = 0)) as HD by eauto.
       ccase (∀ x, N ≤ x → wall e (P_func x) x = 0) as [H'|H'].
       - apply H_; clear H_. exists 0. exists N. intros. by apply H'.
@@ -413,11 +425,11 @@ Section Wall.
           apply H. now exists x; split.
     Qed.
 
-    Lemma N_requirements: ∀ e, (∞∃ n, P_Ω e n ↓) → ¬ ¬ Ξ e (char_rel P) e.
+    Lemma N_requirements_db: ∀ e, (∞∃ n, P_Ω e n ↓) → ¬ ¬ Ξ e (char_rel P) e.
     Proof.
       intros e He H_.
-      apply (@eventally_wall e). intros [N HN].
-      apply (@wall_convergence e). intros [B [b Hb]].
+      apply (@eventally_wall_db e). intros [N HN].
+      apply (@wall_convergence_db e). intros [B [b Hb]].
       apply H_; clear H_.
       set (M := max N b). destruct (He M) as [k [Hk Hk']].
       eapply (@φ_spec  χ e e k); first apply Hk'. 
@@ -445,8 +457,6 @@ Section Wall.
   
     (* Should be enough if we use DNE_Σ_2 to drop out ¬¬ for both
         eventally_wall and wall_convergence *)
-    Fact P_simple: simple P.
-    Proof. eapply P_simple. intro e. apply wall_convergence. Qed.
 
     Section with_LEM_2.
 
@@ -457,7 +467,7 @@ Section Wall.
     Fact jump_P_limit: limit_computable (P´).
     Proof.
       eapply Jump_limit; last done. apply F_with_χ.
-      intros e He. eapply DN, N_requirements; eauto.
+      intros e He. eapply DN, N_requirements_db; eauto.
     Qed.
 
     End with_LEM_2.
@@ -469,7 +479,7 @@ Section Wall.
     Fact jump_P_limit_2: limit_computable (P´).
     Proof.
       eapply Jump_limit_1; first apply F_with_χ.
-      - intros e He. eapply N_requirements_test; eauto.
+      - intros e He. eapply N_requirements; eauto.
       - eapply convergent; eauto.
     Qed.
 

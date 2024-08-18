@@ -7,6 +7,10 @@ Require Export SyntheticComputability.Shared.ListAutomation.
 Require Import Arith Arith.Compare_dec Lia Coq.Program.Equality List.
 Import ListNotations.
 
+(* ########################################################################## *)
+(** * The Priority Method *)
+(* ########################################################################## *)
+
 Notation "'Σ' x .. y , p" :=
     (sigT (fun x => .. (sigT (fun y => p)) ..))
         (at level 200, x binder, right associativity,
@@ -28,6 +32,8 @@ Notation unique p := (forall x x', p x -> p x' -> x = x').
     | ExtendN n l   : F_ E n l -> (forall a, ~ extendP l n a) -> F_ E (S n) l.
 
 Section Construction.
+
+    (** ** Basic Properties *)
 
   Variable E: Extension.
 

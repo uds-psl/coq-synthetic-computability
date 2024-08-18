@@ -8,6 +8,10 @@ Require Import Coq.Program.Equality.
 From stdpp Require Export list.
 Import PartialTactics.
 
+(* ########################################################################## *)
+(** * Step-Inedxed Oracle Machines *)
+(* ########################################################################## *)
+
 Notation "'Σ' x .. y , p" :=
   (sigT (fun x => .. (sigT (fun y => p)) ..))
       (at level 200, x binder, right associativity,
@@ -844,21 +848,15 @@ End Limit_Interrogation.
 
 Section Step_Eval_Spec.
 
+  (** ** Step-Inedxed Execution *)
+
   Definition Φ_ (f: nat → nat → bool) (e x n: nat): option () :=
     match evalt_comp (ξ () e x) (f n) n n with
     | Some (inr ()) => Some ()
     | _ => None 
     end.
 
-  Definition φ (f: nat → bool) (e x n: nat) :=
-    if use_function (ξ () e x) f n n () unit_eq_dec nat_eq_dec 
-      is inl H then S (list_max (projT1 H))
-      else 0.
 
-  Definition φ' (f: nat → bool) (e x n: nat) :=
-    if (use_function' (ξ () e x) f n n () unit_eq_dec nat_eq_dec) 
-      is inl H then S (list_max (projT1 (extract_computation unit_eq_dec nat_eq_dec H)))
-      else 0.
 
   Variable P: nat → Prop.
   Variable decider: nat → nat → bool.
@@ -886,9 +884,20 @@ Section Step_Eval_Spec.
     by destruct u. congruence.
   Qed. 
   
+  (** ** Use Functions *)
 
-  Notation "A ≡{ k }≡ B" := (∀ x, x ≤ k → A x ↔ B x) (at level 30).
-  Definition to_pred (f: nat → bool) x := f x = true.
+    Notation "A ≡{ k }≡ B" := (∀ x, x ≤ k → A x ↔ B x) (at level 30).
+    Definition to_pred (f: nat → bool) x := f x = true.
+
+    Definition φ (f: nat → bool) (e x n: nat) :=
+      if use_function (ξ () e x) f n n () unit_eq_dec nat_eq_dec 
+        is inl H then S (list_max (projT1 H))
+        else 0.
+
+    Definition φ' (f: nat → bool) (e x n: nat) :=
+      if (use_function' (ξ () e x) f n n () unit_eq_dec nat_eq_dec) 
+        is inl H then S (list_max (projT1 (extract_computation unit_eq_dec nat_eq_dec H)))
+        else 0.
 
   Theorem φ_spec e x n p:
     Φ_ decider e x n = Some () →
