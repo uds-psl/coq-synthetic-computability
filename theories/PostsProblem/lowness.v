@@ -1,11 +1,11 @@
-From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions StepIndex Limit simple.
+From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions step_indexing limit_computability simple.
 Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
 Require Import Arith Arith.Compare_dec Lia Coq.Program.Equality List.
-Require Import SyntheticComputability.ReducibilityDegrees.priority_method.
-Require Import SyntheticComputability.ReducibilityDegrees.simple_extension.
+From SyntheticComputability Require Import the_priority_method.
+From SyntheticComputability Require Import simpleness.
 
 Definition inf_exists (P: nat → Prop) := ∀ n, ∃ m, n ≤ m ∧ P m.
   Notation "'∞∃' x .. y , p" :=
@@ -66,19 +66,19 @@ Section Requirements_Lowness_Correctness.
       intros [w Hw]%Φ_spec; exists w; intros??.
       apply Dec_auto. by eapply Hw.
       intros [N HN]. eapply N_requirements. 
-      intros m. exists (S N + m); split; first lia.
+      intros m. exists (Datatypes.S N + m)%nat; split; first lia.
       eapply Dec_true. eapply HN. lia.
     - unfold J. split; intros H. 
       destruct (limit_case x) as [[k Hk]|h2].
       enough (Ξ x (char_rel P) x) by easy.
-      eapply N_requirements. intros m. exists (S k + m).
+      eapply N_requirements. intros m. exists (Datatypes.S k + m).
       split; first lia. eapply Hk. lia.
       destruct h2 as [w Hw]. exists w.
       intros. specialize (Hw n H0). unfold limit_decider.
       destruct (Dec _); eauto.
       destruct H as [w Hw].
       intros [k Hneg]%Φ_spec.
-      set (N := S (max w k)).
+      set (N := Datatypes.S (max w k)).
       assert (Ω x N ↓). { eapply Hneg. lia. }
       enough (¬ Ω x N ↓) by eauto.
       eapply Dec_false. eapply Hw. lia.  
@@ -96,19 +96,19 @@ Section Requirements_Lowness_Correctness.
       intros [w Hw]%Φ_spec; exists w; intros??.
       apply Dec_auto. by eapply Hw.
       intros [N HN]. eapply N_requirements. 
-      intros m. exists (S N + m); split; first lia.
+      intros m. exists (Datatypes.S N + m); split; first lia.
       eapply Dec_true. eapply HN. lia.
     - unfold J. split; intros H. 
       destruct (convergent x) as [[k Hk]|h2].
       enough (Ξ x (char_rel P) x) by easy.
-      eapply N_requirements. intros m. exists (S k + m).
+      eapply N_requirements. intros m. exists (Datatypes.S k + m).
       split; first lia. eapply Hk. lia.
       destruct h2 as [w Hw]. exists w.
       intros. specialize (Hw n H0). unfold limit_decider.
       destruct (Dec _); eauto.
       destruct H as [w Hw].
       intros [k Hneg]%Φ_spec.
-      set (N := S (max w k)).
+      set (N := Datatypes.S (max w k)).
       assert (Ω x N ↓). { eapply Hneg. lia. }
       enough (¬ Ω x N ↓) by eauto.
       eapply Dec_false. eapply Hw. lia.  
@@ -116,78 +116,6 @@ Section Requirements_Lowness_Correctness.
   End with_LEM_1.
     
   End classic_logic.
-(* 
-  Section intuitionistic_logic.
-  Hypothesis N_requirements: ∀ e, (∞∃ n, Ω e n ↓) → ¬¬ Ξ e (char_rel P) e.
-
-  Lemma N_requirements': ∀ e, ¬¬ ((∞∃ n, Ω e n ↓) → Ξ e (char_rel P) e).
-  Proof. firstorder. Qed.
-
-  Fact dn_or (R Q: Prop): (¬¬ R ∨ ¬¬ Q) → ¬¬ (R ∨ Q).
-  Proof. firstorder. Qed.
-  Lemma not_not_limit_case e: ~ ~ ((∞∀ n, Ω e n ↓) ∨ (∞∀ n, ¬ Ω e n ↓)).
-  Proof.
-    ccase (∃ n, ∀ m, n ≤ m → ¬ Ω e m ↓) as [H1|H1].
-    apply dn_or. { right. eauto. }
-    ccase (∀ i, ∃ n, i ≤ n ∧ Ω e n ↓) as [H2|H2].
-    intros H_. apply (@N_requirements' e).
-    intros N_requirements'.
-    apply H_. left. apply Φ_spec, N_requirements'. intros i.
-    { destruct (H2 i) as [w Hw]. exists w. apply Hw.  }
-    exfalso. clear P S_P N_requirements.
-    apply H2. intros i.
-  Admitted.
-  
-    Definition not_not_limit_computable {X} (P: X -> Prop) :=
-      exists f: X -> nat -> bool, 
-        forall x, ~~
-        ((P x <-> exists N, forall n, n >= N -> f x n = true) /\
-          (~ P x <-> exists N, forall n, n >= N -> f x n = false)).
-
-    Fact dn_and (R Q: Prop): (¬¬ R ∧ ¬¬ Q) → ¬¬ (R ∧ Q).
-    Proof. firstorder. Qed.
-
-    Lemma not_not_Jump_limit : not_not_limit_computable (P´).
-    Proof.
-      exists limit_decider; intro x.
-      apply dn_and.   
-      split; intros.
-      - unfold J. intros H_.
-        eapply (@N_requirements' x). intros N_requirements'.
-        apply H_. split.
-        intros [w Hw]%Φ_spec; exists w; intros??.
-        apply Dec_auto. by eapply Hw.
-        intros [N HN].
-        eapply N_requirements'. 
-        intros m. exists (S N + m); split; first lia.
-        eapply Dec_true. eapply HN. lia.
-      - unfold J. intros H_.
-        eapply (@N_requirements' x). intros N_requirements'.
-        eapply (@not_not_limit_case x).
-        intros [[k Hk]|h2].
-        apply H_. split.
-        enough (Ξ x (char_rel P) x) by easy.
-        eapply N_requirements'. intros m. exists (S k + m).
-        split; first lia. eapply Hk. lia.
-        intro H. destruct H as [w Hw].
-        intros [k' Hneg]%Φ_spec.
-        set (N := S (max w k')).
-        assert (Ω x N ↓). { eapply Hneg. lia. }
-        enough (¬ Ω x N ↓) by eauto.
-        eapply Dec_false. eapply Hw. lia.  
-        apply H_. split. 
-        destruct h2 as [w Hw]. exists w.
-        intros. specialize (Hw n H0). unfold limit_decider.
-        destruct (Dec _); eauto.
-        intro H. destruct H as [w Hw].
-        intros [k Hneg]%Φ_spec.
-        set (N := S (max w k)).
-        assert (Ω x N ↓). { eapply Hneg. lia. }
-        enough (¬ Ω x N ↓) by eauto.
-        eapply Dec_false. eapply Hw. lia.  
-    Qed.
-    
-End intuitionistic_logic. *)
 
 End Requirements_Lowness_Correctness.
 
@@ -281,7 +209,7 @@ Section Wall.
       destruct (@wall_convergence_test e) as [B [b Hb]].
       set (M := max N b). destruct (He M) as [k [Hk Hk']].
       eapply (@φ_spec χ e e k); first apply Hk'. 
-      intros x Hx. unfold P, simple_extension.P.
+      intros x Hx. unfold P, simpleness.P.
       rewrite F_with_top. split.
       - intros (L & m & HL & HLs &HP).
         assert (L = P_func m) as E. { eapply F_uni. apply HL. apply F_func_correctness. }
@@ -421,7 +349,7 @@ Section Wall.
       apply H_; clear H_.
       set (M := max N b). destruct (He M) as [k [Hk Hk']].
       eapply (@φ_spec  χ e e k); first apply Hk'. 
-      intros x Hx. unfold P, simple_extension.P.
+      intros x Hx. unfold P, simpleness.P.
       rewrite F_with_top. split.
       - intros (L & m & HL & HLs &HP).
         assert (L = P_func m) as E. { eapply F_uni. apply HL. apply F_func_correctness. }

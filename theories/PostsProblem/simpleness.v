@@ -1,10 +1,10 @@
-From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions Limit simple.
+From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions limit_computability simple.
 Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
 Require Import Arith Arith.Compare_dec Lia Coq.Program.Equality List.
-Require Import SyntheticComputability.ReducibilityDegrees.priority_method.
+From SyntheticComputability Require Import the_priority_method.
 Import SyntheticComputability.Axioms.EA.Assume_EA.
 Import ListNotations.
 
@@ -706,70 +706,6 @@ Section Assume_EA.
   End Result.
 
   End Assume_WALL.
-(* 
-  Section Instance_of_Wall.
-
-  Definition low_wall (e: nat) (l: list nat) (n: nat) := 42.
-  Lemma low_wall_spec: forall e, ~~ exists b, lim_to low_wall (low_wall e) b.
-  Proof. intro e. intros H_; apply H_. exists 42. exists 0; intuition. Qed.
-
-  Definition Pw := P low_wall.
-
-  Theorem P_simple_low_wall: simple Pw.
-  Proof.
-    eapply P_simple. apply low_wall_spec.
-  Qed.
-
-  Definition effectively_simple P := 
-    simple P /\  exists f, 
-      forall e, (forall x, W e x -> (compl P) x) -> forall x, W e x -> x < (f e).
-
-  Lemma attend_pick e k: attend low_wall e k -> exists x, x > 2*e /\ Pw x /\ W e x.
-  Proof.
-    intros [He H].
-    (* edestruct (ext_pick_witness) as [x Hx].
-    { destruct H. eapply e0. }
-    assert (P_ (S k) (Pf_ (S k))) by apply F_func_correctness.
-    inv H0. cbn in H4. assert (ext_least_choice l k x) as Hwitness.
-    exists e. assert (Pf_ k = l) as <-.
-    eapply F_uni. apply F_func_correctness. apply H3.
-    split; first easy. split; first easy. easy.
-    assert (x = a) as ->. eapply (@extend_uni simple_extendsion); cbn; eauto.
-    exists a. split. destruct H4, H0, H1, H4, H4.
-    assert (x=e) as HE.
-    { eapply least_unique; last eapply H.
-    enough (l=(Pf_ k)) as -> by easy. eapply F_uni; eauto. apply F_func_correctness. }
-    lia. split. exists (Pf_ (S k)), (S k); split; eauto. now rewrite <- H2.
-    apply F_func_correctness. destruct H4, H0, H1, H4, H4, H4, H4.
-    assert (x=e) as HE.
-    { eapply least_unique; last eapply H.
-    enough (l=(Pf_ k)) as -> by easy. eapply F_uni; eauto. apply F_func_correctness. }
-    exists x0; congruence.
-    exfalso. eapply (H3 x); exists e; do 2 (split; eauto). 
-    enough ((Pf_ k) = (Pf_ (S k))) as <- by easy. 
-    assert (F_ simple_extendsion k (Pf_ k)) by apply F_func_correctness.
-    eapply F_uni; eauto. *)
-  Admitted.
-
-  Theorem P_effectively_simple: effectively_simple Pw.
-  Proof.
-    split; first apply P_simple. apply low_wall_spec.
-    exists (fun e => 2 * e + 1).
-    intros e He x Hex. enough (~ 2 * e < x) by lia.
-    intros Hex'.
-    assert (W e #ₚ Pw).
-    { intros y Hy1 Hy2. now apply (He y). }
-    (* assert (forall k, (Pf_ low_wall k) # W[k] e).
-    { intros k y Hy1 [w [_ Hy2]]. eapply (H y). exists w; eauto.
-      exists (Pf_ k), k; split; eauto. apply F_func_correctness. }
-    enough (exists k, attend e k) as [k Hk].
-    (* apply H1. intros [k Hk]. *)
-    eapply attend_pick in Hk.
-    destruct Hk as [y (Hx1&Hx2&Hx3)].
-    admit. admit. *)
-  Admitted.
-
-  End Instance_of_Wall. *)
 
 End Assume_EA.
 

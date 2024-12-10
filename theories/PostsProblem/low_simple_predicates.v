@@ -1,10 +1,10 @@
-From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions Limit simple.
+From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions limit_computability simple.
 Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
-Require Export SyntheticComputability.ReducibilityDegrees.low_wall.
-Require Export SyntheticComputability.ReducibilityDegrees.simple_extension.
+From SyntheticComputability Require Export lowness.
+From SyntheticComputability Require Export simpleness.
 Require Import Arith.
 Require Import SyntheticComputability.PostsTheorem.PostsTheorem.
 Require Import Vectors.VectorDef Arith.Compare_dec Lia.
@@ -111,30 +111,29 @@ Section LowFacts.
     eexists. eapply low_simple_correct; split.
     - eapply limit_turing_red_K; eauto. exact 42.
       apply jump_P_limit; eauto.  
-    - eapply low_wall.P_simple; eauto. 
+    - eapply P_simple.
+      intros. intros d. apply d.
+      apply wall_convergence_test. assumption.
   Qed.
 
   End LowSimplePredicate.
 
-  Section LowSimplePredicate2.
-
-  Theorem a_sol_Post's_problem_2 (H: LEM_Σ 1): ∃ P, sol_Post's_problem P.
+  Theorem PostProblem_from_neg_negLPO :
+    ∃ p: nat → Prop, ¬ decidable p ∧ semi_decidable p ∧ (~~ (LEM_Σ 1) -> ¬ K ⪯ᴛ p).
   Proof.
-    eexists. eapply low_simple_correct; split.
-    - eapply limit_turing_red_K; eauto. exact 42.
+    eexists.
+    repeat split.
+    - apply simple_undecidable. 
+      eapply P_simple. apply wall_convergence.
+    - apply P_semi_decidable.
+    - intros L. intros G. apply L. clear L. intros L. revert G. 
+      apply lowness. red.
+      eapply limit_turing_red_K; eauto. exact 42.
       apply jump_P_limit_2; eauto.
-    - eapply low_wall.P_simple; eauto.
   Qed.
-
-  Corollary a_fact `(LEM_Σ 1): 
-      ∃ p: nat → Prop, ¬ decidable p ∧ enumerable p ∧ ¬ K ⪯ᴛ p.
-  Proof. 
-    by apply a_sol_Post's_problem_2. 
-  Qed.
-  End LowSimplePredicate2.
 
 End LowFacts.
 
-(* Check a_fact. *)
-(* Print Assumptions a_fact. *)
+Check PostProblem_from_neg_negLPO.
+Print Assumptions PostProblem_from_neg_negLPO.
 
