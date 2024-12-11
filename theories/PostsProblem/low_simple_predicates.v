@@ -118,22 +118,67 @@ Section LowFacts.
 
   End LowSimplePredicate.
 
+  Notation "(¬¬Σ⁰₁)-LEM" := ((∀ (k : nat) (p : vec nat k → Prop), isΣsem 1 p → ~~ definite p)) (at level 0).
+
   Theorem PostProblem_from_neg_negLPO :
-    ∃ p: nat → Prop, ¬ decidable p ∧ semi_decidable p ∧ (~~ (LEM_Σ 1) -> ¬ K ⪯ᴛ p).
+    ∃ p: nat → Prop, ¬ decidable p ∧ semi_decidable p ∧ (¬¬ (¬¬Σ⁰₁)-LEM -> ¬ K ⪯ᴛ p).
   Proof.
     eexists.
     repeat split.
     - apply simple_undecidable. 
       eapply P_simple. apply wall_convergence.
     - apply P_semi_decidable.
-    - intros L. intros G. apply L. clear L. intros L. revert G. 
-      apply lowness. red.
+    - intros L. intros G. apply L. clear L. intros L.
+      assert (~~ definite K) as hK.
+      {
+        specialize (L 1 (fun v => K (Vector.hd v))).
+        intros h. apply L.
+        (* use Sigma01-ness of K *)
+        admit.
+        intros h1. apply h.
+        intros x. specialize (h1 (Vector.cons x Vector.nil)). exact h1.
+      }
+      apply hK. clear hK. intros hK.
+      assert (LEM_Σ 1).
+      {
+        intros n p Hs.
+        (* use many-one completeness of K *)
+        admit.
+      }
+      revert G. apply lowness. red.
       eapply limit_turing_red_K; eauto. exact 42.
       apply jump_P_limit_2; eauto.
-  Qed.
+  Admitted.
 
 End LowFacts.
 
 Check PostProblem_from_neg_negLPO.
 Print Assumptions PostProblem_from_neg_negLPO.
+
+(* general proof that ¬¬(¬¬Σ⁰₁)-LEM <-> ¬¬(Σ⁰₁)-LEM *)
+Section assume.
+
+  Variable enumerable : (nat -> Prop) -> Prop.
+
+  Variable K : nat -> Prop.
+  Variable eK : enumerable K.
+  Variable cK : forall p : nat -> Prop, enumerable p -> red_m p K.
+
+  Goal ~~ (forall p : nat -> Prop, enumerable p -> forall x, p x \/ ~ p x)
+         <->
+      ~~ (forall p : nat -> Prop, enumerable p -> ~~ forall x, p x \/ ~ p x).
+  Proof.
+    split.
+    - firstorder.
+    - intros nnLPO H.
+      apply nnLPO. clear nnLPO. intros nnLPO.
+      apply (nnLPO K eK). intros dK.
+      apply H.
+      intros p [f Hf] % cK x.
+      specialize (dK (f x)).
+      red in Hf. rewrite <- Hf in dK.
+      assumption.
+  Qed.
+
+End assume.
 
