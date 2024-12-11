@@ -23,6 +23,18 @@ Local Notation vec := Vector.t.
 essential property of low simple, i.e. Low simple as a solution to
 Post's Problem in Turing degree. **)
 
+Section Facts.
+  Lemma m_red_complete {X Y} (P: X → Prop) (Q: Y → Prop):
+    semi_decidable P → Q ⪯ₘ P → semi_decidable Q.
+  Proof. intros [g H1] [f H2]; exists (fun x => g (f x)); firstorder. Qed.
+
+  Lemma m_red_complete_definite {X Y} (P: X → Prop) (Q: Y → Prop):
+    definite P → Q ⪯ₘ P → definite Q.
+  Proof. intros H [f H2]; firstorder. Qed.
+End Facts.
+
+
+
   (* Definition of low *)
   Definition low (P: nat -> Prop) := P´ ⪯ᴛ K.
 
@@ -120,6 +132,13 @@ Section LowFacts.
 
   Notation "(¬¬Σ⁰₁)-LEM" := ((∀ (k : nat) (p : vec nat k → Prop), isΣsem 1 p → ~~ definite p)) (at level 0).
 
+  Lemma m_red_K_semi_decidable {n} (P: vec nat n → Prop):
+    semi_decidable P -> P ⪯ₘ K.
+  Proof.
+    intros H. unfold K. rewrite <- red_m_iff_semidec_jump_vec.
+    by apply semi_decidable_OracleSemiDecidable. eauto.
+  Qed.
+
   Theorem PostProblem_from_neg_negLPO :
     ∃ p: nat → Prop, ¬ decidable p ∧ semi_decidable p ∧ (¬¬ (¬¬Σ⁰₁)-LEM -> ¬ K ⪯ᴛ p).
   Proof.
@@ -132,9 +151,10 @@ Section LowFacts.
       assert (~~ definite K) as hK.
       {
         specialize (L 1 (fun v => K (Vector.hd v))).
-        intros h. apply L.
-        (* use Sigma01-ness of K *)
-        admit.
+        intros h. apply L. 
+        rewrite <- semi_dec_iff_Σ1.
+        eapply m_red_complete; first apply semi_dec_halting.
+        exists (fun v => Vector.hd v); done.
         intros h1. apply h.
         intros x. specialize (h1 (Vector.cons x Vector.nil)). exact h1.
       }
@@ -142,13 +162,14 @@ Section LowFacts.
       assert (LEM_Σ 1).
       {
         intros n p Hs.
-        (* use many-one completeness of K *)
-        admit.
+        eapply m_red_complete_definite; first apply hK.
+        rewrite <- semi_dec_iff_Σ1 in Hs.
+        by eapply m_red_K_semi_decidable.
       }
       revert G. apply lowness. red.
       eapply limit_turing_red_K; eauto. exact 42.
       apply jump_P_limit_2; eauto.
-  Admitted.
+  Qed.
 
 End LowFacts.
 
