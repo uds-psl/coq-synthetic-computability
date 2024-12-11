@@ -176,7 +176,7 @@ End LowFacts.
 Check PostProblem_from_neg_negLPO.
 Print Assumptions PostProblem_from_neg_negLPO.
 
-(* general proof that ¬¬(¬¬Σ⁰₁)-LEM <-> ¬¬(Σ⁰₁)-LEM *)
+(* general proof that (¬¬Σ⁰₁)-LEM <-> ¬¬(Σ⁰₁)-LEM under many-one complete Σ⁰₁ predicate  *)
 Section assume.
 
   Variable enumerable : (nat -> Prop) -> Prop.
@@ -187,12 +187,11 @@ Section assume.
 
   Goal ~~ (forall p : nat -> Prop, enumerable p -> forall x, p x \/ ~ p x)
          <->
-      ~~ (forall p : nat -> Prop, enumerable p -> ~~ forall x, p x \/ ~ p x).
+      (forall p : nat -> Prop, enumerable p -> ~~ forall x, p x \/ ~ p x).
   Proof.
     split.
     - firstorder.
     - intros nnLPO H.
-      apply nnLPO. clear nnLPO. intros nnLPO.
       apply (nnLPO K eK). intros dK.
       apply H.
       intros p [f Hf] % cK x.
@@ -202,4 +201,3 @@ Section assume.
   Qed.
 
 End assume.
-
