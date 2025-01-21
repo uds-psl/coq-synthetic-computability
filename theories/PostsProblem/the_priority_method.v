@@ -1,4 +1,4 @@
-From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions Limit simple.
+From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions limit_computability simple.
 From stdpp Require Export list.
 Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Export SyntheticComputability.Shared.FinitenessFacts.

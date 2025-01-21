@@ -1,10 +1,10 @@
-From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions Limit simple.
+From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions limit_computability simple.
 Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
-Require Export SyntheticComputability.PostsProblem.low_wall.
-Require Export SyntheticComputability.PostsProblem.simple_extension.
+From SyntheticComputability Require Export lowness.
+From SyntheticComputability Require Export simpleness.
 Require Import Arith.
 Require Import SyntheticComputability.PostsTheorem.PostsTheorem.
 Require Import Vectors.VectorDef Arith.Compare_dec Lia.
@@ -20,6 +20,18 @@ Local Notation vec := Vector.t.
 (** This file contains the definition of low simple set and proves the
 essential property of low simple, i.e. Low simple as a solution to
 Post's Problem in Turing degree. **)
+
+Section Facts.
+  Lemma m_red_complete {X Y} (P: X → Prop) (Q: Y → Prop):
+    semi_decidable P → Q ⪯ₘ P → semi_decidable Q.
+  Proof. intros [g H1] [f H2]; exists (fun x => g (f x)); firstorder. Qed.
+
+  Lemma m_red_complete_definite {X Y} (P: X → Prop) (Q: Y → Prop):
+    definite P → Q ⪯ₘ P → definite Q.
+  Proof. intros H [f H2]; firstorder. Qed.
+End Facts.
+
+
 
   (* Definition of low *)
   Definition low (P: nat -> Prop) := P´ ⪯ᴛ K.
@@ -109,32 +121,81 @@ Section LowFacts.
     eexists. eapply low_simple_correct; split.
     - eapply limit_turing_red_K; eauto. exact 42.
       apply jump_P_limit; eauto.  
-    - eapply low_wall.P_simple; eauto. 
+    - eapply P_simple.
+      intros. intros d. apply d.
+      apply wall_convergence_test. assumption.
   Qed.
 
   End LowSimplePredicate.
 
-  Section LowSimplePredicate2.
+  Notation "(¬¬Σ⁰₁)-LEM" := ((∀ (k : nat) (p : vec nat k → Prop), isΣsem 1 p → ~~ definite p)) (at level 0).
 
-    (** ** A solution to Post's Problem *)
-
-  Theorem a_sol_Post's_problem_2 (H: LEM_Σ 1): ∃ P, sol_Post's_problem P.
+  Lemma m_red_K_semi_decidable {n} (P: vec nat n → Prop):
+    semi_decidable P -> P ⪯ₘ K.
   Proof.
-    eexists. eapply low_simple_correct; split.
-    - eapply limit_turing_red_K; eauto. exact 42.
-      apply jump_P_limit_2; eauto.
-    - eapply low_wall.P_simple; eauto.
+    intros H. unfold K. rewrite <- red_m_iff_semidec_jump_vec.
+    by apply semi_decidable_OracleSemiDecidable. eauto.
   Qed.
 
-  Corollary a_fact `(LEM_Σ 1): 
-      ∃ p: nat → Prop, ¬ decidable p ∧ enumerable p ∧ ¬ K ⪯ᴛ p.
-  Proof. 
-    by apply a_sol_Post's_problem_2. 
+  Theorem PostProblem_from_neg_negLPO :
+    ∃ p: nat → Prop, ¬ decidable p ∧ semi_decidable p ∧ (¬¬ (¬¬Σ⁰₁)-LEM -> ¬ K ⪯ᴛ p).
+  Proof.
+    eexists.
+    repeat split.
+    - apply simple_undecidable. 
+      eapply P_simple. apply wall_convergence.
+    - apply P_semi_decidable.
+    - intros L. intros G. apply L. clear L. intros L.
+      assert (~~ definite K) as hK.
+      {
+        specialize (L 1 (fun v => K (Vector.hd v))).
+        intros h. apply L. 
+        rewrite <- semi_dec_iff_Σ1.
+        eapply m_red_complete; first apply semi_dec_halting.
+        exists (fun v => Vector.hd v); done.
+        intros h1. apply h.
+        intros x. specialize (h1 (Vector.cons x Vector.nil)). exact h1.
+      }
+      apply hK. clear hK. intros hK.
+      assert (LEM_Σ 1).
+      {
+        intros n p Hs.
+        eapply m_red_complete_definite; first apply hK.
+        rewrite <- semi_dec_iff_Σ1 in Hs.
+        by eapply m_red_K_semi_decidable.
+      }
+      revert G. apply lowness. red.
+      eapply limit_turing_red_K; eauto. exact 42.
+      apply jump_P_limit_2; eauto.
   Qed.
-  End LowSimplePredicate2.
 
 End LowFacts.
 
-(* Check a_fact. *)
-(* Print Assumptions a_fact. *)
+Check PostProblem_from_neg_negLPO.
+Print Assumptions PostProblem_from_neg_negLPO.
 
+(* general proof that (¬¬Σ⁰₁)-LEM <-> ¬¬(Σ⁰₁)-LEM under many-one complete Σ⁰₁ predicate  *)
+Section assume.
+
+  Variable enumerable : (nat -> Prop) -> Prop.
+
+  Variable K : nat -> Prop.
+  Variable eK : enumerable K.
+  Variable cK : forall p : nat -> Prop, enumerable p -> red_m p K.
+
+  Goal ~~ (forall p : nat -> Prop, enumerable p -> forall x, p x \/ ~ p x)
+         <->
+      (forall p : nat -> Prop, enumerable p -> ~~ forall x, p x \/ ~ p x).
+  Proof.
+    split.
+    - firstorder.
+    - intros nnLPO H.
+      apply (nnLPO K eK). intros dK.
+      apply H.
+      intros p [f Hf] % cK x.
+      specialize (dK (f x)).
+      red in Hf. rewrite <- Hf in dK.
+      assumption.
+  Qed.
+
+End assume.

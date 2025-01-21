@@ -1,10 +1,10 @@
-From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions Limit simple.
+From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions limit_computability simple.
 Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
 Require Import Arith Arith.Compare_dec Lia Coq.Program.Equality List.
-Require Import SyntheticComputability.PostsProblem.priority_method.
+From SyntheticComputability Require Import the_priority_method.
 Import SyntheticComputability.Axioms.EA.Assume_EA.
 Import ListNotations.
 
@@ -348,29 +348,36 @@ Section Assume_EA.
       apply (attend_always_act H1 Hm).
     Qed.
 
-    Lemma attend_at_most_once e: ~ ~ (exists s', forall s, s' < s -> ~ attend e s).
+    Lemma attend_at_most_once_gen e:
+      (pdec (exists k, attend e k)) ->
+      (exists s', forall s, s' < s -> ~ attend e s).
     Proof.
-      ccase (exists k, attend e k) as [[w Hw]|H].
-      - intros H. eapply H. exists w.
+      intros [[w Hw]|H].
+      - exists w.
         now eapply attend_always_not_attend.
-      - intros Hk. apply Hk. exists 0.
-        intros k' Hk' Ha.
-        apply H. now exists k'.
-    Qed.
-
-    Definition done e s := ∀ s', s < s' → ¬ attend e s'.
-
-    Lemma attend_at_most_once_test:
-      LEM_Σ 1 → ∀ e, ∃ s, done e s.
-    Proof.
-      intros Hlem e.
-      assert (pdec (exists k, attend e k)) as [[w Hw]|H].
-      { eapply assume_Σ_1_lem. apply Hlem. eauto. }
-      - exists w. unfold done. by eapply attend_always_not_attend.
       - exists 0.
         intros k' Hk' Ha.
         apply H. now exists k'.
     Qed.
+
+    Lemma attend_at_most_once e: ~ ~ (exists s', forall s, s' < s -> ~ attend e s).
+    Proof.
+      intros H.
+      assert (~~ (pdec (exists k, attend e k))) as Hdec.
+      { unfold pdec. tauto. }
+      apply Hdec. clear Hdec. intros Hdec.
+      apply H, attend_at_most_once_gen. assumption.
+    Qed.
+
+    Definition done e s := ∀ s', s < s' → ¬ attend e s'.
+
+    (* Lemma attend_at_most_once_test: *)
+    (*   LEM_Σ 1 → ∀ e, ∃ s, done e s. *)
+    (* Proof. *)
+    (*   intros Hlem e. *)
+    (*   apply attend_at_most_once_gen. *)
+    (*   { eapply assume_Σ_1_lem. apply Hlem. eauto. } *)
+    (* Qed. *)
 
     Lemma attend_uni e: unique (attend e).
     Proof.
@@ -588,29 +595,17 @@ Section Assume_EA.
       specialize (IHe_ i x H1). lia.
   Qed.
 
-    Lemma attend_at_most_once_bound k: 
-      ~ ~ exists s, (forall e, e < k -> forall s', s < s' -> ~ attend e s').
-    Proof.
-      induction k.
-      - intros H. apply H. exists 42. intros ??. lia. 
-      - intros H. apply IHk. intros [s Hs]; clear IHk.
-        specialize (@attend_at_most_once k) as Hk.
-        apply Hk. intros [sk Hsk]; clear Hk.
-        set (max sk s) as N.
-        eapply H. exists N. intros e He.
-        assert (e = k \/ e < k) as [->|Hek] by lia.
-        intros s' Hs'. eapply Hsk. lia.
-        intros s' Hs'. eapply Hs; lia.
-    Qed.
-
-
-  Lemma attend_at_most_once_bound_test: 
-    LEM_Σ 1 → ∀ k, ∃ s, (∀ e, e < k -> ∀ s', s < s' -> ~ attend e s').
+  Lemma attend_at_most_once_bound_gen k:
+    (forall k', k' < k -> pdec (∃ k0 : nat, attend k' k0)) ->
+    exists s, (forall e, e < k -> forall s', s < s' -> ~ attend e s').
   Proof.
-    intros Hlem. induction k.
+    intros Hle.
+    induction k.
     - exists 42. intros ??. lia. 
     - destruct IHk as [s Hs].
-      specialize (@attend_at_most_once_test Hlem k) as [sk Hsk].
+      { intros. eapply Hle. lia. }
+      destruct (@attend_at_most_once_gen k) as [sk Hsk].
+      { apply Hle. lia. }
       set (max sk s) as N.
       exists N. intros e He.
       assert (e = k \/ e < k) as [->|Hek] by lia.
@@ -618,19 +613,49 @@ Section Assume_EA.
       intros s' Hs'. eapply Hs; lia.
   Qed.
 
-    Lemma non_finite_not_bounded e: 
-      non_finite e -> ~~ exists k, exists x, (W[k] e) x /\ 2 * e < x /\ 
-        (forall n, forall i, i <= e -> wall i (P_func n) n < x).
-    Proof.
-      intro H. unfold non_finite in H.
-      intros He.  rewrite non_finite_nat in H.
-      apply (@wall_of_wall e). intros [w Hw].
-      pose (N := max (2*e + 1) w). specialize (H N).
-      apply H. intros [m [Hm1 [k Hmk]]].
-      apply He. exists k, m.
-      repeat split. now exists k.
-      lia. intros n i Hie. specialize (Hw i n Hie). lia.
-    Qed.
+  Lemma finite_decs (P : nat -> Prop) k Q :
+    ((forall k', k' < k -> pdec (P k')) -> ~ Q) -> ~ Q.
+  Proof.
+    induction k.
+    - firstorder lia.
+    - intros H Hq.
+      assert (~~ pdec (P k)) as Hk. { cbv. tauto. }
+      apply Hk. clear Hk. intros Hk.
+      apply IHk. 2: assumption.
+      intros Ha. apply H. intros.
+      assert (k' = k \/ k' < k) as [-> | ] by lia.
+      assumption.
+      now apply Ha.
+  Qed.
+  
+  Lemma attend_at_most_once_bound k:
+    ~ ~ exists s, (forall e, e < k -> forall s', s < s' -> ~ attend e s').
+  Proof.
+    eapply finite_decs.
+    intros H % (attend_at_most_once_bound_gen (k := k)).
+    tauto.
+  Qed.
+
+  Lemma attend_at_most_once_bound_test: 
+    LEM_Σ 1 → ∀ k, ∃ s, (∀ e, e < k -> ∀ s', s < s' -> ~ attend e s').
+  Proof.
+    intros Hlem k. apply attend_at_most_once_bound_gen.
+    intros. eapply assume_Σ_1_lem. apply Hlem. eauto. 
+  Qed.
+
+  Lemma non_finite_not_bounded e: 
+    non_finite e -> ~~ exists k, exists x, (W[k] e) x /\ 2 * e < x /\ 
+                                  (forall n, forall i, i <= e -> wall i (P_func n) n < x).
+  Proof.
+    intro H. unfold non_finite in H.
+    intros He.  rewrite non_finite_nat in H.
+    apply (@wall_of_wall e). intros [w Hw].
+    pose (N := max (2*e + 1) w). specialize (H N).
+    apply H. intros [m [Hm1 [k Hmk]]].
+    apply He. exists k, m.
+    repeat split. now exists k.
+                        lia. intros n i Hie. specialize (Hw i n Hie). lia.
+  Qed.
 
     Lemma ext_pick_attend N e: 
       e < N -> ext_pick (P_func N) N e -> 
@@ -716,70 +741,6 @@ Section Assume_EA.
   End Result.
 
   End Assume_WALL.
-(* 
-  Section Instance_of_Wall.
-
-  Definition low_wall (e: nat) (l: list nat) (n: nat) := 42.
-  Lemma low_wall_spec: forall e, ~~ exists b, lim_to low_wall (low_wall e) b.
-  Proof. intro e. intros H_; apply H_. exists 42. exists 0; intuition. Qed.
-
-  Definition Pw := P low_wall.
-
-  Theorem P_simple_low_wall: simple Pw.
-  Proof.
-    eapply P_simple. apply low_wall_spec.
-  Qed.
-
-  Definition effectively_simple P := 
-    simple P /\  exists f, 
-      forall e, (forall x, W e x -> (compl P) x) -> forall x, W e x -> x < (f e).
-
-  Lemma attend_pick e k: attend low_wall e k -> exists x, x > 2*e /\ Pw x /\ W e x.
-  Proof.
-    intros [He H].
-    (* edestruct (ext_pick_witness) as [x Hx].
-    { destruct H. eapply e0. }
-    assert (P_ (S k) (Pf_ (S k))) by apply F_func_correctness.
-    inv H0. cbn in H4. assert (ext_least_choice l k x) as Hwitness.
-    exists e. assert (Pf_ k = l) as <-.
-    eapply F_uni. apply F_func_correctness. apply H3.
-    split; first easy. split; first easy. easy.
-    assert (x = a) as ->. eapply (@extend_uni simple_extendsion); cbn; eauto.
-    exists a. split. destruct H4, H0, H1, H4, H4.
-    assert (x=e) as HE.
-    { eapply least_unique; last eapply H.
-    enough (l=(Pf_ k)) as -> by easy. eapply F_uni; eauto. apply F_func_correctness. }
-    lia. split. exists (Pf_ (S k)), (S k); split; eauto. now rewrite <- H2.
-    apply F_func_correctness. destruct H4, H0, H1, H4, H4, H4, H4.
-    assert (x=e) as HE.
-    { eapply least_unique; last eapply H.
-    enough (l=(Pf_ k)) as -> by easy. eapply F_uni; eauto. apply F_func_correctness. }
-    exists x0; congruence.
-    exfalso. eapply (H3 x); exists e; do 2 (split; eauto). 
-    enough ((Pf_ k) = (Pf_ (S k))) as <- by easy. 
-    assert (F_ simple_extendsion k (Pf_ k)) by apply F_func_correctness.
-    eapply F_uni; eauto. *)
-  Admitted.
-
-  Theorem P_effectively_simple: effectively_simple Pw.
-  Proof.
-    split; first apply P_simple. apply low_wall_spec.
-    exists (fun e => 2 * e + 1).
-    intros e He x Hex. enough (~ 2 * e < x) by lia.
-    intros Hex'.
-    assert (W e #ₚ Pw).
-    { intros y Hy1 Hy2. now apply (He y). }
-    (* assert (forall k, (Pf_ low_wall k) # W[k] e).
-    { intros k y Hy1 [w [_ Hy2]]. eapply (H y). exists w; eauto.
-      exists (Pf_ k), k; split; eauto. apply F_func_correctness. }
-    enough (exists k, attend e k) as [k Hk].
-    (* apply H1. intros [k Hk]. *)
-    eapply attend_pick in Hk.
-    destruct Hk as [y (Hx1&Hx2&Hx3)].
-    admit. admit. *)
-  Admitted.
-
-  End Instance_of_Wall. *)
 
 End Assume_EA.
 
