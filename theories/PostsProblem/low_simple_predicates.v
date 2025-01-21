@@ -25,7 +25,7 @@ Post's Problem in Turing degree. **)
   Definition low (P: nat -> Prop) := P´ ⪯ᴛ K.
 
 Section LowFacts.
-
+ 
   Variable vec_to_nat : forall k, vec nat k -> nat.
   Variable nat_to_vec : forall k, nat -> vec nat k.
   Variable vec_nat_inv : forall k v, nat_to_vec k (vec_to_nat v) = v.
