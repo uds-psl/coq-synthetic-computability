@@ -359,21 +359,6 @@ Section Step_Eval.
         by exists depth; injection H as ->.
   Qed.
 
-  (* Lemma evalt_comp_step (τ: tree) f n m v qs ans q:
-    interrogation τ (λ x y, f x = y) qs ans →
-    length qs = n →
-    τ ans =! Ask q →
-    evalt_comp τ f n m = Some (Ask q) ∧ seval (τ (f q::ans)) m = Some v →
-    evalt_comp τ f (S n) m = Some v.
-  Proof.
-    intros HIn HE Hans [H1 H2].
-    rewrite <- HE in *.
-    replace (length qs) with (length qs + 0) in H1 by lia.
-    eapply interrogation_plus_evalt_comp_1 in H1; last done.
-    induction HIn.
-    - simpl in *. admit.
-    - admit.
-  Admitted. *)
   Fact sub_tree (τ: tree) f use ans ans_:
     interrogation τ (λ x y, f x = y) use ans →
     ans_ `prefix_of` ans →

@@ -23,7 +23,6 @@ Convention:
 
  **)
 
-
   (* Definition of limit ciomputable *)
 
   Definition limit_computable {X} (P: X -> Prop) :=
