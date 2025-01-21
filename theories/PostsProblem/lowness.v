@@ -8,19 +8,19 @@ From SyntheticComputability Require Import the_priority_method.
 From SyntheticComputability Require Import simpleness.
 
 Definition inf_exists (P: nat → Prop) := ∀ n, ∃ m, n ≤ m ∧ P m.
-  Notation "'∞∃' x .. y , p" :=
-    (inf_exists (λ x, .. (inf_exists (λ y, p)) ..))
-        (at level 200, x binder, right associativity,
-        format "'[' '∞∃'  '/  ' x  ..  y ,  '/  ' p ']'")
-    : type_scope.
 
-
-  Notation "f ↓" := (f = Some ()) (at level 30).
-
-  Global Instance dec_le: ∀ m n, dec (m ≤ n).
+Global Instance dec_le: ∀ m n, dec (m ≤ n).
   Proof. intros n m; destruct (le_gt_dec n m); [by left|right; lia]. Qed.
 
-Section requirements_verification.
+Notation "'∞∃' x .. y , p" :=
+  (inf_exists (λ x, .. (inf_exists (λ y, p)) ..))
+      (at level 200, x binder, right associativity,
+      format "'[' '∞∃'  '/  ' x  ..  y ,  '/  ' p ']'")
+  : type_scope.
+
+Notation "f ↓" := (f = Some ()) (at level 30).
+
+Section Requirements_Verification.
 
   Variable P: nat → Prop.
   Variable f: nat → nat → bool.
@@ -63,10 +63,9 @@ Section requirements_verification.
       eapply Dec_false. eapply Hw. lia.  
   Qed.
 
-End requirements_verification.
+End Requirements_Verification.
 
-
-Section requirements_meet.
+Section Requirements_Meet.
 
   Variables wall: Wall.
 
@@ -87,8 +86,8 @@ Section requirements_meet.
     Hypothesis Σ_1_lem: LEM_Σ 1.
 
     Lemma attention_bound:  
-      ∀ k, ∃ s, ∀ e, e < k -> ∀ s', s < s' -> ~ attend wall e s'.
-    Proof. by apply attend_at_most_once_bound_test. Qed.
+      ∀ k, ∃ s, ∀ e, e < k -> ∀ s', s < s' -> ~ recv_att wall e s'.
+    Proof. by apply recv_at_most_once_bound. Qed.
 
     Lemma eventally_greater_than_wall: 
       ∀ e, (∞∀ s, ∀ x, extendP (P_func s) s x → wall e (P_func s) s < x).
@@ -97,7 +96,7 @@ Section requirements_meet.
       destruct (@attention_bound (S e)) as [s Hs].
       exists (S s). intros m Hm x [e_ [He_ He_']].
       destruct (Dec (e_ < e)) as [E|E].
-      { exfalso. enough (attend wall e_ m).
+      { exfalso. enough (recv_att wall e_ m).
         unshelve eapply (Hs e_ _ m); eauto; lia.
         split; first lia. destruct He_' as [H _].
         apply H. }
@@ -143,9 +142,9 @@ Section requirements_meet.
 
   End wall_greater_than_use.
 
-End requirements_meet.
+End Requirements_Meet.
 
-Section concret_wall.
+Section Concret_Wall.
 
   (** ** Construction *)
 
@@ -230,11 +229,11 @@ Section concret_wall.
     Lemma eventally_greater_than_wall_classically e:
       ¬¬ (∞∀ s, ∀ x, extendP (P_func wall s) s x → wall e (P_func wall s) s < x).
     Proof.
-      intros H_. eapply (@attend_at_most_once_bound wall (S e)).
+      intros H_. eapply (@recv_at_most_once_bound_classically wall (S e)).
       intros [s Hs]. eapply H_; clear H_.
       exists (S s). intros m Hm x [e_ [He_ He_']].
       destruct (Dec (e_ < e)) as [E|E].
-      { exfalso. enough (attend wall e_ m).
+      { exfalso. enough (recv_att wall e_ m).
         unshelve eapply (Hs e_ _ m); eauto; lia.
         split; first lia. destruct He_' as [H _].
         apply H. }
@@ -289,23 +288,20 @@ Section concret_wall.
     Fact P_simple: simple (P wall).
     Proof. eapply P_simple, wall_convergence_classically. Qed.
 
-End concret_wall.
+End Concret_Wall.
 
-Section result.
+Section Results.
 
-Hypothesis LEM_Σ_1: LEM_Σ 1.
+  Hypothesis LEM_Σ_1: LEM_Σ 1.
 
-Fact jump_P_limit_2: limit_computable ((P wall)´).
-Proof.
-  eapply Jump_limit_1; first apply F_with_χ.
-  - intros e He. eapply step_ex_spec; eauto.
-  - eapply N_requirements; eauto.
-Qed.
+  Fact jump_P_limit: limit_computable ((P wall)´).
+  Proof.
+    eapply Jump_limit_1; first apply F_with_χ.
+    - intros e He. eapply step_ex_spec; eauto.
+    - eapply N_requirements; eauto.
+  Qed.
 
-End result.
-
-
-
+End Results.
 
 
 

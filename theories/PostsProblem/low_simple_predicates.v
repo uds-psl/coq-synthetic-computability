@@ -102,17 +102,6 @@ Section LowFacts.
   Hypothesis EA: 
     forall P, semi_decidable P -> exists e, forall x, P x <-> exists n, η e n = Some x.
 
-  (* Used to eliminate ~~Φ *)
-  (* should be able to weaker to DNE_Σ_2 *)
-  Hypothesis DN: forall P, ~ ~ P -> P.
-
-  (* Used to prove limit computable from N requirements *)
-  Hypothesis LEM_Σ_2: 
-  forall (P: nat -> nat -> Prop), 
-    (forall n m, dec (P n m)) -> 
-      (exists n, forall m, P n m) \/ ~ (exists n, forall m, P n m).
-
-  (* Used to prove Limit Lemma *)
   Hypothesis LEM_Σ_1: LEM_Σ 1.
   Hypothesis def_K: definite K.
 
@@ -123,7 +112,7 @@ Section LowFacts.
       apply jump_P_limit; eauto.  
     - eapply P_simple.
       intros. intros d. apply d.
-      apply wall_convergence_test. assumption.
+      apply wall_convergence. assumption.
   Qed.
 
   End LowSimplePredicate.
@@ -143,7 +132,7 @@ Section LowFacts.
     eexists.
     repeat split.
     - apply simple_undecidable. 
-      eapply P_simple. apply wall_convergence.
+      eapply P_simple. apply wall_convergence_classically.
     - apply P_semi_decidable.
     - intros L. intros G. apply L. clear L. intros L.
       assert (~~ definite K) as hK.
@@ -166,7 +155,7 @@ Section LowFacts.
       }
       revert G. apply lowness. red.
       eapply limit_turing_red_K; eauto. exact 42.
-      apply jump_P_limit_2; eauto.
+      apply jump_P_limit; eauto.
   Qed.
 
 End LowFacts.
