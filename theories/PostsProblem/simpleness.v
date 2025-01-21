@@ -338,29 +338,36 @@ Section Assume_EA.
       apply (attend_always_act H1 Hm).
     Qed.
 
-    Lemma attend_at_most_once e: ~ ~ (exists s', forall s, s' < s -> ~ attend e s).
+    Lemma attend_at_most_once_gen e:
+      (pdec (exists k, attend e k)) ->
+      (exists s', forall s, s' < s -> ~ attend e s).
     Proof.
-      ccase (exists k, attend e k) as [[w Hw]|H].
-      - intros H. eapply H. exists w.
+      intros [[w Hw]|H].
+      - exists w.
         now eapply attend_always_not_attend.
-      - intros Hk. apply Hk. exists 0.
-        intros k' Hk' Ha.
-        apply H. now exists k'.
-    Qed.
-
-    Definition done e s := ∀ s', s < s' → ¬ attend e s'.
-
-    Lemma attend_at_most_once_test:
-      LEM_Σ 1 → ∀ e, ∃ s, done e s.
-    Proof.
-      intros Hlem e.
-      assert (pdec (exists k, attend e k)) as [[w Hw]|H].
-      { eapply assume_Σ_1_lem. apply Hlem. eauto. }
-      - exists w. unfold done. by eapply attend_always_not_attend.
       - exists 0.
         intros k' Hk' Ha.
         apply H. now exists k'.
     Qed.
+
+    Lemma attend_at_most_once e: ~ ~ (exists s', forall s, s' < s -> ~ attend e s).
+    Proof.
+      intros H.
+      assert (~~ (pdec (exists k, attend e k))) as Hdec.
+      { unfold pdec. tauto. }
+      apply Hdec. clear Hdec. intros Hdec.
+      apply H, attend_at_most_once_gen. assumption.
+    Qed.
+
+    Definition done e s := ∀ s', s < s' → ¬ attend e s'.
+
+    (* Lemma attend_at_most_once_test: *)
+    (*   LEM_Σ 1 → ∀ e, ∃ s, done e s. *)
+    (* Proof. *)
+    (*   intros Hlem e. *)
+    (*   apply attend_at_most_once_gen. *)
+    (*   { eapply assume_Σ_1_lem. apply Hlem. eauto. } *)
+    (* Qed. *)
 
     Lemma attend_uni e: unique (attend e).
     Proof.
@@ -578,29 +585,17 @@ Section Assume_EA.
       specialize (IHe_ i x H1). lia.
   Qed.
 
-    Lemma attend_at_most_once_bound k: 
-      ~ ~ exists s, (forall e, e < k -> forall s', s < s' -> ~ attend e s').
-    Proof.
-      induction k.
-      - intros H. apply H. exists 42. intros ??. lia. 
-      - intros H. apply IHk. intros [s Hs]; clear IHk.
-        specialize (@attend_at_most_once k) as Hk.
-        apply Hk. intros [sk Hsk]; clear Hk.
-        set (max sk s) as N.
-        eapply H. exists N. intros e He.
-        assert (e = k \/ e < k) as [->|Hek] by lia.
-        intros s' Hs'. eapply Hsk. lia.
-        intros s' Hs'. eapply Hs; lia.
-    Qed.
-
-
-  Lemma attend_at_most_once_bound_test: 
-    LEM_Σ 1 → ∀ k, ∃ s, (∀ e, e < k -> ∀ s', s < s' -> ~ attend e s').
+  Lemma attend_at_most_once_bound_gen k:
+    (forall k', k' < k -> pdec (∃ k0 : nat, attend k' k0)) ->
+    exists s, (forall e, e < k -> forall s', s < s' -> ~ attend e s').
   Proof.
-    intros Hlem. induction k.
+    intros Hle.
+    induction k.
     - exists 42. intros ??. lia. 
     - destruct IHk as [s Hs].
-      specialize (@attend_at_most_once_test Hlem k) as [sk Hsk].
+      { intros. eapply Hle. lia. }
+      destruct (@attend_at_most_once_gen k) as [sk Hsk].
+      { apply Hle. lia. }
       set (max sk s) as N.
       exists N. intros e He.
       assert (e = k \/ e < k) as [->|Hek] by lia.
@@ -608,19 +603,49 @@ Section Assume_EA.
       intros s' Hs'. eapply Hs; lia.
   Qed.
 
-    Lemma non_finite_not_bounded e: 
-      non_finite e -> ~~ exists k, exists x, (W[k] e) x /\ 2 * e < x /\ 
-        (forall n, forall i, i <= e -> wall i (P_func n) n < x).
-    Proof.
-      intro H. unfold non_finite in H.
-      intros He.  rewrite non_finite_nat in H.
-      apply (@wall_of_wall e). intros [w Hw].
-      pose (N := max (2*e + 1) w). specialize (H N).
-      apply H. intros [m [Hm1 [k Hmk]]].
-      apply He. exists k, m.
-      repeat split. now exists k.
-      lia. intros n i Hie. specialize (Hw i n Hie). lia.
-    Qed.
+  Lemma finite_decs (P : nat -> Prop) k Q :
+    ((forall k', k' < k -> pdec (P k')) -> ~ Q) -> ~ Q.
+  Proof.
+    induction k.
+    - firstorder lia.
+    - intros H Hq.
+      assert (~~ pdec (P k)) as Hk. { cbv. tauto. }
+      apply Hk. clear Hk. intros Hk.
+      apply IHk. 2: assumption.
+      intros Ha. apply H. intros.
+      assert (k' = k \/ k' < k) as [-> | ] by lia.
+      assumption.
+      now apply Ha.
+  Qed.
+  
+  Lemma attend_at_most_once_bound k:
+    ~ ~ exists s, (forall e, e < k -> forall s', s < s' -> ~ attend e s').
+  Proof.
+    eapply finite_decs.
+    intros H % (attend_at_most_once_bound_gen (k := k)).
+    tauto.
+  Qed.
+
+  Lemma attend_at_most_once_bound_test: 
+    LEM_Σ 1 → ∀ k, ∃ s, (∀ e, e < k -> ∀ s', s < s' -> ~ attend e s').
+  Proof.
+    intros Hlem k. apply attend_at_most_once_bound_gen.
+    intros. eapply assume_Σ_1_lem. apply Hlem. eauto. 
+  Qed.
+
+  Lemma non_finite_not_bounded e: 
+    non_finite e -> ~~ exists k, exists x, (W[k] e) x /\ 2 * e < x /\ 
+                                  (forall n, forall i, i <= e -> wall i (P_func n) n < x).
+  Proof.
+    intro H. unfold non_finite in H.
+    intros He.  rewrite non_finite_nat in H.
+    apply (@wall_of_wall e). intros [w Hw].
+    pose (N := max (2*e + 1) w). specialize (H N).
+    apply H. intros [m [Hm1 [k Hmk]]].
+    apply He. exists k, m.
+    repeat split. now exists k.
+                        lia. intros n i Hie. specialize (Hw i n Hie). lia.
+  Qed.
 
     Lemma ext_pick_attend N e: 
       e < N -> ext_pick (P_func N) N e -> 
