@@ -655,7 +655,7 @@ Section Assume_EA.
         exists k. do 2 (split; first lia). eapply Hk.
       Qed.
 
-      Lemma non_finite_attend e:
+      Lemma non_finite_recv e:
         non_finite e -> ~ ~ (exists k, ~ ext_intersect_W (P_func k) k e \/ recv_att e k) .
       Proof.
         intros H He.
@@ -690,7 +690,7 @@ Section Assume_EA.
       Lemma P_requirements_meet : forall e, P_requirements P e.
       Proof.
         intros e He. intros He'.
-        eapply (non_finite_attend He).
+        eapply (non_finite_recv He).
         intros [k [H|H]].
         - eapply ext_intersect_W_intersect; eauto.
         - eapply recv_impl_next_act in H.
