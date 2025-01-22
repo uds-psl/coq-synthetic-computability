@@ -86,7 +86,7 @@ Section Requirements_Meet.
     Hypothesis Σ_1_lem: LEM_Σ 1.
 
     Lemma attention_bound:  
-      ∀ k, ∃ s, ∀ e, e < k -> ∀ s', s < s' -> ~ recv_att wall e s'.
+      ∀ k, ∃ s, ∀ e, e < k → ∀ s', s < s' → ~ recv_att wall e s'.
     Proof. by apply recv_at_most_once_bound. Qed.
 
     Lemma eventally_greater_than_wall: 

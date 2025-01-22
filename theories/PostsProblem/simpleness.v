@@ -14,10 +14,10 @@ Import ListNotations.
 
 Section ComplToBound.
     Definition complToBound L b : list nat 
-        := filter (fun x => Dec (~ In x L)) (seq 0 (S b)).
+        := filter (fun x => Dec (¬ In x L)) (seq 0 (S b)).
 
     Lemma complToBound_Bound L b :
-        forall x, In x (complToBound L b) -> x <= b.
+        ∀ x, In x (complToBound L b) → x <= b.
     Proof.
         intros x [H % in_seq ?] % in_filter_iff. lia.
     Qed.
@@ -29,7 +29,7 @@ Section ComplToBound.
         - destruct f; cbn; lia.
     Qed.
     Lemma filter_NoDup {X} f (l : list X) :
-        NoDup l -> NoDup (filter f l).
+        NoDup l → NoDup (filter f l).
     Proof.
         induction 1; cbn.
         - econstructor.
@@ -58,12 +58,12 @@ Section ComplToBound.
     Proof.
         eapply filter_NoDup, seq_NoDup.
     Qed.
-    Lemma firstn_In {X} (l : list X) n x : In x (firstn n l) -> In x l.
+    Lemma firstn_In {X} (l : list X) n x : In x (firstn n l) → In x l.
     Proof.
         induction n in x, l |- *; destruct l; cbn; firstorder.
     Qed.
 
-    Lemma firstn_NoDup {X} (l : list X) n : NoDup l -> NoDup (firstn n l).
+    Lemma firstn_NoDup {X} (l : list X) n : NoDup l → NoDup (firstn n l).
     Proof.
         induction 1 in n |- *; destruct n; cbn; try now econstructor.
         econstructor; eauto.
@@ -85,16 +85,16 @@ Section Assume_EA.
   Qed.
 
   Definition W_ n e x := φ n e = Some x.
-  Definition W e x := exists n, W_ e n x.
+  Definition W e x := ∃ n, W_ e n x.
 
-  Lemma W_spec: forall P, semi_decidable P -> exists e, forall x, P x <-> W e x.
+  Lemma W_spec: ∀ P, semi_decidable P → ∃ e, ∀ x, P x <-> W e x.
   Proof. intros P [e He]%EA. exists e; intros x; now rewrite He. Qed.
 
-  Notation "'W[' s ']' e" := (fun x => exists n, n <= s /\ W_ e n x) (at level 30).
+  Notation "'W[' s ']' e" := (fun x => ∃ n, n <= s ∧ W_ e n x) (at level 30).
 
   Section EA_dec.
 
-    Lemma W_dec e: forall x n, dec (W_ e n x).
+    Lemma W_dec e: ∀ x n, dec (W_ e n x).
     Proof.
       intros x n.
       destruct (φ e n) eqn: E.
@@ -103,7 +103,7 @@ Section Assume_EA.
       - right. intros H. congruence. 
     Qed.
 
-    Lemma W_bounded_dec e : forall x s, dec ((W[s] e) x).
+    Lemma W_bounded_dec e : ∀ x s, dec ((W[s] e) x).
     Proof.
       intros x s. cbn. eapply exists_bounded_dec.
       intro; apply W_dec.
@@ -134,12 +134,12 @@ Section Assume_EA.
 
   End EA_dec.
 
-  Definition disj_list_pred {X} (A: list X) (B: X -> Prop) := forall x, In x A -> B x -> False.
-  Definition disj_pred {X} (A B: X -> Prop) := forall x, A x -> B x -> False.
+  Definition disj_list_pred {X} (A: list X) (B: X → Prop) := ∀ x, In x A → B x → False.
+  Definition disj_pred {X} (A B: X → Prop) := ∀ x, A x → B x → False.
   Notation "A # B" := (disj_list_pred A B) (at level 30).
   Notation "A #ₚ B" := (disj_pred A B) (at level 30).
 
-  Lemma extra_bounded f m: Σ b, forall n, n < m -> f n < b.
+  Lemma extra_bounded f m: Σ b, ∀ n, n < m → f n < b.
   Proof.
     induction m.
     - exists 42. intros. inv H. 
@@ -155,10 +155,10 @@ Section Assume_EA.
     Section Extension. (** ** Construction *)
 
       Definition ext_intersect_W L n e := L # W[n] e.
-      Definition ext_has_wit L n e x := (W[n] e) x /\ 2 * e < x /\ forall i, i <= e -> wall i L n < x.
-      Definition ext_pick L n e := ext_intersect_W L n e /\ exists x, ext_has_wit L n e x.
-      Definition ext_choice L n e x :=  e < n /\ least (ext_pick L n) e /\ least (ext_has_wit L n e) x.
-      Definition ext_least_choice L n x := exists e, ext_choice L n e x.
+      Definition ext_has_wit L n e x := (W[n] e) x ∧ 2 * e < x ∧ ∀ i, i <= e → wall i L n < x.
+      Definition ext_pick L n e := ext_intersect_W L n e ∧ ∃ x, ext_has_wit L n e x.
+      Definition ext_choice L n e x :=  e < n ∧ least (ext_pick L n) e ∧ least (ext_has_wit L n e) x.
+      Definition ext_least_choice L n x := ∃ e, ext_choice L n e x.
 
     End Extension.
 
@@ -170,13 +170,13 @@ Section Assume_EA.
         intro x. eapply dec_neg_dec, exists_bounded_dec; eauto.
       Qed. 
 
-      #[export] Instance ext_wall L n e x: dec (forall i, i <= e -> wall i L n < x).
+      #[export] Instance ext_wall L n e x: dec (∀ i, i <= e → wall i L n < x).
       Proof. eapply forall_bounded_dec; eauto. Qed.
       
       #[export]Instance ext_has_wit_dec L n e x : dec (ext_has_wit L n e x).
       Proof. apply and_dec; first apply exists_bounded_dec; eauto. Qed.
 
-      #[export]Instance ext_has_wit_exists_dec L n e : dec (exists x, ext_has_wit L n e x).
+      #[export]Instance ext_has_wit_exists_dec L n e : dec (∃ x, ext_has_wit L n e x).
       Proof.
         unfold ext_has_wit. eapply bounded_dec; last eapply W_bounded_bounded.
         intro x; eapply W_bounded_dec; eauto. eauto.
@@ -191,7 +191,7 @@ Section Assume_EA.
         intro; apply W_dec. eauto.
       Qed.
 
-      #[export]Instance ext_pick_exists_dec L n: dec (exists e, e < n /\ least (ext_pick L n) e).
+      #[export]Instance ext_pick_exists_dec L n: dec (∃ e, e < n ∧ least (ext_pick L n) e).
       Proof. 
         eapply exists_bounded_dec'. intro x.
         eapply least_dec. intros y.
@@ -199,7 +199,7 @@ Section Assume_EA.
       Qed.
 
       Fact ext_least_choice_dec L n:
-        (Σ x : nat, ext_least_choice L n x) + (forall x : nat, ~ ext_least_choice L n x).
+        (Σ x : nat, ext_least_choice L n x) + (∀ x : nat, ¬ ext_least_choice L n x).
       Proof.
         unfold ext_least_choice.
         destruct (ext_pick_exists_dec L n) as [H|H].
@@ -238,44 +238,44 @@ Section Assume_EA.
       Definition P_func := F_func simple_extension.
       Definition P := F_with simple_extension.
 
-      Definition non_finite e := ~ exhaustible (W e).
+      Definition non_finite e := ¬ exhaustible (W e).
 
-      Fact In_Pf k y: In y (P_func k) -> P y.
+      Fact In_Pf k y: In y (P_func k) → P y.
       Proof.
         intros H. exists (P_func k), k.
         split; [easy| apply F_func_correctness].
       Qed.
 
-      Definition lim_to (f: list nat -> nat -> nat) b := 
-          (exists n, forall m, n <= m -> f (P_func m) m = b).
+      Definition lim_to (f: list nat → nat → nat) b := 
+          (∃ n, ∀ m, n <= m → f (P_func m) m = b).
 
-      Lemma finite_decs (P : nat -> Prop) k Q :
-        ((forall k', k' < k -> pdec (P k')) -> ~ Q) -> ~ Q.
+      Lemma finite_decs (P : nat → Prop) k Q :
+        ((∀ k', k' < k → pdec (P k')) → ¬ Q) → ¬ Q.
       Proof.
         induction k.
         - firstorder lia.
         - intros H Hq.
-          assert (~~ pdec (P k)) as Hk. { cbv. tauto. }
+          assert (¬¬ pdec (P k)) as Hk. { cbv. tauto. }
           apply Hk. clear Hk. intros Hk.
           apply IHk. 2: assumption.
           intros Ha. apply H. intros.
-          assert (k' = k \/ k' < k) as [-> | ] by lia.
+          assert (k' = k ∨ k' < k) as [-> | ] by lia.
           assumption.
           now apply Ha.
       Qed.
 
     End Extension_Facts.
 
-    Hypothesis wall_spec: forall e, ~~ exists b, lim_to (wall e) b.
+    Hypothesis wall_spec: ∀ e, ¬¬ ∃ b, lim_to (wall e) b.
 
     Section Requirements.
 
       (** ** Requirements *)
 
-      Definition P_requirements P e := non_finite e -> ~ (W e #ₚ P).
-      Definition recv_att e n := e < n /\ least (ext_pick (P_func n) n) e.
-      Definition act e n := ~ (P_func n) # W[n] e.
-      Definition act_by e x := exists k, recv_att e k /\ ext_least_choice (P_func k) k x.
+      Definition P_requirements P e := non_finite e → ¬ (W e #ₚ P).
+      Definition recv_att e n := e < n ∧ least (ext_pick (P_func n) n) e.
+      Definition act e n := ¬ (P_func n) # W[n] e.
+      Definition act_by e x := ∃ k, recv_att e k ∧ ext_least_choice (P_func k) k x.
       Definition done e n := ∀ s, n < s → ¬ recv_att e s.
 
       #[export]Instance attend_dec e n: dec (recv_att e n).
@@ -292,7 +292,7 @@ Section Assume_EA.
       (** ** Verification *)
 
       Lemma ext_pick_witness L n e:
-        ext_pick L n e -> exists x, least (ext_has_wit L n e) x.
+        ext_pick L n e → ∃ x, least (ext_has_wit L n e) x.
       Proof.
         intros [H1 H2].
         eapply least_ex. intro; eapply ext_has_wit_dec.
@@ -300,21 +300,21 @@ Section Assume_EA.
       Qed.
       
       Lemma W_incl e n m: 
-        n <= m -> forall x,  (W[n] e) x -> (W[m] e) x.
+        n <= m → ∀ x,  (W[n] e) x → (W[m] e) x.
       Proof.
         intros H x [y [H1 H2]].
         exists y. split; lia + easy.
       Qed.
 
-      Lemma intersect_mono {X} (L L': list X) (P P': X -> Prop) : 
-        L' # P' -> incl L L' -> (forall x, P x -> P' x) -> L # P.
+      Lemma intersect_mono {X} (L L': list X) (P P': X → Prop) : 
+        L' # P' → incl L L' → (∀ x, P x → P' x) → L # P.
       Proof.
         intros H h1 h2 x Hx1 Hx2.
         eapply (H x). now eapply h1. 
         now apply h2.
       Qed.
 
-      Lemma act_impl_always_act e n: act e n -> forall m, n <= m -> act e m .
+      Lemma act_impl_always_act e n: act e n → ∀ m, n <= m → act e m .
       Proof.
         intros H m Hm Hx. apply H. 
         eapply (intersect_mono Hx).
@@ -322,7 +322,7 @@ Section Assume_EA.
         now eapply W_incl.
       Qed.
 
-      Lemma recv_impl_next_act e k: recv_att e k -> act e (S k).
+      Lemma recv_impl_next_act e k: recv_att e k → act e (S k).
       Proof.
         intros [He H] Hcontr.
         edestruct (ext_pick_witness) as [x Hx].
@@ -342,25 +342,25 @@ Section Assume_EA.
         firstorder.
       Qed.
 
-      Lemma act_impl_not_recv e k: act e k -> ~ recv_att e k.
+      Lemma act_impl_not_recv e k: act e k → ¬ recv_att e k.
       Proof. now intros h2 [_ [[h _] _]]. Qed.
 
-      Lemma recv_impl_next_always_act e k: recv_att e k -> forall m, k < m -> act e m.
+      Lemma recv_impl_next_always_act e k: recv_att e k → ∀ m, k < m → act e m.
       Proof.
         intros. eapply act_impl_always_act.
         apply recv_impl_next_act. apply H. lia.
       Qed.
 
       Lemma recv_impl_always_not_recv e k: 
-        recv_att e k -> forall m, k < m -> ~ recv_att e m.
+        recv_att e k → ∀ m, k < m → ¬ recv_att e m.
       Proof.
         intros H1 m Hm. eapply act_impl_not_recv.
         apply (recv_impl_next_always_act H1 Hm).
       Qed.
 
       Lemma recv_at_most_once_gen e:
-        (pdec (exists k, recv_att e k)) ->
-        (exists s', forall s, s' < s -> ~ recv_att e s).
+        (pdec (∃ k, recv_att e k)) ->
+        (∃ s', ∀ s, s' < s → ¬ recv_att e s).
       Proof.
         intros [[w Hw]|H].
         - exists w.
@@ -370,18 +370,18 @@ Section Assume_EA.
           apply H. now exists k'.
       Qed.
 
-      Lemma recv_at_most_once e: ~ ~ (exists s', forall s, s' < s -> ~ recv_att e s).
+      Lemma recv_at_most_once e: ¬ ¬ (∃ s', ∀ s, s' < s → ¬ recv_att e s).
       Proof.
         intros H.
-        assert (~~ (pdec (exists k, recv_att e k))) as Hdec.
+        assert (¬¬ (pdec (∃ k, recv_att e k))) as Hdec.
         { unfold pdec. tauto. }
         apply Hdec. clear Hdec. intros Hdec.
         apply H, recv_at_most_once_gen. assumption.
       Qed.
 
       Lemma recv_at_most_once_bound_gen k:
-        (forall k', k' < k -> pdec (∃ k0 : nat, recv_att k' k0)) ->
-        exists s, (forall e, e < k -> forall s', s < s' -> ~ recv_att e s').
+        (∀ k', k' < k → pdec (∃ k0 : nat, recv_att k' k0)) ->
+        ∃ s, (∀ e, e < k → ∀ s', s < s' → ¬ recv_att e s').
       Proof.
         intros Hle.
         induction k.
@@ -392,20 +392,20 @@ Section Assume_EA.
           { apply Hle. lia. }
           set (max sk s) as N.
           exists N. intros e He.
-          assert (e = k \/ e < k) as [->|Hek] by lia.
+          assert (e = k ∨ e < k) as [->|Hek] by lia.
           intros s' Hs'. eapply Hsk. lia.
           intros s' Hs'. eapply Hs; lia.
       Qed.
 
       Lemma recv_at_most_once_bound_classically k:
-        ~ ~ exists s, (forall e, e < k -> forall s', s < s' -> ~ recv_att e s').
+        ¬ ¬ ∃ s, (∀ e, e < k → ∀ s', s < s' → ¬ recv_att e s').
       Proof.
         eapply finite_decs.
         intros H % (recv_at_most_once_bound_gen (k := k)).
         tauto.
       Qed.
       Lemma recv_at_most_once_bound: 
-        LEM_Σ 1 → ∀ k, ∃ s, (∀ e, e < k -> ∀ s', s < s' -> ~ recv_att e s').
+        LEM_Σ 1 → ∀ k, ∃ s, (∀ e, e < k → ∀ s', s < s' → ¬ recv_att e s').
       Proof.
         intros Hlem k. apply recv_at_most_once_bound_gen.
         intros. eapply assume_Σ_1_lem. apply Hlem. eauto. 
@@ -416,7 +416,7 @@ Section Assume_EA.
         intros k1 k2 H1 H2.
         specialize (fun a b => @act_impl_not_recv _ _ (@recv_impl_next_always_act _ _ H1 a b)) as H1'.
         specialize (fun a b => @act_impl_not_recv _ _ (@recv_impl_next_always_act _ _ H2 a b)) as H2'.
-        enough (~ k1 < k2 /\ ~ k2 < k1) by lia; split.
+        enough (¬ k1 < k2 ∧ ¬ k2 < k1) by lia; split.
         intro Hk. eapply H1'. apply Hk. easy. 
         intro Hk. eapply H2'. apply Hk. easy.
       Qed.
@@ -432,7 +432,7 @@ Section Assume_EA.
 
     Section Complement_Inf.
 
-      Lemma P_meet_spec x n : P x /\ x <= 2*n -> exists e, act_by e x /\ e < n.
+      Lemma P_meet_spec x n : P x ∧ x <= 2*n → ∃ e, act_by e x ∧ e < n.
       Proof.
         intros [[L [k [Hin Hk]]] Hn].
         dependent induction L. inv Hin.
@@ -454,8 +454,8 @@ Section Assume_EA.
       Qed.
 
       Lemma P_extract_spec n L:
-        (forall x, In x L -> P x /\ x <= 2 * n) -> 
-        forall x, In x L -> exists c, act_by c x /\ c < n.
+        (∀ x, In x L → P x ∧ x <= 2 * n) → 
+        ∀ x, In x L → ∃ c, act_by c x ∧ c < n.
       Proof.
         intros. induction L. inv H0. 
         destruct H0 as [-> | Hln]; last apply IHL; eauto.
@@ -463,9 +463,9 @@ Section Assume_EA.
       Qed.
 
       Lemma P_pullback_list n L:
-        NoDup L -> (forall x, In x L -> P x /\ x <= 2 * n) -> 
-          exists (LC: list nat), NoDup LC /\ length LC = length L /\
-            forall c, In c LC -> exists x, act_by c x /\ In x L /\ c < n.
+        NoDup L → (∀ x, In x L → P x ∧ x <= 2 * n) → 
+          ∃ (LC: list nat), NoDup LC ∧ length LC = length L ∧
+            ∀ c, In c LC → ∃ x, act_by c x ∧ In x L ∧ c < n.
       Proof.
         intros HL H1.
         induction L.
@@ -489,11 +489,11 @@ Section Assume_EA.
             now apply H1 in H2.
       Qed.
 
-      Definition PredListTo p : list nat -> nat -> Prop
-        := fun L b => forall x, In x L <-> p x /\ x <= b.
+      Definition PredListTo p : list nat → nat → Prop
+        := fun L b => ∀ x, In x L <-> p x ∧ x <= b.
 
       Lemma NoDupBoundH {L} b:
-          NoDup L -> (forall x, In x L -> x <= b) -> forall x, x > b -> NoDup (x::L).
+          NoDup L → (∀ x, In x L → x <= b) → ∀ x, x > b → NoDup (x::L).
       Proof.
           intros ND H x E.
           constructor.
@@ -502,7 +502,7 @@ Section Assume_EA.
       Qed.
 
       Lemma PredNoDupListTo_NNExist p:
-        forall b, ~~ exists L, PredListTo p L b /\ NoDup L.
+        ∀ b, ¬¬ ∃ L, PredListTo p L b ∧ NoDup L.
       Proof.
         destruct (F_computable simple_extension) as [f Hf].
         induction b; intros H.
@@ -523,7 +523,7 @@ Section Assume_EA.
           + exists ((1+ b) :: L). split; try split.
             * intros [E | E]; try (rewrite <- E; intuition).
               apply H1 in E. intuition.
-            * intros [E1 E2]. assert (x <= b \/ x = 1 + b) as [E | E] by lia.
+            * intros [E1 E2]. assert (x <= b ∨ x = 1 + b) as [E | E] by lia.
               ** right. apply H1. intuition.
               ** left. lia.
             * apply (@NoDupBoundH _ b).
@@ -532,14 +532,14 @@ Section Assume_EA.
               ** lia.
           + exists L. split; try split.
             * intros E % H1. intuition.
-            * intros [E1 E2]. assert (x <= b \/ x = 1 + b) as [E | E] by lia.
+            * intros [E1 E2]. assert (x <= b ∨ x = 1 + b) as [E | E] by lia.
               ** apply H1. intuition.
               ** rewrite E in E1. firstorder.
             * apply H1.
       Qed.
 
       Lemma P_bounded L n:
-        NoDup L -> (forall x, In x L -> P x /\ x <= 2 * n) -> length L <= n.
+        NoDup L → (∀ x, In x L → P x ∧ x <= 2 * n) → length L <= n.
       Proof.
         intros ND [LC H] % P_pullback_list; intuition.
         rewrite <- H.
@@ -552,7 +552,7 @@ Section Assume_EA.
       Qed.
 
       Lemma P_Listing:
-        forall n, ~~ exists L, NoDup L /\ length L <= n /\ PredListTo P L (2*n).
+        ∀ n, ¬¬ ∃ L, NoDup L ∧ length L <= n ∧ PredListTo P L (2*n).
       Proof.
         intros n H. apply (@PredNoDupListTo_NNExist P (2*n)).
         intros [L H1]. apply H. exists L; intuition.
@@ -562,7 +562,7 @@ Section Assume_EA.
       Qed.
 
       Lemma complToBound_compl p L b:
-        PredListTo p L b -> PredListTo (compl p) (complToBound L b) b.
+        PredListTo p L b → PredListTo (compl p) (complToBound L b) b.
       Proof.
       intros H x. split.
       - intros [H1 H1'] % in_filter_iff.
@@ -576,8 +576,8 @@ Section Assume_EA.
       Qed.
 
       Lemma compl_P_Listing:
-      forall (n: nat) , ~~ exists L, length L >= n /\ NoDup L 
-                                    /\ forall x, In x L -> ~ P x.
+      ∀ (n: nat) , ¬¬ ∃ L, length L >= n ∧ NoDup L 
+                                    ∧ ∀ x, In x L → ¬ P x.
       Proof.
         intros n H.
         apply (@P_Listing n). intros [L H1].
@@ -587,7 +587,7 @@ Section Assume_EA.
         - intros x I % (@complToBound_compl P); intuition.
       Qed.
 
-      Lemma P_coinfinite : ~ exhaustible (compl P).
+      Lemma P_coinfinite : ¬ exhaustible (compl P).
       Proof.
         eapply weakly_unbounded_non_finite.
         intros n H. eapply compl_P_Listing with (n := n).
@@ -604,7 +604,7 @@ Section Assume_EA.
 
     Section Requirements_Meet.
 
-      Lemma wall_bounded' e: ~~ exists w, forall x, wall e (P_func x) x < w.
+      Lemma wall_bounded' e: ¬¬ ∃ w, ∀ x, wall e (P_func x) x < w.
       Proof.
         intro H_. apply (@wall_spec e). intros [v [k Hk]].
         apply H_.
@@ -615,7 +615,7 @@ Section Assume_EA.
       Qed.
 
       Lemma wall_bounded e: 
-          ~~ exists w, forall i x, i <= e -> wall i (P_func x) x < w.
+          ¬¬ ∃ w, ∀ i x, i <= e → wall i (P_func x) x < w.
       Proof.
         intro H_. induction e.
         - apply (@wall_bounded' 0). intros [w Hw]. apply H_. exists w.
@@ -628,8 +628,8 @@ Section Assume_EA.
       Qed.
 
       Lemma non_finite_not_bounded e: 
-        non_finite e -> ~~ exists k, exists x, (W[k] e) x /\ 2 * e < x /\ 
-                                      (forall n, forall i, i <= e -> wall i (P_func n) n < x).
+        non_finite e → ¬¬ ∃ k, ∃ x, (W[k] e) x ∧ 2 * e < x ∧ 
+                                      (∀ n, ∀ i, i <= e → wall i (P_func n) n < x).
       Proof.
         intro H. unfold non_finite in H.
         intros He.  rewrite non_finite_nat in H.
@@ -642,21 +642,21 @@ Section Assume_EA.
       Qed.
 
       Lemma ext_pick_impl_recv N e: 
-        e < N -> ext_pick (P_func N) N e -> 
-        (exists w, w ≤ e /\ recv_att w N).
+        e < N → ext_pick (P_func N) N e → 
+        (∃ w, w ≤ e ∧ recv_att w N).
       Proof.
         intros HeN H1.
         assert (exists w, ext_pick (P_func N) N w) by now exists e.
         eapply least_ex in H; last eauto.
         destruct H as [k Hk]. assert (k <= e).
-        { enough (~ k > e) by lia. intro Hkw.
+        { enough (¬ k > e) by lia. intro Hkw.
           destruct Hk. rewrite safe_char in H0.
           specialize (H0 e H1). lia. }
         exists k. do 2 (split; first lia). eapply Hk.
       Qed.
 
       Lemma non_finite_recv e:
-        non_finite e -> ~ ~ (exists k, ~ ext_intersect_W (P_func k) k e \/ recv_att e k) .
+        non_finite e → ¬ ¬ (∃ k, ¬ ext_intersect_W (P_func k) k e ∨ recv_att e k) .
       Proof.
         intros H He.
         eapply (non_finite_not_bounded H); intros (b & x & (Hx1 & Hx2 & Hx3)).
@@ -678,7 +678,7 @@ Section Assume_EA.
       Qed.
 
       Lemma ext_intersect_W_intersect k e: 
-        ~ (P_func k # W[k] e) -> W e #ₚ P -> False.
+        ¬ (P_func k # W[k] e) → W e #ₚ P → False.
       Proof.
         unfold ext_intersect_W.
         intros H1 H2. apply H1.
@@ -687,9 +687,9 @@ Section Assume_EA.
         eapply (In_Pf Hy1).
       Qed.
 
-      Lemma P_requirements_meet : forall e, P_requirements P e.
+      Lemma P_requirements_meet : ∀ e, P_requirements P e.
       Proof.
-        intros e He. intros He'.
+        intros e He He'.
         eapply (non_finite_recv He).
         intros [k [H|H]].
         - eapply ext_intersect_W_intersect; eauto.
@@ -725,6 +725,7 @@ Section Assume_EA.
   End Assume_WALL.
 
 End Assume_EA.
+
 
 
 
