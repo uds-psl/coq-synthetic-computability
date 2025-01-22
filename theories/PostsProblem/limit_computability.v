@@ -1,6 +1,6 @@
 From SyntheticComputability Require Import ArithmeticalHierarchySemantic PostsTheorem reductions SemiDec TuringJump OracleComputability Definitions partial Pigeonhole.
 
-Require Import Vectors.VectorDef Arith.Compare_dec Lia.
+Require Import stdpp.list Vectors.VectorDef Arith.Compare_dec Lia.
 Import Vector.VectorNotations.
 
 Local Notation vec := Vector.t.
@@ -25,27 +25,27 @@ Convention:
 
   (* Definition of limit ciomputable *)
 
-  Definition limit_computable {X} (P: X -> Prop) :=
-    exists f: X -> nat -> bool, forall x,
-      (P x <-> exists N, forall n, n >= N -> f x n = true) /\
-        (~ P x <-> exists N, forall n, n >= N -> f x n = false).
+  Definition limit_computable {X} (P: X → Prop) :=
+    ∃ f: X → nat → bool, ∀ x,
+      (P x ↔ ∃ N, ∀ n, n ≥ N → f x n = true) ∧
+        (¬ P x ↔ ∃ N, ∀ n, n ≥ N → f x n = false).
 
-  Definition char_rel_limit_computable {X} (P: X -> bool -> Prop) :=
-    exists f: X -> nat -> bool, forall x y, P x y <-> exists N, forall n, n >= N -> f x n = y.
+  Definition char_rel_limit_computable {X} (P: X → bool → Prop) :=
+    ∃ f: X → nat → bool, ∀ x y, P x y ↔ ∃ N, ∀ n, n ≥ N → f x n = y.
 
-  Definition char_rel_limit_computable' {X} (P: X -> bool -> Prop) :=
-    exists f: X -> nat -> bool, forall x y, P x y -> exists N, forall n, n >= N -> f x n = y.    
+  Definition char_rel_limit_computable' {X} (P: X → bool → Prop) :=
+    ∃ f: X → nat → bool, ∀ x y, P x y → ∃ N, ∀ n, n ≥ N → f x n = y.    
 
-  Lemma char_rel_limit_equiv {X} (P: X -> Prop):
-    char_rel_limit_computable (char_rel P) <-> limit_computable P.
+  Lemma char_rel_limit_equiv {X} (P: X → Prop):
+    char_rel_limit_computable (char_rel P) ↔ limit_computable P.
   Proof.
     split; intros [f Hf]; exists f; intros x.
     - split; firstorder.
     - intros []; destruct (Hf x) as [h1 h2]; eauto.
   Qed.
 
-  Lemma char_rel_limit_equiv' {X} (P: X -> Prop):
-    definite P -> char_rel_limit_computable (char_rel P) <-> char_rel_limit_computable' (char_rel P) .
+  Lemma char_rel_limit_equiv' {X} (P: X → Prop):
+    definite P → char_rel_limit_computable (char_rel P) ↔ char_rel_limit_computable' (char_rel P) .
   Proof.
     intros HP; split.
     - intros [f Hf]. exists f; intros.
@@ -76,28 +76,28 @@ Convention:
 Section LimitLemma1.
   (* Limit computable predicate P is reduciable to K *)
 
-  Variable vec_to_nat : forall k, vec nat k -> nat.
-  Variable nat_to_vec : forall k, nat -> vec nat k.
-  Variable vec_nat_inv : forall k v, nat_to_vec k (vec_to_nat v) = v.
-  Variable nat_vec_inv : forall k n, vec_to_nat (nat_to_vec k n) = n.
+  Variable vec_to_nat : ∀ k, vec nat k → nat.
+  Variable nat_to_vec : ∀ k, nat → vec nat k.
+  Variable vec_nat_inv : ∀ k v, nat_to_vec k (vec_to_nat v) = v.
+  Variable nat_vec_inv : ∀ k n, vec_to_nat (nat_to_vec k n) = n.
 
-  Variable list_vec_to_nat : forall k, list (vec nat k) -> nat.
-  Variable nat_to_list_vec : forall k, nat -> list (vec nat k).
-  Variable list_vec_nat_inv : forall k v, nat_to_list_vec k (list_vec_to_nat v) = v.
-  Variable nat_list_vec_inv : forall k n, list_vec_to_nat (nat_to_list_vec k n) = n.
+  Variable list_vec_to_nat : ∀ k, list (vec nat k) → nat.
+  Variable nat_to_list_vec : ∀ k, nat → list (vec nat k).
+  Variable list_vec_nat_inv : ∀ k v, nat_to_list_vec k (list_vec_to_nat v) = v.
+  Variable nat_list_vec_inv : ∀ k n, list_vec_to_nat (nat_to_list_vec k n) = n.
 
-  Variable nat_to_list_bool : nat -> list bool.
-  Variable list_bool_to_nat : list bool -> nat.
-  Variable list_bool_nat_inv : forall l, nat_to_list_bool (list_bool_to_nat l) = l.
-  Variable nat_list_bool_inv : forall n, list_bool_to_nat (nat_to_list_bool n) = n.
+  Variable nat_to_list_bool : nat → list bool.
+  Variable list_bool_to_nat : list bool → nat.
+  Variable list_bool_nat_inv : ∀ l, nat_to_list_bool (list_bool_to_nat l) = l.
+  Variable nat_list_bool_inv : ∀ n, list_bool_to_nat (nat_to_list_bool n) = n.
 
 
   Section def_K.
 
     Hypothesis LEM_Σ_1: LEM_Σ 1.
 
-    Lemma semi_dec_def {X} (p: X -> Prop):
-      semi_decidable p -> definite p.
+    Lemma semi_dec_def {X} (p: X → Prop):
+      semi_decidable p → definite p.
     Proof.
       intros [f Hf]. unfold semi_decider in Hf.
       destruct level1 as (_&H2&_).
@@ -128,18 +128,18 @@ Section LimitLemma1.
 
   (* Extensionality of Σ2, i.e. P t iff ∃ x. ∀ y. f(x, y, t) = true *)
 
-  Lemma char_Σ2 {k: nat} (P: vec nat k -> Prop) :
-    (exists f: nat -> nat -> vec nat k -> bool, forall x, P x <-> (exists n, forall m, f n m x = true)) ->
+  Lemma char_Σ2 {k: nat} (P: vec nat k → Prop) :
+    (∃ f: nat → nat → vec nat k → bool, ∀ x, P x ↔ (∃ n, ∀ m, f n m x = true)) →
     isΣsem 2 P.
   Proof.
     intros [f H].
-    eapply isΣsemS_ with (p := fun v => forall y, f (hd v) y (tl v) = true).
+    eapply isΣsemS_ with (p := fun v => ∀ y, f (hd v) y (tl v) = true).
     eapply isΠsemS_ with (p := fun v => f (hd (tl v)) (hd v) (tl (tl v)) = true).
     eapply isΣsem0. all: easy.
   Qed.
 
-  Lemma limit_Σ2 {k: nat} (P: vec nat k -> Prop) :
-    limit_computable P -> isΣsem 2 P /\ isΣsem 2 (compl P).
+  Lemma limit_Σ2 {k: nat} (P: vec nat k → Prop) :
+    limit_computable P → isΣsem 2 P ∧ isΣsem 2 (compl P).
   Proof.
     intros [f H]; split; eapply char_Σ2.
     - exists (fun N n x => if lt_dec n N then true else f x n).
@@ -153,10 +153,10 @@ Section LimitLemma1.
         destruct (lt_dec n N); auto; [lia|destruct (f w n); easy].
   Qed.
 
-  Lemma limit_semi_dec_K {k: nat} (P: vec nat k -> Prop) :
-    LEM_Σ 1 ->
-    limit_computable P ->
-    OracleSemiDecidable K P /\
+  Lemma limit_semi_dec_K {k: nat} (P: vec nat k → Prop) :
+    LEM_Σ 1 →
+    limit_computable P →
+    OracleSemiDecidable K P ∧
     OracleSemiDecidable K (compl P).
   Proof.
     intros LEM H%limit_Σ2.
@@ -164,10 +164,10 @@ Section LimitLemma1.
     all: eauto.
   Qed.
 
-  Lemma limit_turing_red_K' {k: nat} (P: vec nat k -> Prop) :
-    LEM_Σ 1 ->
-    definite K ->
-    limit_computable P ->
+  Lemma limit_turing_red_K' {k: nat} (P: vec nat k → Prop) :
+    LEM_Σ 1 →
+    definite K →
+    limit_computable P →
     P ⪯ᴛ K.
   Proof.
     intros LEM D H % (limit_semi_dec_K LEM); destruct H as [h1 h2].
@@ -175,22 +175,22 @@ Section LimitLemma1.
     apply Dec.nat_eq_dec.
   Qed.
 
-  Fact elim_vec (P: nat -> Prop):
+  Fact elim_vec (P: nat → Prop):
     P ⪯ₘ (fun x: vec nat 1 => P (hd x)) .
   Proof. exists (fun x => [x]). now intros x. Qed.
 
     (** ** The Limit Lemma 1 *)
   
-  Lemma limit_turing_red_K {k: nat} (P: nat -> Prop) :
-    LEM_Σ 1 ->
-    limit_computable P ->
+  Lemma limit_turing_red_K {k: nat} (P: nat → Prop) :
+    LEM_Σ 1 →
+    limit_computable P →
     P ⪯ᴛ K.
   Proof.
     intros Hc [h Hh].
     specialize (def_K Hc) as Hk.
     eapply Turing_transitive; last eapply (@limit_turing_red_K' 1); eauto.
     eapply red_m_impl_red_T. apply elim_vec.
-    exists (fun v n => h (hd v) n). 
+    exists (fun v n => h (hd v) n).
     intros x; split; 
     destruct (Hh (hd x)) as [Hh1 Hh2]; eauto.
   Qed.
@@ -204,7 +204,7 @@ Section Σ1Approximation.
   Lemma semi_dec_halting : semi_decidable K.
   Proof.
     eapply OracleSemiDecidable_semi_decidable with (q := ­{0}).
-    - exists (fun n => match n with | O => true | _ => false end); intros [|n]; easy.
+    - exists (λ n, match n with | O => true | _ => false end); intros [|n]; easy.
     - eapply semidecidable_J.
   Qed.
 
@@ -212,16 +212,16 @@ Section Σ1Approximation.
   (* Stabilizing the semi decider allows the semi decider
      to be used as a Σ1 approximation *)
 
-  Definition stable (f: nat -> bool) := forall n m, n <= m -> f n = true -> f m = true.
+  Definition stable (f: nat → bool) := ∀ n m, n ≤ m → f n = true → f m = true.
 
-  Fixpoint stabilize_step {X} (f: X -> nat -> bool) x n :=
+  Fixpoint stabilize_step {X} (f: X → nat → bool) x n :=
     match n with
     | O => false
     | S n => if f x n then true else stabilize_step f x n
     end.
 
-  Lemma stabilize {X} (P: X -> Prop) :
-    semi_decidable P -> exists f, semi_decider f P /\ forall x, stable (f x).
+  Lemma stabilize {X} (P: X → Prop) :
+    semi_decidable P → ∃ f, semi_decider f P ∧ ∀ x, stable (f x).
   Proof.
     intros [f Hf].
     exists (fun x n => stabilize_step f x n); split.
@@ -239,25 +239,25 @@ Section Σ1Approximation.
   Qed.
 
   (* The Σ1 approximation output correct answers for arbitray list of questions *)
-  Definition approximation_list {A} (P: A -> Prop) (f: A -> bool) L :=
-    forall i, List.In i L -> P i <-> f i = true.
+  Definition approximation_list {A} (P: A → Prop) (f: A → bool) L :=
+    ∀ i, List.In i L → P i ↔ f i = true.
 
-  Definition approximation_Σ1 {A} (P: A -> Prop) :=
-    exists P_ : nat -> A -> bool,
-    forall L, exists c, forall c', c' >= c -> approximation_list P (P_ c') L.
+  Definition approximation_Σ1 {A} (P: A → Prop) :=
+    ∃ P_ : nat → A → bool,
+    ∀ L, ∃ c, ∀ c', c' ≥ c → approximation_list P (P_ c') L.
 
-  Definition approximation_Σ1_strong {A} (P: A -> Prop) :=
-     exists P_ : nat -> A -> bool,
-       (forall L, exists c, forall c', c' >= c -> approximation_list P (P_ c') L) /\
-       (forall tau q a, @interrogation _ _ _ bool tau (char_rel P) q a -> exists n, forall m, m >= n -> interrogation tau (fun q a => P_ m q = a) q a).
+  Definition approximation_Σ1_strong {A} (P: A → Prop) :=
+     ∃ P_ : nat → A → bool,
+       (∀ L, ∃ c, ∀ c', c' ≥ c → approximation_list P (P_ c') L) ∧
+       (∀ tau q a, @interrogation _ _ _ bool tau (char_rel P) q a → ∃ n, ∀ m, m ≥ n → interrogation tau (fun q a => P_ m q = a) q a).
 
-  Definition approximation_Σ1_weak {A} (P: A -> Prop) :=
-    exists P_ : nat -> A -> bool,
-      (forall tau q a, @interrogation _ _ _ bool tau (char_rel P) q a -> exists n, forall m, m >= n -> interrogation tau (fun q a => P_ m q = a) q a).
+  Definition approximation_Σ1_weak {A} (P: A → Prop) :=
+    ∃ P_ : nat → A → bool,
+      (∀ tau q a, @interrogation _ _ _ bool tau (char_rel P) q a → ∃ n, ∀ m, m ≥ n → interrogation tau (λ q a, P_ m q = a) q a).
 
-  Lemma semi_dec_approximation_Σ1 {X} (P: X -> Prop) :
-    definite P ->
-    semi_decidable P -> approximation_Σ1 P.
+  Lemma semi_dec_approximation_Σ1 {X} (P: X → Prop) :
+    definite P →
+    semi_decidable P → approximation_Σ1 P.
   Proof.
     intros defP semiP; unfold approximation_Σ1, approximation_list.
     destruct (stabilize semiP)  as [h [Hh HS]].
@@ -277,9 +277,9 @@ Section Σ1Approximation.
         rewrite Hc; eauto.
   Qed.
 
-  Lemma semi_dec_approximation_Σ1_strong {X} (P: X -> Prop) :
-    definite P ->
-    semi_decidable P -> approximation_Σ1_strong P.
+  Lemma semi_dec_approximation_Σ1_strong {X} (P: X → Prop) :
+    definite P →
+    semi_decidable P → approximation_Σ1_strong P.
   Proof.
     intros defP semiP.
     destruct (semi_dec_approximation_Σ1 defP semiP) as [P_ HP_].
@@ -296,10 +296,10 @@ Section Σ1Approximation.
     firstorder.
   Qed.
 
-  Lemma approximation_Σ1_halting : definite K -> approximation_Σ1 K.
+  Lemma approximation_Σ1_halting : definite K → approximation_Σ1 K.
   Proof. now intros H; apply semi_dec_approximation_Σ1, semi_dec_halting. Qed.
 
-  Lemma approximation_Σ1_halting_strong: definite K -> approximation_Σ1_strong K.
+  Lemma approximation_Σ1_halting_strong: definite K → approximation_Σ1_strong K.
   Proof. now intros H; apply semi_dec_approximation_Σ1_strong, semi_dec_halting. Qed.
 
 
@@ -312,19 +312,19 @@ Section LimitLemma2.
 
   Section Construction.
 
-    Variable f : nat -> nat -> bool.
-    Variable tau : nat -> tree nat bool bool.
-    Hypothesis Hf: forall L, exists c, forall c', c' >= c -> approximation_list K (f c') L.
+    Variable f : nat → nat → bool.
+    Variable tau : nat → tree nat bool bool.
+    Hypothesis Hf: ∀ L, ∃ c, ∀ c', c' ≥ c → approximation_list K (f c') L.
 
     Definition K_ n := fun i o => f n i = o.
     Definition char_K_ n := fun i => ret (f n i).
 
-    Lemma dec_K_ n : decidable (fun i => f n i = true).
+    Lemma dec_K_ n : decidable (λ i, f n i = true).
     Proof.
       exists (f n). easy.
     Qed.
 
-    Lemma pcomputes_K_ n: pcomputes (char_K_ n) (fun i o => f n i = o).
+    Lemma pcomputes_K_ n: pcomputes (char_K_ n) (λ i o, f n i = o).
     Proof.
       intros i o; split; intro H.
       now apply ret_hasvalue_inv.
@@ -335,10 +335,10 @@ Section LimitLemma2.
 
     (** ** The Limit Lemma 2 *)
 
-  Theorem turing_red_K_lim (P: nat -> Prop) :
-    P ⪯ᴛ K ->
-    definite K ->
-    definite P ->
+  Theorem turing_red_K_lim (P: nat → Prop) :
+    P ⪯ᴛ K →
+    definite K →
+    definite P →
     limit_computable P.
   Proof.
     intros [F [H HF]] defK defP.
@@ -348,7 +348,7 @@ Section LimitLemma2.
     pose (char_K_ n := char_K_ k_ n).
     pose (K_ n := K_ k_ n).
     pose (Phi x n := evalt_comp (tau x) (k_ n) n n).
-    assert (forall x y, char_rel P x y -> exists N : nat, forall n : nat, n >= N -> (evalt_comp (tau x) (k_ n)) n n = Some (inr y)) as HL.
+    assert (∀ x y, char_rel P x y → ∃ N : nat, ∀ n : nat, n ≥ N → (evalt_comp (tau x) (k_ n)) n n = Some (inr y)) as HL.
     {
     intros x y H.
     rewrite HF in H.
@@ -364,9 +364,9 @@ Section LimitLemma2.
     eapply Out.
     exists L. intros. now apply Hlimt.
     }
-    assert (exists f, forall x y, char_rel P x y -> exists N : nat, forall n : nat, n >= N -> f x n = y) as [f HL'].
+    assert (∃ f, ∀ x y, char_rel P x y → ∃ N : nat, ∀ n : nat, n ≥ N → f x n = y) as [f HL'].
     {
-    exists (fun x n => match (Phi x n) with
+      exists (λ x n, match (Phi x n) with
                | Some (inr y) => y | _ => false end).
     intros x y Hxy%HL.
     destruct (Hxy) as [N HN].

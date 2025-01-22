@@ -14,7 +14,7 @@ Import ListNotations.
 
 Section ComplToBound.
     Definition complToBound L b : list nat 
-        := filter (fun x => Dec (¬ In x L)) (seq 0 (S b)).
+        := filter (λ x, Dec (¬ In x L)) (seq 0 (S b)).
 
     Lemma complToBound_Bound L b :
         ∀ x, In x (complToBound L b) → x <= b.
@@ -22,7 +22,7 @@ Section ComplToBound.
         intros x [H % in_seq ?] % in_filter_iff. lia.
     Qed.
     Lemma filter_length {X} f (l : list X) :
-        length l = length (filter f l) + length (filter (fun x => (negb (f x))) l).
+        length l = length (filter f l) + length (filter (λ x, (negb (f x))) l).
     Proof.
         induction l; cbn.
         - reflexivity.
@@ -87,10 +87,10 @@ Section Assume_EA.
   Definition W_ n e x := φ n e = Some x.
   Definition W e x := ∃ n, W_ e n x.
 
-  Lemma W_spec: ∀ P, semi_decidable P → ∃ e, ∀ x, P x <-> W e x.
+  Lemma W_spec: ∀ P, semi_decidable P → ∃ e, ∀ x, P x ↔ W e x.
   Proof. intros P [e He]%EA. exists e; intros x; now rewrite He. Qed.
 
-  Notation "'W[' s ']' e" := (fun x => ∃ n, n <= s ∧ W_ e n x) (at level 30).
+  Notation "'W[' s ']' e" := (λ x, ∃ n, n <= s ∧ W_ e n x) (at level 30).
 
   Section EA_dec.
 
@@ -380,7 +380,7 @@ Section Assume_EA.
       Qed.
 
       Lemma recv_at_most_once_bound_gen k:
-        (∀ k', k' < k → pdec (∃ k0 : nat, recv_att k' k0)) ->
+        (∀ k', k' < k → pdec (∃ k0 : nat, recv_att k' k0)) →
         ∃ s, (∀ e, e < k → ∀ s', s < s' → ¬ recv_att e s').
       Proof.
         intros Hle.
@@ -490,7 +490,7 @@ Section Assume_EA.
       Qed.
 
       Definition PredListTo p : list nat → nat → Prop
-        := fun L b => ∀ x, In x L <-> p x ∧ x <= b.
+        := λ L b, ∀ x, In x L ↔ p x ∧ x <= b.
 
       Lemma NoDupBoundH {L} b:
           NoDup L → (∀ x, In x L → x <= b) → ∀ x, x > b → NoDup (x::L).
