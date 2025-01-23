@@ -638,7 +638,7 @@ Section Assume_EA.
         apply H. intros [m [Hm1 [k Hmk]]].
         apply He. exists k, m.
         repeat split. now exists k.
-                            lia. intros n i Hie. specialize (Hw i n Hie). lia.
+        lia. intros n i Hie. specialize (Hw i n Hie). lia.
       Qed.
 
       Lemma ext_pick_impl_recv N e: 
