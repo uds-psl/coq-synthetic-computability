@@ -112,7 +112,8 @@ Section LowFacts.
       apply jump_P_limit; eauto.  
     - eapply P_simple.
       intros. intros d. apply d.
-      apply wall_convergence. assumption.
+      apply wall_convergence. by unfold wall. 
+      assumption.
   Qed.
 
   End LowSimplePredicate.
@@ -130,10 +131,13 @@ Section LowFacts.
   Theorem PostProblem_from_neg_negLPO :
     ∃ p: nat → Prop, ¬ decidable p ∧ semi_decidable p ∧ (¬¬ (¬¬Σ⁰₁)-LEM → ¬ K ⪯ᴛ p).
   Proof.
-    eexists.
+    exists (P wall).
     repeat split.
     - apply simple_undecidable. 
-      eapply P_simple. apply wall_convergence_classically.
+      eapply P_simple. intro e.
+      unfold lim_to. cbn.
+      apply wall_convergence_classically.
+      by unfold wall.
     - apply P_semi_decidable.
     - intros L. intros G. apply L. clear L. intros L.
       assert (~~ definite K) as hK.
