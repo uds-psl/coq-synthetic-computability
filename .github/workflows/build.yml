@@ -27,7 +27,7 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
       - run: opam repo add coq-released https://coq.inria.fr/opam/released
-      - run: opam install coq-equations.1.3+8.17 coq-stdpp.1.8.0 coq-library-undecidability.1.1+8.17
+      - run: opam install coq-equations.1.3+8.17 coq-stdpp.1.8.0 coq-metacoq-template.1.2+8.17 coq-library-undecidability.1.1+8.17
       - run: cd theories && opam exec -- make models -j 2
 
 # name: Test compilation
