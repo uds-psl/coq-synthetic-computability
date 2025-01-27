@@ -201,6 +201,13 @@ Section PostsTheorem.
         destruct seval as [ [ | [] ] | ]eqn:E; eauto.
   Qed.
 
+  Lemma Σ_semi_decidable_in_Π_forward {k} (p: (vec nat k) -> Prop) n (DN : LEM_Π n) :
+    isΣsem (S n) p -> exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p.
+  Proof.
+    apply Σ_semi_decidable_in_Π1.
+    assumption.
+  Qed.
+
   Lemma Σ_semi_decidable_in_Π {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :
     isΣsem (S n) p <-> exists (p': vec nat (S k) -> Prop), isΠsem n p' /\ oracle_semi_decidable p' p.
   Proof.
@@ -210,6 +217,18 @@ Section PostsTheorem.
   Qed.
 
   Hint Resolve DNEimpl.
+
+  (* Lemma Σ_semi_decidable_in_Σ_forward {k} (p: (vec nat k) -> Prop) n (DN : LEM_Π n) : *)
+  (*   isΣsem (S n) p -> exists (p': vec nat (S k) -> Prop), isΣsem n p' /\ oracle_semi_decidable p' p. *)
+  (* Proof. *)
+  (*   intros H % Σ_semi_decidable_in_Π_forward; eauto. *)
+  (*   destruct H as [p' [H S]]. eapply negΣinΠsem in H as H'. *)
+  (*   2: now eapply LEM_Σ_to_DNE_Σ. *)
+  (*   eexists. split;[apply H'|]. *)
+  (*   rewrite <- oracle_semi_decidable_complement_iff. eauto. *)
+  (*   eapply DNEimpl; eauto. *)
+  (*   now eapply LEM_Σ_to_DNE_Σ. *)
+  (* Qed. *)
 
   Lemma Σ_semi_decidable_in_Σ {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :
       isΣsem (S n) p <-> exists (p': vec nat (S k) -> Prop), isΣsem n p' /\ oracle_semi_decidable p' p.
@@ -261,6 +280,15 @@ Section PostsTheorem.
     forall k (p : vec nat k -> Prop), isΣsem n p -> p ⪯ᴛ (­{0}^(n)).
   Proof.
     intros. apply red_m_impl_red_T. eapply jump_Σn_complete; eauto.
+  Qed.
+
+  Lemma Σ_semi_decidable_jump_forward {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :
+    isΣsem (S n) p -> oracle_semi_decidable (­{0}^(n)) p.
+  Proof.
+    intros [p' [Σp' Sp']]%Σ_semi_decidable_in_Σ.
+    eapply (Turing_transports_sdec Sp').
+    eapply jump_Σn_complete_redT.
+    all: eauto.
   Qed.
 
   Lemma Σ_semi_decidable_jump {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :
