@@ -6,7 +6,13 @@ Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Import SyntheticComputability.Shared.ListAutomation.
 Require Import List Arith.
 
-Import Assume_EA.
+Section Assume_EA.
+
+Context {EA : EA}.
+
+Notation φ := (proj1_sig EA).
+Notation EAP := (proj2_sig EA).
+
 Import ListNotations ListAutomationNotations.
 
 Definition majorizes (f: nat -> nat) (p: nat -> Prop): Prop
@@ -46,7 +52,7 @@ Proof.
   destruct Hi1. eapply in_seq. split. lia. cbn. lia.
 Qed.
 
-Definition ttId := Assume_EA.TT.
+Definition ttId := TT.
 
 Lemma IsFilter_NoDup {X} l l' (p : X -> Prop) :
   IsFilter p l l' -> NoDup l -> NoDup l'.
@@ -159,12 +165,12 @@ Proof.
   - cunwrap. destruct IHL as (l & IH).
     ccase P as [H | H].
     + cprove exists (true :: l). econstructor; firstorder.
-    + cprove exists (false :: l). econstructor; firstorder.
+    + cprove exists (false :: l). econstructor; firstorder.  congruence.
 Qed.
 
 Lemma reflects_ext b1 b2 p q : reflects b1 p -> reflects b2 q -> p <-> q -> b1 = b2.
-Proof.
-  destruct b1, b2; firstorder congruence.
+Proof using. clear EA.
+  destruct b1, b2; firstorder congruence. 
 Qed.
 
 Lemma list_max_in x l : In x l -> x <= list_max l.
@@ -256,3 +262,5 @@ Proof.
   intros (q & Heq & Hinfq & Hsub).
   eapply hyperimmune_immune; eauto.
 Qed.
+
+End Assume_EA.

@@ -101,24 +101,34 @@ Section halting.
 
 End halting.
 
+Existing Class EPF.
+
+Section AssumePartiality.
+  
+Context {Part : partiality}.
+
+Class encoding O :=
+  { 
+    iota1 : (nat * list bool) -> nat ;
+    iota2 : (nat + O) -> nat ;
+    rho1 : nat -> nat * list bool ;
+    rho2 : nat -> nat + O ;
+    
+    bij1 : forall y, (rho1 (iota1 y) = y); 
+    bij2 : forall y, (rho2 (iota2 y) = y)
+  }.
+
+Context {EPF_assm : EPF}.
+
 Section Enumerator.
   (** ** Enumerating Oracle Machines *)
 
-  Context {Part : partiality}.
+  Variable O : Type.
+  
+  Context {encO : encoding O}.
 
-  Axiom EPF_assm : EPF.
   Definition θ := proj1_sig EPF_assm.
   Definition EPF := proj2_sig EPF_assm.
-
-  Variable O : Type.
-
-  Parameter iota1 : (nat * list bool) -> nat.
-  Parameter iota2 : (nat + O) -> nat.
-  Parameter rho1 : nat -> nat * list bool.
-  Parameter rho2 : nat -> nat + O.
-
-  Parameter bij1 : forall y, (rho1 (iota1 y) = y).
-  Parameter bij2 : forall y, (rho2 (iota2 y) = y).
 
   Definition ξ : nat -> nat -> tree nat bool O :=
     fun c x l => bind (θ c (iota1 (x, l))) (fun v => ret (rho2 v)).
@@ -150,17 +160,17 @@ End Enumerator.
 
 Section SemiDecEnumerator.
 
-  Context {Part : partiality}.
-
+  Context {encO : encoding unit}.
+  
   Definition rel {I A Q} (τ : I -> list A ↛ (Q + unit)) R x :=
     exists qs ans, interrogation (τ x) R qs ans /\ (τ x) ans =! inr tt.
 
-  Definition Ξ c R x := rel (ξ unit c) R x.
+  Definition Ξ c R x := rel (ξ c) R x.
 
   Fact computable :
     OracleComputable (fun R '(c,x) (o : unit) => Ξ c R x).
   Proof.
-    exists (fun '(c,x) => ξ unit c x). intros R [c x] [].
+    exists (fun '(c,x) => ξ c x). intros R [c x] [].
     reflexivity.
   Qed.
 
@@ -192,17 +202,17 @@ End SemiDecEnumerator.
 
 Section TuringRedEnumerator.
 
-  Context {Part : partiality}.
+  Context {enc : encoding bool}.
 
   Definition rel_b {I A Q} (τ : I -> list A ↛ (Q + bool)) R x o :=
     exists qs ans, interrogation (τ x) R qs ans /\ (τ x) ans =! inr o.
 
-  Definition χ c R x := rel_b (ξ bool c) R x.
+  Definition χ c R x := rel_b (ξ c) R x.
 
   Fact computable_b :
     OracleComputable (fun R '(c,x) (o : bool) => χ c R x o).
   Proof.
-    exists (fun '(c,x) => ξ bool c x). intros R [c x].
+    exists (fun '(c,x) => ξ c x). intros R [c x].
     reflexivity.
   Qed.
 
@@ -222,9 +232,7 @@ Section TuringRedEnumerator.
 
 End TuringRedEnumerator.
 
-Module Reverse.
-
-  Context {Part : partiality}.
+Section Reverse.
 
   Variable χ : nat -> (nat -> bool -> Prop) -> nat -> bool -> Prop.
   Variable computable_b : OracleComputable (fun R '(c,x) (o : bool) => χ c R x o).
@@ -252,14 +260,12 @@ Module Reverse.
 
 End Reverse.
 
-(* Opaque Ξ.Ξ. *)
-
 Notation oracle_semi_decidable := OracleSemiDecidable.
 
 Section jump.
   (** ** Synthetic Turing Jump *)
 
-  Context {Part : partiality}.
+  Context {enc : encoding unit}.
 
   Definition J Q c := Ξ c (char_rel Q) c.
 
@@ -325,7 +331,7 @@ Section jump.
   Lemma red_𝒥_J_self Q : 
     𝒥 Q ⪯ₘ J Q.
   Proof.
-    destruct (parametric (fun! ⟨c,x⟩ => fun _ => ξ unit c x)) as [γ Hγ].
+    destruct (parametric (fun! ⟨c,x⟩ => fun _ => ξ c x)) as [γ Hγ].
     exists γ. unfold J, 𝒥. red. setoid_rewrite Hγ. intros ⟨c, x⟩.
     reflexivity. 
   Qed.
@@ -354,11 +360,8 @@ Section jump.
       + reflexivity.
   Qed.
 
-  Variable vec_to_nat : forall k, vec nat k -> nat.
-  Variable nat_to_vec : forall k, nat -> vec nat k.
-  Variable vec_nat_inv : forall k v, nat_to_vec k (vec_to_nat v) = v.
-  Variable nat_vec_inv : forall k n, vec_to_nat (nat_to_vec k n) = n.
-
+  Import VectorEmbedding.
+  
   Lemma red_m_iff_semidec_jump_vec {k} (P : vec nat k -> Prop) (Q : nat -> Prop): 
     oracle_semi_decidable Q P <-> P ⪯ₘ (J Q).
   Proof.
@@ -396,10 +399,12 @@ Section jump.
 
 End jump.
 
+End AssumePartiality.
+
 Notation "A '´'" := (J A) (at level 20, format "A ´").
 Notation "­{0}" := (fun x:nat => x=0).
 
-Fixpoint jump_n {Part : partiality} Q n :=
+Fixpoint jump_n {Part : partiality} {enc : encoding unit} {epf : EPF.EPF} Q n :=
   match n with
   | 0 => Q
   | S n => J (jump_n Q n)

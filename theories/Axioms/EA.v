@@ -62,11 +62,13 @@ Proof.
   - intros H. eapply semi_decidable_enumerable. eauto. eauto.
 Qed.
 
-Module Assume_EA.
-
 From SyntheticComputability Require Import reductions.
 
-Axiom EA : EA.
+Existing Class EA.
+
+Section AssumeEA.
+
+Context {EA : EA}.
 
 Notation φ := (proj1_sig EA).
 Notation EAP := (proj2_sig EA).
@@ -95,7 +97,7 @@ Proof.
   eapply W_spec.
 Qed.
 
-Global Hint Resolve discrete_nat : core.
+Hint Resolve discrete_nat : core.
 
 Lemma EAS' :
   forall p : nat -> nat -> Prop, enumerable (fun! ⟨x,y⟩ => p x y) ->
@@ -231,7 +233,7 @@ Proof.
   exists (fun '(n,m) => ⟨n,m⟩). intros [n m]. now rewrite embedP.
 Qed.
 
-Global Hint Resolve discrete_prod discrete_nat : core.
+Hint Resolve discrete_prod discrete_nat : core.
 
 Lemma W_not_enumerable : ~ enumerable (compl (uncurry W)).
 Proof.
@@ -302,4 +304,8 @@ Proof.
   intros ? (? & <- & ?) % in_map_iff. rewrite embedP. firstorder.
 Qed.
 
-End Assume_EA.
+End AssumeEA.
+
+Notation "m-complete p" := (forall q : nat -> Prop, enumerable q -> q ⪯ₘ p) (at level 10).
+
+Global Hint Resolve  discrete_prod discrete_nat : core.

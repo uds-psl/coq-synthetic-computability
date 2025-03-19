@@ -6,7 +6,12 @@ Require Import SyntheticComputability.Synthetic.DecidabilityFacts SyntheticCompu
 Require Import SyntheticComputability.Shared.ListAutomation.
 Require Import List Arith.
 
-Import Assume_EA.
+Section Assume_EA.
+
+Context {EA : EA}.
+
+Notation φ := (proj1_sig EA).
+Notation EAP := (proj2_sig EA).
 
 Import ListNotations ListAutomationNotations.
 
@@ -117,3 +122,5 @@ Proof.
     now intros ? [=] % inj_f.
   - intros ? [n ->]. red. now rewrite <- (Hf (x0, n)).
 Qed.
+
+End Assume_EA.

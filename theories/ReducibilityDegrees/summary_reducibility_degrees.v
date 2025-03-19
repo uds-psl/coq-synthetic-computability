@@ -1,6 +1,12 @@
 From SyntheticComputability Require Import simple simple_construction hypersimple hypersimple_construction MoreEnumerabilityFacts ReducibilityFacts.
 
-Import Assume_EA.
+
+Section Assume_EA.
+
+Context {EA : EA}.
+
+Notation φ := (proj1_sig EA).
+Notation EAP := (proj2_sig EA).
 
 Theorem Posts_problem_many_one :
   exists p : nat -> Prop, simple p /\ enumerable p /\ ~ decidable p /\ ~ uncurry W ⪯ₘ p.
@@ -102,6 +108,8 @@ Proof.
     intros ? ?. eapply red_m_transitive. 2: eapply H.
     eapply m_complete_W. eauto.
 Qed.
+
+End Assume_EA.
 
 Print Assumptions Posts_problem_many_one.
 Print Assumptions Posts_problem_truth_table.

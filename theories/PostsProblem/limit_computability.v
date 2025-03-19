@@ -72,25 +72,35 @@ Convention:
   (* Naming the halting problem as K *)
   Notation K := (­{0}^(1)).
 
+  Section AssumePartiality.
 
-Section LimitLemma1.
+    Context {Part : partiality}.
+
+    Context {enc : encoding ()}.
+
+    Context {EPF_assm : EPF.EPF}.
+
+  Section LimitLemma1.
+
   (* Limit computable predicate P is reduciable to K *)
 
-  Variable vec_to_nat : ∀ k, vec nat k → nat.
-  Variable nat_to_vec : ∀ k, nat → vec nat k.
-  Variable vec_nat_inv : ∀ k v, nat_to_vec k (vec_to_nat v) = v.
-  Variable nat_vec_inv : ∀ k n, vec_to_nat (nat_to_vec k n) = n.
+    Context {vec_datatype : datatype (vec nat)}.
 
-  Variable list_vec_to_nat : ∀ k, list (vec nat k) → nat.
-  Variable nat_to_list_vec : ∀ k, nat → list (vec nat k).
-  Variable list_vec_nat_inv : ∀ k v, nat_to_list_vec k (list_vec_to_nat v) = v.
-  Variable nat_list_vec_inv : ∀ k n, list_vec_to_nat (nat_to_list_vec k n) = n.
+    Notation vec_to_nat := (@X_to_nat (vec nat) _ _).
+    Notation nat_to_vec := (@nat_to_X (vec nat) _ _).
+    Notation vec_nat_inv := (@X_nat_inv (vec nat) _ _).
 
-  Variable nat_to_list_bool : nat → list bool.
-  Variable list_bool_to_nat : list bool → nat.
-  Variable list_bool_nat_inv : ∀ l, nat_to_list_bool (list_bool_to_nat l) = l.
-  Variable nat_list_bool_inv : ∀ n, list_bool_to_nat (nat_to_list_bool n) = n.
+    Context {list_vec_datatype : datatype (fun k => list (vec nat k))}.
 
+    Notation list_vec_to_nat := (@X_to_nat  (fun k => list (vec nat k)) _ _).
+    Notation nat_to_list_vec := (@nat_to_X  (fun k => list (vec nat k)) _).
+    Notation list_vec_nat_inv := (@X_nat_inv  (fun k => list (vec nat k)) _ _).
+
+    Context {list_bool_datatype : datatype (fun _ => list bool)}.
+
+    Notation list_bool_to_nat := (@X_to_nat (fun _ => list bool) _ 0).
+    Notation nat_to_list_bool := (@nat_to_X (fun _ => list bool) _ 0).
+    Notation list_bool_nat_inv := (@X_nat_inv (fun _ => list bool) _ 0).
 
   Section def_K.
 
@@ -111,9 +121,9 @@ Section LimitLemma1.
     Lemma def_K: definite K.
     Proof.
       apply semi_dec_def. 
-      assert (isΣsem 1 (@jumpNK _ 1 1)).
+      assert (isΣsem 1 (@jumpNK _ _ _ 1 1)).
       eapply jump_in_Σn; eauto.
-      assert (@jumpNK _ 1 1 ≡ₘ ­{0}^(1)).
+      assert (@jumpNK _ _ _ 1 1 ≡ₘ ­{0}^(1)).
       apply jumpNKspec.
       rewrite <- semi_dec_iff_Σ1 in H.
       destruct H0 as [_ [f Hf]].
@@ -397,3 +407,5 @@ Section LimitLemma2.
   Qed.
 
 End LimitLemma2.
+
+End AssumePartiality.

@@ -38,3 +38,33 @@ Module EmbedNatNotations.
   Notation "⟨ a , b ⟩" := (embed (a, b)) (at level 0).
   Notation "'fun!' '⟨' x ',' y '⟩' '=>' b" := (fun p => let (x,y) := unembed p in b) (at level 30, b at level 200).
 End EmbedNatNotations.
+
+Module VectorEmbedding.
+
+Require Import Vector.
+
+Fixpoint vec_to_nat {k : nat} (v : Vector.t nat k) {struct v} : nat.
+Proof.
+  destruct v.
+  - exact 0.
+  - exact (S (embed (h, (vec_to_nat _ v)))).
+Defined.
+
+Fixpoint nat_to_vec (k : nat) (v : nat) : Vector.t nat k.
+Proof.
+  destruct k.
+  - apply Vector.nil.
+  - destruct v.
+    + apply Vector.cons. exact 0. apply nat_to_vec. exact 0.
+    + destruct (unembed v) as [h v'].
+      apply Vector.cons. exact h. apply nat_to_vec. exact v'.
+Defined.
+
+Lemma vec_nat_inv : forall k v, nat_to_vec k (vec_to_nat v) = v.
+Proof.
+  induction v.
+  - cbn. reflexivity.
+  - cbn. now rewrite embedP, IHv.
+Qed.
+
+End VectorEmbedding.

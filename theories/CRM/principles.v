@@ -713,9 +713,12 @@ Proof.
   eapply MP.
 Qed.
 
-Module assume_EA.
+Section Assume_EA.
 
-  Import Assume_EA. (* assumes EA as an axiom, i.e. a parametrically universal enumerator *)
+  Context {EA : EA}.
+
+  Notation φ := (proj1_sig EA).
+  Notation EAP := (proj2_sig EA).
 
   Lemma MP_iff_stable_W :
     MP <-> Definitions.stable (uncurry W).
@@ -760,7 +763,7 @@ Module assume_EA.
       eapply Hm; eauto.
   Qed.
 
-End assume_EA.
+End Assume_EA.
 
 Lemma DNE_sdec_to_cosdec :
   DNE ->

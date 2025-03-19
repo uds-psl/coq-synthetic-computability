@@ -5,7 +5,14 @@ Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
 Require Import Arith Arith.Compare_dec Lia Coq.Program.Equality List.
 From SyntheticComputability Require Import the_priority_method.
-Import SyntheticComputability.Axioms.EA.Assume_EA.
+
+Section Assume_EA.
+
+Context {EA : EA.EA}.
+
+Notation φ := (proj1_sig EA).
+Notation EAP := (proj2_sig EA).
+
 Import ListNotations.
 
 (* ########################################################################## *)
@@ -30,7 +37,7 @@ Section ComplToBound.
     Qed.
     Lemma filter_NoDup {X} f (l : list X) :
         NoDup l → NoDup (filter f l).
-    Proof.
+    Proof using. clear EA.
         induction 1; cbn.
         - econstructor.
         - destruct f; eauto. econstructor; auto.
@@ -76,11 +83,11 @@ Section Assume_EA.
   Definition θ := φ.
   Definition EA_spec := ∀ p, semi_decidable p → ∃ e, ∀ x, p x ↔ ∃ n, φ e n = Some x.
 
-  Lemma EA: EA_spec.
+  Lemma EA_ : EA_spec.
   Proof.
     intros P HP%SyntheticComputability.Axioms.EA.enum_iff.
-    rewrite W_spec in HP. destruct HP as [c Hc].
-    exists c. intros x. unfold W in Hc.
+    rewrite EA.W_spec in HP. destruct HP as [c Hc].
+    exists c. intros x. unfold EA.W in Hc.
     eapply Hc.
   Qed.
 
@@ -88,7 +95,7 @@ Section Assume_EA.
   Definition W e x := ∃ n, W_ e n x.
 
   Lemma W_spec: ∀ P, semi_decidable P → ∃ e, ∀ x, P x ↔ W e x.
-  Proof. intros P [e He]%EA. exists e; intros x; now rewrite He. Qed.
+  Proof. intros P [e He]%EA_. exists e; intros x; now rewrite He. Qed.
 
   Notation "'W[' s ']' e" := (λ x, ∃ n, n <= s ∧ W_ e n x) (at level 30).
 
@@ -725,7 +732,7 @@ Section Assume_EA.
   End Assume_WALL.
 
 End Assume_EA.
-
+End Assume_EA.
 
 
 

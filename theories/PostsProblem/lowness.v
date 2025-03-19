@@ -20,6 +20,16 @@ Notation "'∞∃' x .. y , p" :=
 
 Notation "f ↓" := (f = Some ()) (at level 30).
 
+Global Instance EA_ {Part : partial.partiality} {epf : EPF.EPF} : EA.EA. Proof. now eapply Equivalence.equivalence. Qed.
+
+Section AssumePartiality.
+
+Context {Part : partial.partiality}.
+
+Context {enc : encoding ()}.
+
+Context {EPF_assm : EPF.EPF}.
+
 Section Requirements_Verification.
 
   Variable P: nat → Prop.
@@ -107,7 +117,7 @@ Section Requirements_Meet.
     Lemma eventally_greater_than_use_classically e:
       ¬¬ (∞∀ s, ∀ x, extendP (P_func s) s x → use e s < x).
     Proof.
-      intros H_. eapply (@recv_at_most_once_bound_classically wall e).
+      intros H_. eapply (@recv_at_most_once_bound_classically _ wall e).
       intros H'. apply H_. 
       by apply eventally_greater_than_use_gen.
     Qed.
@@ -125,7 +135,7 @@ Section Requirements_Meet.
         clear H'. destruct H'' as [x [H1 H2]].
         destruct (use e x) as [|k] eqn: H; first done; clear H2.
         exists (S k), x. intros t Ht. induction Ht; first done.
-        rewrite <- (@φ_spec1 χ _ _ _ _ IHHt).
+        rewrite <- (@φ_spec1 _ _ _ χ _ _ _ _ IHHt).
         reflexivity.
         intros; split.
         + intros K%Dec_true. apply Dec_auto.
@@ -229,7 +239,7 @@ Section Requirements_Meet.
       destruct (eventally_greater_than_wall e) as [N HN].
       destruct (wall_convergence e) as [B [b Hb]].
       set (M := max N b). destruct (He M) as [k [Hk Hk']].
-      eapply (@φ_spec χ e e k); first apply Hk'. 
+      eapply (@φ_spec _ _ _ χ e e k); first apply Hk'. 
       intros x Hx. unfold P, simpleness.P.
       rewrite F_with_top. split.
       - intros (L & m & HL & HLs &HP).
@@ -297,5 +307,5 @@ Section Results.
 
 End Results.
 
-
+End AssumePartiality.
 

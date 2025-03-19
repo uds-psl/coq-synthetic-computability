@@ -32,26 +32,39 @@ Section Facts.
 End Facts.
 
 
+Notation "(¬¬Σ⁰₁)-LEM" := 
+  ((∀ (k : nat) (p : vec nat k → Prop), isΣsem 1 p → ¬¬ definite p)) (at level 0).
 
-  (* Definition of low *)
-  Definition low (P: nat → Prop) := P´ ⪯ᴛ K.
+Section AssumePartiality.
+
+Context {Part : partial.partiality}.
+
+Context {enc : encoding ()}.
+
+Context {EPF_assm : EPF.EPF}.
+
+(* Definition of low *)
+Definition low (P: nat → Prop) := P´ ⪯ᴛ K.
 
 Section LowFacts.
- 
-  Variable vec_to_nat : ∀ k, vec nat k → nat.
-  Variable nat_to_vec : ∀ k, nat → vec nat k.
-  Variable vec_nat_inv : ∀ k v, nat_to_vec k (vec_to_nat v) = v.
-  Variable nat_vec_inv : ∀ k n, vec_to_nat (nat_to_vec k n) = n.
 
-  Variable list_vec_to_nat : ∀ k, list (vec nat k) → nat.
-  Variable nat_to_list_vec : ∀ k, nat → list (vec nat k).
-  Variable list_vec_nat_inv : ∀ k v, nat_to_list_vec k (list_vec_to_nat v) = v.
-  Variable nat_list_vec_inv : ∀ k n, list_vec_to_nat (nat_to_list_vec k n) = n.
+  Context {vec_datatype : datatype (vec nat)}.
 
-  Variable nat_to_list_bool : nat → list bool.
-  Variable list_bool_to_nat : list bool → nat.
-  Variable list_bool_nat_inv : ∀ l, nat_to_list_bool (list_bool_to_nat l) = l.
-  Variable nat_list_bool_inv : ∀ n, list_bool_to_nat (nat_to_list_bool n) = n.
+  Notation vec_to_nat := (@X_to_nat (vec nat) _ _).
+  Notation nat_to_vec := (@nat_to_X (vec nat) _ _).
+  Notation vec_nat_inv := (@X_nat_inv (vec nat) _ _).
+
+  Context {list_vec_datatype : datatype (fun k => list (vec nat k))}.
+
+  Notation list_vec_to_nat := (@X_to_nat  (fun k => list (vec nat k)) _ _).
+  Notation nat_to_list_vec := (@nat_to_X  (fun k => list (vec nat k)) _).
+  Notation list_vec_nat_inv := (@X_nat_inv  (fun k => list (vec nat k)) _ _).
+
+  Context {list_bool_datatype : datatype (fun _ => list bool)}.
+
+  Notation list_bool_to_nat := (@X_to_nat (fun _ => list bool) _ 0).
+  Notation nat_to_list_bool := (@nat_to_X (fun _ => list bool) _ 0).
+  Notation list_bool_nat_inv := (@X_nat_inv (fun _ => list bool) _ 0).
 
   Lemma lowness (P: nat → Prop) :
     low P → ¬ K ⪯ᴛ P.
@@ -77,7 +90,7 @@ Section LowFacts.
   Proof.
     intros LEM defK H IH.
     apply lowness with (P := A); [|apply IH].
-    eapply limit_turing_red_K; eauto. exact 42. 
+    eapply limit_turing_red_K; eauto. Unshelve. exact 42.
   Qed.
 
   Definition low_simple P := low P ∧ simple P.
@@ -92,15 +105,9 @@ Section LowFacts.
     split; [destruct H2 as [H2 _]; eauto| now apply lowness].
   Qed.
 
-
-
-    (*** Instance of low simple predicate ***)
+  (*** Instance of low simple predicate ***)
 
   Section LowSimplePredicate.
-
-  Variable η: nat → nat → option nat.
-  Hypothesis EA: 
-  ∀ P, semi_decidable P → exists e, ∀ x, P x ↔ ∃ n, η e n = Some x.
 
   Hypothesis LEM_Σ_1: LEM_Σ 1.
   Hypothesis def_K: definite K.
@@ -108,27 +115,24 @@ Section LowFacts.
   Theorem a_sol_Post's_problem: ∃ P, sol_Post's_problem P.
   Proof.
     eexists. eapply low_simple_correct; split.
-    - eapply limit_turing_red_K; eauto. exact 42.
+    - eapply limit_turing_red_K; eauto. 
       apply jump_P_limit; eauto.  
     - eapply P_simple.
       intros. intros d. apply d.
       apply wall_convergence. by unfold wall. 
-      assumption.
+      assumption. Unshelve. exact 42.
   Qed.
 
   End LowSimplePredicate.
-
-  Notation "(¬¬Σ⁰₁)-LEM" := 
-      ((∀ (k : nat) (p : vec nat k → Prop), isΣsem 1 p → ¬¬ definite p)) (at level 0).
 
   Lemma m_red_K_semi_decidable {n} (P: vec nat n → Prop):
     semi_decidable P → P ⪯ₘ K.
   Proof.
     intros H. unfold K. rewrite <- red_m_iff_semidec_jump_vec.
-    by apply semi_decidable_OracleSemiDecidable. eauto.
+    by apply semi_decidable_OracleSemiDecidable. 
   Qed.
 
-  Theorem PostProblem_from_neg_negLPO :
+  Lemma PostProblem_from_neg_negLPO_aux :
     ∃ p: nat → Prop, ¬ decidable p ∧ semi_decidable p ∧ (¬¬ (¬¬Σ⁰₁)-LEM → ¬ K ⪯ᴛ p).
   Proof.
     exists (P wall).
@@ -159,13 +163,97 @@ Section LowFacts.
         by eapply m_red_K_semi_decidable.
       }
       revert G. apply lowness. red.
-      eapply limit_turing_red_K; eauto. exact 42.
+      eapply limit_turing_red_K; eauto. Unshelve. 2: exact 42.
       apply jump_P_limit; eauto.
   Qed.
 
 End LowFacts.
 
-Check PostProblem_from_neg_negLPO.
+End AssumePartiality.
+
+From SyntheticComputability Require Import EnumerabilityFacts ListEnumerabilityFacts.
+
+Theorem PostProblem_from_neg_negLPO {Part : partial.partiality} :
+(exists θ, EPF.EPF_for θ) ->
+  ∃ p: nat → Prop, ¬ decidable p ∧ semi_decidable p ∧ (¬¬ (¬¬Σ⁰₁)-LEM → forall K : nat -> Prop, (forall q : nat -> Prop, semi_decidable q -> q ⪯ₘ K) -> ~ K ⪯ᴛ p).
+Proof.
+  intros [θ EPF].
+  destruct (EnumerabilityFacts.datatype_retract (nat * list bool)) as [(I & R & HIR) _].
+  {
+    split. eapply discrete_iff. econstructor. exact _.
+    apply enumerableᵗ_prod. 
+    eapply enumerableᵗ_nat.
+    apply enum_enumT.
+    apply enumerable_list. apply enum_enumT.  eapply enumerableᵗ_bool.
+  }
+  destruct (EnumerabilityFacts.datatype_retract (list bool)) as [(I2 & R2 & HIR2) _].
+  {
+    split. eapply discrete_iff. econstructor. exact _.
+    apply enum_enumT.
+    apply enumerable_list. apply enum_enumT.  eapply enumerableᵗ_bool.
+  }
+  unshelve edestruct @PostProblem_from_neg_negLPO_aux as (p & undec & semidec & H).
+  - assumption.
+  - unshelve econstructor.
+    exact I. exact (fun x => match x with inl n => S n | inr _ => 0 end).
+    exact (fun n => match R n with None => (0, []) | Some x => x end).
+    exact (fun v => match v with 0 => inr tt | S n => inl n end).
+    cbn. intros n.
+    now destruct (HIR n) as [-> _]. 
+    intros []. reflexivity. now destruct u.
+  - exists θ. assumption.
+  - unshelve econstructor.
+    3: eapply VectorEmbedding.vec_nat_inv.
+  - eassert (forall k, enumeratorᵗ _ (list (vec nat k))).
+    {
+      intros k. eapply list_enumeratorᵗ_enumeratorᵗ.
+      eapply enumeratorᵗ_list.
+      eapply enumeratorᵗ_of_list.
+      Unshelve.
+      2:{ intros n. apply Some. apply (VectorEmbedding.nat_to_vec k n). }
+      red. intros. exists (VectorEmbedding.vec_to_nat x).
+      now rewrite VectorEmbedding.vec_nat_inv.
+    }
+    eassert (forall k, decider _ (eq_on (list (vec nat k)))).
+    {
+      intros k. apply decider_eq_list.
+      Unshelve.
+      2:{ intros [l1 l2].
+          exact (VectorEmbedding.vec_to_nat l1 =? VectorEmbedding.vec_to_nat l2). }
+      cbn.
+      red. intros [l1 l2].
+      red.
+      split. intros ->.
+      eapply Nat.eqb_refl.
+      intros Heq.
+      destruct (Nat.eqb_spec  (VectorEmbedding.vec_to_nat l1) (VectorEmbedding.vec_to_nat l2)).
+      eapply (f_equal (VectorEmbedding.nat_to_vec k)) in e.
+      now rewrite !VectorEmbedding.vec_nat_inv in e.
+      congruence.
+    }
+    unshelve econstructor.
+    + intros k.
+      specialize (H k). eapply enumerator_retraction in H as [I3 HI].
+      exact I3. eapply (H0 k). 
+    + intros k. specialize (H k). eapply enumerator_retraction in H as [I3 HI].
+      set (fun! ⟨ n, m ⟩ => nth_error (L_list (λ n0 : nat, [VectorEmbedding.nat_to_vec k n0]) n) m) as R3.
+      refine (fun n => match R3 n with None => [] | Some x => x end). eapply (H0 k). 
+    + cbn. intros. destruct enumerator_retraction.
+      red in r. now rewrite r.
+  - unshelve econstructor. exact (fun _ => I2).
+    exact (fun _ n => match R2 n with None => [] | Some x => x end).
+    cbn. intros _ n.
+    now destruct (HIR2 n) as [-> _]. 
+  - exists p. repeat split. assumption. assumption.
+    intros lpo K HK Hp.
+    apply H. assumption.
+    eapply Turing_transitive.
+    eapply red_m_impl_red_T.
+    eapply HK. eapply semi_dec_halting.
+    assumption.
+Qed.
+
+Check @PostProblem_from_neg_negLPO.
 Print Assumptions PostProblem_from_neg_negLPO.
 
 (* general proof that (¬¬Σ⁰₁)-LEM <-> ¬¬(Σ⁰₁)-LEM under many-one complete Σ⁰₁ predicate  *)
@@ -194,3 +282,4 @@ Section assume.
   Qed.
 
 End assume.
+

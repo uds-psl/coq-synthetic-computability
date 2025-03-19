@@ -643,6 +643,14 @@ Section Step_Eval.
 
 End Step_Eval.
 
+Section AssumePartiality.
+
+Context {Part : partiality}.
+
+Context {enc : encoding ()}.
+
+Context {EPF_assm : EPF.EPF}.
+
 Section Use_Function.
 
 Lemma extract_computation {Q O: Type} (τ: (list bool) ↛ (Q + O)) (f: Q → bool) n m v: 
@@ -836,21 +844,19 @@ Section Step_Eval_Spec.
   (** ** Step-Inedxed Execution *)
 
   Definition Φ_ (f: nat → nat → bool) (e x n: nat): option () :=
-    match evalt_comp (ξ () e x) (f n) n n with
+    match evalt_comp (ξ e x) (f n) n n with
     | Some (inr ()) => Some ()
     | _ => None 
     end.
-
-
 
   Variable P: nat → Prop.
   Variable decider: nat → nat → bool.
   Hypothesis S_P: stable_semi_decider P decider.
 
   Fact phi_iff_evalt f e x n :
-    Φ_ f e x n = Some () ↔ evalt_comp (ξ () e x) (f n) n n = Some (inr ()).
+    Φ_ f e x n = Some () ↔ evalt_comp (ξ e x) (f n) n n = Some (inr ()).
   Proof.
-    unfold Φ_. destruct (evalt_comp (ξ () e x) (f n) n n) eqn: E; [destruct s|].
+    unfold Φ_. destruct (evalt_comp (ξ e x) (f n) n n) eqn: E; [destruct s|].
     - split; congruence.
     - destruct u. done.
     - split; congruence.
@@ -860,11 +866,11 @@ Section Step_Eval_Spec.
       Ξ e (char_rel P) x → (∞∀ n, Φ_ decider e x n = Some ()).
   Proof.
     unfold Ξ, rel. intros (qs & ans & Ha & Hb).
-    specialize (@S_approx_Σ1 _ _ _ S_P () (ξ _ e x) qs ans Ha) as H.
+    specialize (@S_approx_Σ1 _ _ _ S_P () (ξ e x) qs ans Ha) as H.
     eapply interrogation_evalt_comp_limit in H; last apply Hb.
     destruct H as [w Hw].
     exists w; intros m Hm. unfold Φ_. specialize (Hw m Hm).
-    destruct (evalt_comp (ξ () e x) (decider m) m m).
+    destruct (evalt_comp (ξ e x) (decider m) m m).
     destruct s. by injection Hw.
     by destruct u. congruence.
   Qed. 
@@ -875,12 +881,12 @@ Section Step_Eval_Spec.
     Definition to_pred (f: nat → bool) x := f x = true.
 
     Definition φ (f: nat → bool) (e x n: nat) :=
-      if use_function (ξ () e x) f n n () unit_eq_dec nat_eq_dec 
+      if use_function (ξ  e x) f n n () unit_eq_dec nat_eq_dec 
         is inl H then S (list_max (projT1 H))
         else 0.
 
     Definition φ' (f: nat → bool) (e x n: nat) :=
-      if (use_function' (ξ () e x) f n n () unit_eq_dec nat_eq_dec) 
+      if (use_function' (ξ e x) f n n () unit_eq_dec nat_eq_dec) 
         is inl H then S (list_max (projT1 (extract_computation unit_eq_dec nat_eq_dec H)))
         else 0.
 
@@ -890,7 +896,7 @@ Section Step_Eval_Spec.
     Ξ e (char_rel p) x.
   Proof.
     intros H2 H1. rewrite phi_iff_evalt in H2. unfold φ in H1. 
-    destruct (use_function (ξ () e x) (decider n) n n _ _ _) as [(ans&Hans)|H]; last done.
+    destruct (use_function (ξ e x) (decider n) n n _ _ _) as [(ans&Hans)|H]; last done.
     exists ans. eapply Hans.
     intros q [i Hq]%elem_of_list_lookup_1. rewrite H1; first done.
     simpl. enough (q ≤ list_max (ans)) by lia.
@@ -904,7 +910,7 @@ Section Step_Eval_Spec.
     Ξ e (char_rel p) x.
   Proof.
     intros H2 H1. rewrite phi_iff_evalt in H2. unfold φ' in H1. 
-    destruct (use_function' (ξ () e x) (decider n) n n () _ _) as [H'|H]; last done.
+    destruct (use_function' (ξ e x) (decider n) n n () _ _) as [H'|H]; last done.
     destruct (extract_computation unit_eq_dec nat_eq_dec H') as [qs [ans [Hans1 Hans2]]].
     simpl in H1.
     exists qs, ans; split; eauto.
@@ -919,7 +925,7 @@ Section Step_Eval_Spec.
     φ (decider n) e x n ≠ 0 → Φ_ decider e x n = Some ().
   Proof.
     unfold φ, Φ_. intros H. 
-    destruct (use_function (ξ () e x) (decider n) n n () unit_eq_dec nat_eq_dec).
+    destruct (use_function (ξ  e x) (decider n) n n () unit_eq_dec nat_eq_dec).
     - clear H. by destruct s as (_&->&_). 
     - congruence.
   Qed.
@@ -928,9 +934,9 @@ Section Step_Eval_Spec.
     Φ_ decider e x n = Some () → φ (decider n) e x n ≠ 0.
   Proof.
     unfold φ, Φ_. intros H. 
-    destruct (use_function (ξ () e x) (decider n) n n () unit_eq_dec nat_eq_dec).
+    destruct (use_function (ξ  e x) (decider n) n n () unit_eq_dec nat_eq_dec).
     - lia.
-    - destruct (evalt_comp (ξ () e x) (decider n) n n); last eauto.
+    - destruct (evalt_comp (ξ  e x) (decider n) n n); last eauto.
       destruct s; eauto. destruct u. congruence.
   Qed.
 
@@ -961,7 +967,7 @@ Section Step_Eval_Spec.
     φ (decider (S n)) e x (S n) = S k.
   Proof.
     intros H H2. unfold φ in *.
-    destruct (use_function (ξ () e x) (decider n) n n) 
+    destruct (use_function (ξ  e x) (decider n) n n) 
       as [(use & Hu1 & Hu2)|]; last congruence. simpl in *.
 
     assert (∀ q, q ∈ use → decider (S n) q ↔ decider n q = true) as boring1.
@@ -979,7 +985,7 @@ Section Step_Eval_Spec.
 
     destruct (Hu2 (decider (S n)) boring1) as [ans (Hans & Hans1)].
 
-    destruct (use_function (ξ () e x) (decider (S n)) (S n) (S n)) as [(use' & Hu1' & Hu2')|HSn].
+    destruct (use_function (ξ  e x) (decider (S n)) (S n) (S n)) as [(use' & Hu1' & Hu2')|HSn].
     + destruct (Hu2' (decider (S n))) as [ans' (Hans' & Hans1')].
       { intros; destruct (decider (S n) q); intuition. }
       enough (use = use') as Hanseq. 
@@ -988,13 +994,13 @@ Section Step_Eval_Spec.
       { intros ?[][]; unfold to_pred, char_rel; eauto. }
       by edestruct (interrogation_eq 42 true _H_ Hans Hans1 Hans' Hans1').
     + exfalso; apply HSn. 
-      assert (interrogation (ξ () e x) (λ q a, decider n q = a) use ans) as Hansn.
+      assert (interrogation (ξ  e x) (λ q a, decider n q = a) use ans) as Hansn.
       { eapply interrogation_ext; last apply Hans; first done. intros.
         rewrite <- char_rel_boring. by apply boring2. }
       assert (n ≤ S n) as _H_ by lia.
       unshelve eapply (evalt_comp_depth_mono _ _H_).
       eapply (evalt_comp_step_mono').
-      assert (interrogation (ξ () e x) (λ q a, decider (S n) q = a) use ans) as HansSn.
+      assert (interrogation (ξ  e x) (λ q a, decider (S n) q = a) use ans) as HansSn.
       { eapply interrogation_ext; last apply Hans; first done. intros; by rewrite char_rel_boring. }
       clear Hu2 S_P HSn boring1 boring2 H H2 _H_ Hans. 
       eapply final_fact; eauto.
@@ -1006,13 +1012,13 @@ Section Step_Eval_Spec.
     Φ_ decider e x (S n) = Some ().
   Proof.
     intros H H2. unfold φ in *.
-    destruct (use_function (ξ () e x) (decider n) n n) 
+    destruct (use_function (ξ  e x) (decider n) n n) 
       as [(use & Hu1 & Hu2)|]; last congruence. simpl in *.
 
-    destruct (evalt_comp (ξ () e x) (decider n) n n) eqn: E1; last congruence.
+    destruct (evalt_comp (ξ  e x) (decider n) n n) eqn: E1; last congruence.
     destruct s eqn: E2; first congruence.
     destruct u; clear Hu1 E2. 
-    unfold Φ_; enough (evalt_comp (ξ () e x) (decider (S n)) (S n) (S n) = Some (inr ())) as H'
+    unfold Φ_; enough (evalt_comp (ξ  e x) (decider (S n)) (S n) (S n) = Some (inr ())) as H'
       by by rewrite H'.
     eapply evalt_comp_step_mono'.
     eapply evalt_comp_depth_mono; last exact (le_S _ _ (le_n n)).
@@ -1031,17 +1037,18 @@ Section Step_Eval_Spec.
         destruct a, (decider (S n) q), (decider n q); intuition. }
 
     destruct (Hu2 (decider (S n)) boring1) as [ans (Hans & Hans1)].
-    assert (interrogation (ξ () e x) (λ q a, decider n q = a) use ans) as Hansn.
+    assert (interrogation (ξ  e x) (λ q a, decider n q = a) use ans) as Hansn.
     { eapply interrogation_ext; last apply Hans; first done. intros.
       rewrite <- char_rel_boring. by apply boring2. }
     assert (n ≤ S n) as _H_ by lia.
-    assert (interrogation (ξ () e x) (λ q a, decider (S n) q = a) use ans) as HansSn.
+    assert (interrogation (ξ  e x) (λ q a, decider (S n) q = a) use ans) as HansSn.
     { eapply interrogation_ext; last apply Hans; first done. intros; by rewrite char_rel_boring. }
     eapply final_fact; eauto.
   Qed.
 
 End Step_Eval_Spec.
 
+End AssumePartiality.
 
 
 

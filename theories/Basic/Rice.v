@@ -2,7 +2,12 @@ From SyntheticComputability Require Import Equivalence EA equiv_on DecidabilityF
 
 Import EmbedNatNotations.
 
-Import Assume_EA.
+Section Assume_EA.
+
+Context {EA : EA}.
+
+Notation φ := (proj1_sig EA).
+Notation EAP := (proj2_sig EA).
 
 Set Default Goal Selector "!".
 
@@ -136,3 +141,5 @@ Proof.
     firstorder.
   - destruct H as [f Hf]. exists (fun c => f (θ c)). firstorder.
 Qed.
+
+End Assume_EA.

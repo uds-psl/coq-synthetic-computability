@@ -8,7 +8,12 @@ Require Export SyntheticComputability.ReducibilityDegrees.simple.
 Require Export SyntheticComputability.Shared.embed_nat.
 Require Export List Arith.
 
-Import Assume_EA.
+Section Assume_EA.
+
+Context {EA : EA}.
+
+Notation φ := (proj1_sig EA).
+Notation EAP := (proj2_sig EA).
 
 Export EmbedNatNotations.
 
@@ -120,7 +125,7 @@ Section ComplToBound.
 
   Lemma filter_NoDup {X} f (l : list X) :
     NoDup l -> NoDup (filter f l).
-  Proof.
+  Proof using. clear EA.
     induction 1; cbn.
     - econstructor.
     - destruct f; eauto. econstructor; auto.
@@ -842,3 +847,4 @@ Section S_Star.
 
 End S_Star.
 
+End Assume_EA.
