@@ -1,34 +1,57 @@
-name: Main workflow
+name: coq-library-undecidability CI
 
 on:
-  pull_request:
   push:
-
-permissions: read-all
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
   build:
+    runs-on: ubuntu-latest
+
     strategy:
       matrix:
-        os:
-          - ubuntu-latest
-        ocaml-compiler:
-          - "4.14"
-
-    runs-on: ${{ matrix.os }}
+        coq_version: 
+          - '9.0'
+        ocaml_version:
+          - '4.14-flambda'
+      fail-fast: true
 
     steps:
-      - name: Checkout tree
-        uses: actions/checkout@v3
 
-      - name: Set-up OCaml ${{ matrix.ocaml-compiler }}
-        uses: ocaml/setup-ocaml@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
         with:
-          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          fetch-depth: 1
 
-      - run: opam repo add coq-released https://coq.inria.fr/opam/released
-      - run: opam install rocq-equations.1.3.1+9.0 coq-stdpp
-      - run: cd theories && opam exec -- make 
+      - name: Docker-Coq-Action
+        uses: rocq-community/docker-coq-action@v1
+        with:
+          coq_version: ${{ matrix.coq_version }}
+          ocaml_version: ${{ matrix.ocaml_version }}
+          before_script: |
+            startGroup "Workaround permission issue"
+              sudo chown -R 1000:1000 .  # <--
+              opam exec -- ocamlfind list
+              opam install rocq-equations coq-stdpp
+            endGroup
+          before_install: |
+            startGroup "Print opam config"
+              sudo chown -R 1000:1000 .
+              opam config list; opam repo list; opam list
+            endGroup
+          script: |
+            startGroup "Build project"
+              opam exec -- make -C theories -j 2 all TIMED=1
+            endGroup
+          uninstall: |
+            startGroup "Clean project"
+            endGroup
+
+      - name: Revert permissions
+        # to avoid a warning at cleanup time
+        if: ${{ always() }}
+        run: sudo chown -R 1001:116 .  # <--
 
 # name: Test compilation
 
