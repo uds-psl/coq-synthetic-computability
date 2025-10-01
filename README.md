@@ -48,7 +48,7 @@ This library contains results on synthetic computability theory.
 opam switch create coq-synthetic-computability --packages=ocaml-variants.4.14.0+options,ocaml-option-flambda
 eval $(opam env)
 opam repo add coq-released https://coq.inria.fr/opam/released
-opam install rocq-prover.9.0.0 rocq-equations rocq-metarocq-template coq-stdpp
+opam install rocq-prover.9.0.0 rocq-equations coq-stdpp
 cd theories
 make
 make install
