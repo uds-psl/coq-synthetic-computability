@@ -297,7 +297,7 @@ Proof.
     move => H n Hn x Hx.
     assert (Hg : D (length l1 + length l3) n = Some x). {
       eapply seval_mono. eassumption. lia. }
-    specialize (H n (lt_plus_trans _ _ (length l3) Hn) x Hg).
+    specialize (H n (Arith_base.lt_plus_trans_stt _ _ (length l3) Hn) x Hg).
     erewrite <- (lookup_app_l _ _ _ Hn). eassumption.
   - eapply decidable_iff. econstructor. move => a. generalize (length a) at 2 as k.
     induction a as [ | b a] using rev_rect; move => k; cbn.
@@ -308,11 +308,11 @@ Proof.
            ++ left. rewrite app_length. cbn. move => n Hn x' Hx'.
               destruct (nat_eq_dec n (length a)).
               ** subst. rewrite lookup_app_r. lia.
-                 rewrite minus_diag. cbn. congruence.
+                 rewrite Nat.sub_diag. cbn. congruence.
               ** rewrite lookup_app_l. lia.
                  eapply L. lia. eassumption.
            ++ right. rewrite app_length. cbn. move => / (fun H => H (length a)) H.
-              rewrite lookup_app_r ?minus_diag in H. lia. cbn in H.
+              rewrite lookup_app_r ?Nat.sub_diag in H. lia. cbn in H.
               eapply n.
               eapply Some_inj. symmetry. eapply H. lia. eauto.
         -- left. rewrite app_length. cbn. move => n Hn x' Hx'.
@@ -341,7 +341,7 @@ Proof.
       * cbn. destruct (nat_eq_dec n m).
         -- subst. rewrite Hx. destruct m. cbn. reflexivity.
            rewrite lookup_app_r. rewrite H_length. lia.
-           rewrite H_length minus_diag. reflexivity.
+           rewrite H_length Nat.sub_diag. reflexivity.
         -- rewrite lookup_app_l. rewrite H_length. lia.
            eapply IHm. lia.
     + rewrite H_length. lia.
@@ -434,7 +434,7 @@ Proof.
   - intros [k Hb].
     specialize (Hb (map (fun _ => true) (seq 0 k))).
     rewrite map_length seq_length in Hb.
-    specialize (Hb (le_refl _)).
+    specialize (Hb (Nat.le_refl _)).
     unfold tree_from in Hb. cbn in Hb.
     rewrite <- Is_true_iff in Hb.
     setoid_rewrite forallb_True in Hb.
@@ -544,8 +544,8 @@ Proof.
       exists (1 + Nat.max b1 b2). intros l Hl.
       destruct l; cbn in *; try lia.
       eapply le_S_n in Hl.
-      pose proof (Max.max_lub_l _ _ _ Hl).
-      pose proof (Max.max_lub_r _ _ _ Hl).
+      pose proof (Nat.max_lub_l _ _ _ Hl).
+      pose proof (Nat.max_lub_r _ _ _ Hl).
       destruct b; intros HT.
       * assert (T [true]). eapply tree_p. eapply T. 2:eauto. now eexists.
         eapply is_tree_subtree_at in H1.
@@ -701,7 +701,7 @@ Proof.
   intros Hl [w ->].
   rewrite <- firstn_all.
   rewrite <- (firstn_all u) at 1.
-  now rewrite Hl firstn_app Hl minus_diag firstn_O app_nil_r.
+  now rewrite Hl firstn_app Hl Nat.sub_diag firstn_O app_nil_r.
 Qed.
 
 Lemma take_prefix {X} n (l : list X) :
@@ -929,7 +929,7 @@ Proof.
       intros i Hi'. rewrite app_length in Hi'; cbn in *.
       assert (i = length u \/ i < length u) as [-> | Hi] by lia.
       + subst. rewrite app_nth2. lia.
-        intros. rewrite minus_diag. cbn. now eapply Hf.
+        intros. rewrite Nat.sub_diag. cbn. now eapply Hf.
       + intros. rewrite app_nth1. lia. now eapply IH.
   }
   exists g. intros n. cbn in *. eapply Hf. intros m.

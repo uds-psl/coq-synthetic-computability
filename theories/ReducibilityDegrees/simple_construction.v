@@ -132,6 +132,13 @@ Section ComplToBound.
       intros ? % in_filter_iff. firstorder.
   Qed.
 
+  Lemma plus_le_compat_l x y y' :
+    y <= y' ->
+    x + y <= x + y'.
+  Proof.
+    lia.
+  Qed.
+
   Lemma complToBound_length L b:
     length (complToBound L b) + length L >= S b.   
   Proof.
@@ -822,7 +829,7 @@ Section S_Star.
     intros [c x] L. cbn.
     unfold reflects. intros H1. 
     rewrite eval_tt_mk_tt'.
-    2:{ eapply list.Forall2_length in H1.
+    2:{ eapply list_relations.Forall2_length in H1.
         now rewrite H1, map_length. }
     unshelve edestruct (Forall_dec (fun b => b = true)) as [H0 | H0].
     - intuition. 

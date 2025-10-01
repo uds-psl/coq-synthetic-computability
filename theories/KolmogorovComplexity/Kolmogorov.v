@@ -207,7 +207,7 @@ Proof.
   intros H c'. red in H. setoid_rewrite <- H. exists c'. reflexivity.
 Qed.
 
-#[export] Hint Rewrite List.app_nil_l @list.nil_length : length.
+#[export] Hint Rewrite List.app_nil_l @List.length_nil : length.
 
 Set Default Goal Selector "!".
 
@@ -531,11 +531,11 @@ Proof.
   destruct (list_for_k k) as (l & H1 & H2 & H3).
   eapply (functional_NoDup (fun x y => ϕ u y ▷ x ∧ | y | < | x |)) in H2 as (l' & H4 & H5).
   - assert (Forall (fun y => |y| < k) l'). {
-      eapply list.Forall2_Forall_r; eauto.
+      eapply list_relations.Forall2_Forall_r; eauto.
       cbn. eapply Forall_forall.
       intros ? ? % H1. lia.
     } 
-    assert (length l' = 2 ^ k). { erewrite <- list.Forall2_length; eauto. }
+    assert (length l' = 2 ^ k). { erewrite <- list_relations.Forall2_length; eauto. }
     destruct k.
     + cbn in *. destruct H0.  1:inversion H2. cbn in *. lia.
     + unshelve epose proof (@at_most (S k) _ l' _ _).
@@ -563,8 +563,8 @@ Proof.
   - eapply H.
     + now left.
     + intros Ha. eapply IHl.
-      * intros HH. eapply H0. intros. inversion H1 as [-> | ]; eauto.
       * firstorder.
+      * intros HH. eapply H0. intros. inversion H1 as [-> | ]; eauto.
 Qed.
 
 Lemma non_finite_length (p : nat -> Prop) :

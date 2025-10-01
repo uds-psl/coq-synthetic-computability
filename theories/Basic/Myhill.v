@@ -99,7 +99,7 @@ Section fixes.
     (p x <-> p (γ C x)) /\ In (γ C x) (x :: map fst C) /\ ~ In2 (f (γ C x)) C.
   Proof.
     funelim (γ C x); try rename H0 into IH.
-    - intros Hx HC. rewrite <- Heqcall. eauto.
+    - intros Hx HC. eauto.
     - intros Hx HC.
       specialize (IH ) as (IH1 & IH2 & IH3).
       { intros ([] & E & [] % in_remove) % in_map_iff; cbn in E; subst.
@@ -107,9 +107,8 @@ Section fixes.
       { eapply correspondence_remove; eauto. }
       split. 2:split.
       + etransitivity. eapply f_red.
-        rewrite <- Heqcall. 
         rewrite <- IH1. symmetry. now eapply HC.
-      + rewrite <- Heqcall.  specialize IH2 as [EE | ([] & E & [] % in_remove) % in_map_iff]; eauto.
+      + specialize IH2 as [EE | ([] & E & [] % in_remove) % in_map_iff]; eauto.
         rewrite <- EE. right. eapply in_map_iff. eexists (_, _). eauto.
       + rewrite Heqcall in IH3, IH2, IH1 |- *.
         intros ([] & E & ?) % (in_map_iff). cbn in E. subst.
@@ -258,8 +257,8 @@ Section fixes2.
       eapply build_corr_mono; eauto.
   Qed.
   
-  Definition f' x := proj1_sig (In1_compute _ _ (build_corrX x (S (IX x)) ltac:(abstract lia))).
-  Definition g' y := proj1_sig (In2_compute _ _ (build_corrY y (S (IY y)) ltac:(abstract lia))).
+  Program Definition f' x := proj1_sig (In1_compute _ _ (build_corrX x (S (IX x)) _)).
+  Program Definition g' y := proj1_sig (In2_compute _ _ (build_corrY y (S (IY y)) _)).
   
   Lemma f'_red : reduces_m f' p q.
   Proof.

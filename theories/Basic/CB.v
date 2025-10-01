@@ -164,7 +164,7 @@ Section Def_F.
     forall x : X, index x < length (e (gen (map f (e (occ x))))).
   Proof.
     intros x.
-    eapply lt_le_trans.
+    eapply Nat.lt_le_trans.
     2: eapply gen_spec. 2:eapply NoDup_map; eauto.
     rewrite map_length.
     eapply nth_error_Some.
@@ -176,7 +176,7 @@ Section Def_F.
     nth_error (e (gen (map f (e (occ x))))) (index x) <> None.
   Proof.
     intros E. eapply nth_error_None in E. revert E.
-    eapply lt_not_le, index_length.
+    pose proof (index_length x). lia.
   Qed.
     
   Definition F_ (x : X) : Y :=

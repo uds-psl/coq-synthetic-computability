@@ -358,7 +358,7 @@ Proof.
     + intros. eapply H. lia.
     + destruct (H (S n) (Nat.le_refl _)).
       * right. eauto.
-      * left. intros m [Hle |  ->] % le_lt_or_eq; eauto.
+      * left. intros m [Hle |  ->] % Nat.lt_eq_cases; eauto.
         eapply H1. lia.
     + right. exists m. split. lia. eassumption.
 Qed.
@@ -410,7 +410,7 @@ Proof.
     destruct (dec_bounded_quant (fun n => g n = true) n).
     + intros m ?; destruct (g m); firstorder congruence.
     + exfalso. enough (alpha' (2 * n) = true). rewrite H0 in H3. congruence.
-      rewrite mult_comm. unfold alpha'.
+      rewrite Nat.mul_comm. unfold alpha'.
       eapply andb_true_iff. split. eauto.
       eapply forallb_forall.
       intros b. rewrite in_map_iff. setoid_rewrite in_seq.
@@ -435,7 +435,7 @@ Proof.
     destruct (dec_bounded_quant (fun n => f n = true) (S n)).
     + intros m ?; destruct (f m); firstorder congruence.
     + exfalso. enough (H3 : alpha' (1 + 2 * n) = true). rewrite H0 in H3. congruence.
-      rewrite mult_comm. unfold alpha'.
+      rewrite Nat.mul_comm. unfold alpha'.
       eapply andb_true_iff. split. eauto.
       eapply forallb_forall.
       intros b. rewrite in_map_iff. setoid_rewrite in_seq.
@@ -854,10 +854,11 @@ Goal ADC -> ACC.
 Proof.
   intros C X R Htot.
   destruct (Htot 0) as [y0 Hy0].
-  unshelve specialize (C (∑ '(n, x), R n x) (fun '(exist _  (n, x) H) '(exist _ (m, y) H2) => m = S n)) as [f].
+  unshelve epose proof (C (∑ '(n, x), R n x) (fun '(exist _  (n, x) H) '(exist _ (m, y) H2) => m = S n)).
+  unshelve edestruct H as [f].
   - eexists (_, _). eauto.
-  - intros [(n, x) H]. destruct (Htot (S n)) as [y Hy]. now exists (exist _ (S n, y) Hy). 
-  - destruct H as [H0 H].
+  - intros [(n, x) H']. destruct (Htot (S n)) as [y Hy]. now exists (exist _ (S n, y) Hy). 
+  - clear H. destruct H0 as [H0 H].
     pose (N n := fst (proj1_sig (f n))).
     pose (s n := snd (proj1_sig (f n))).
     assert (HN : forall n, N (S n) = S (N n)). {

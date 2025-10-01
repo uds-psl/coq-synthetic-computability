@@ -11,9 +11,9 @@
   - Niklas Mück
   - Haoyi Zeng
 - Maintainer:
-  - Yannick Forster ([**@yforster**](https://github.com/yfrster))
+  - Yannick Forster ([**@yforster**](https://github.com/yforster))
 - License: [MIT License](LICENSE)
-- Compatible Coq versions: 8.17
+- Compatible Coq versions: 9.0
 - Additional dependencies: 
   - the [`stdpp` library](https://gitlab.mpi-sws.org/iris/stdpp)
   - optionally, the [Coq Library of Undecidability Proofs](https://github.com/uds-psl/coq-library-undecidability)
@@ -48,7 +48,7 @@ This library contains results on synthetic computability theory.
 opam switch create coq-synthetic-computability --packages=ocaml-variants.4.14.0+options,ocaml-option-flambda
 eval $(opam env)
 opam repo add coq-released https://coq.inria.fr/opam/released
-opam install coq.8.17.0 coq-equations.1.3+8.17 coq-metacoq-template.1.2+8.17 coq-stdpp.1.8.0
+opam install rocq-prover.9.0.0 rocq-equations rocq-metarocq-template coq-stdpp
 cd theories
 make
 make install
@@ -57,7 +57,7 @@ make install
 To build the part of the development relying on models of computation, in addition you have to 
 
 ```sh
-opam install coq-library-undecidability.1.1+8.17
+opam install coq-library-undecidability
 make models
 make install-models
 ```

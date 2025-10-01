@@ -49,7 +49,7 @@ Section ComplToBound.
         rewrite <- (seq_length (S b) 0).
         erewrite filter_length with (l := seq 0 (S b)).
         unfold complToBound.
-        eapply Plus.plus_le_compat_l_stt.
+        eapply simple_construction.plus_le_compat_l.
         generalize (seq_NoDup (S b) 0).
         generalize (seq 0 (S b)). clear.
         intros. erewrite filter_ext with (g := fun x => Dec (In x L)).

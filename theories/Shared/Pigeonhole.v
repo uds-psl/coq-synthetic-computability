@@ -1,6 +1,6 @@
 Require SyntheticComputability.Shared.Dec.
 Require Import Setoid Morphisms.
-Require Export Lia List NPeano.
+Require Export Lia List Arith.
 Import ListNotations.
 
 Fact ldec_stable P :

@@ -128,9 +128,9 @@ Proof.
     rewrite !app_length in *. cbn in *. split; try lia.
     intros.
     assert (n = length ans \/ n < length ans) as [-> | Hlt] by lia.
-    + rewrite take_app. rewrite nth_middle.
+    + rewrite take_app_length. rewrite nth_middle.
       rewrite IH1.
-      rewrite !nth_middle. firstorder.
+      rewrite !nth_middle. firstorder. 
     + rewrite take_app_le. 2: lia.
       rewrite !app_nth1; try lia.
       firstorder.
@@ -143,7 +143,7 @@ Proof.
         destruct (H2 (length ans)) as [HH1 HH2].
         lia.
         assert (length ans = length qs) as E by lia.
-        rewrite take_app, E, nth_middle in HH1.
+        rewrite take_app_length, E, nth_middle in HH1.
         rewrite E, nth_middle, <- E, nth_middle in HH2.
         econstructor; eauto. eapply IHans.
         lia.
@@ -152,7 +152,7 @@ Proof.
         lia.
         rewrite take_app_le in HH1. 2: lia.
         rewrite !app_nth1 in *; try lia.
-        firstorder.
+        firstorder. 
 Qed.
 
 Lemma interrogation_det {A Q O} qs1 ans1 qs2 ans2 τ f :
@@ -384,11 +384,11 @@ Proof.
     + epose proof (Hacc (length acc) e _ a) as (q & HH).
       4:{
         rewrite bind_hasvalue_given.
-        2: rewrite take_app in HH.
+        2: rewrite take_app_length in HH.
         2: eapply HH. cbn. reflexivity. }
       eauto.
       2:{ rewrite nth_error_app2. 2: lia.
-          now rewrite minus_diag. }
+          now rewrite Nat.sub_diag. }
       eauto.
     + intros. cbn in Hacc.
       rewrite <- app_assoc in H1 |- *. cbn. eapply Hacc; eauto.
@@ -432,12 +432,12 @@ Proof.
       rewrite take_app_le. 2: lia. eauto.
     * rewrite Hl in H3.
       rewrite nth_error_app2 in H3. 2: lia.
-      rewrite minus_diag in H3. cbn in H3. inversion H3; subst; clear H3.
+      rewrite Nat.sub_diag in H3. cbn in H3. inversion H3; subst; clear H3.
       assert (k = length ans) by lia. subst.
-      rewrite take_app.
+      rewrite take_app_length.
       rewrite nth_error_app2 in H4. 2: lia.
       rewrite nth_error_app1 in H2. 2: lia.
-      rewrite minus_diag in H4. inversion H4; subst; clear H4.
+      rewrite Nat.sub_diag in H4. inversion H4; subst; clear H4.
       rewrite H2 in IH4. inversion IH4; subst. eauto.
 Qed.
 
@@ -1158,7 +1158,7 @@ Proof.
         + eapply repeat_spec in i0; congruence.
         + destruct lt_dec; try lia. psimpl.
     }
-    generalize (le_refl i).
+    generalize (Nat.le_refl i).
     generalize i at 1 6 7.
     induction i0 in i, H2 |- *.
     + cbn. econstructor.
@@ -1303,7 +1303,7 @@ Proof using.
     exists (ans1 ++ ans2).
     exists (Some (y, length qs1)). split.
     2:{ assert (length qs1 = length ans1) as Hlen by (eapply interrogation_length; eauto).
-        psimpl. rewrite Hlen. rewrite drop_app. eauto. cbn. psimpl. }
+        psimpl. rewrite Hlen. rewrite drop_app_length. eauto. cbn. psimpl. }
     eapply sinterrogation_app. instantiate (1 := None).
     + clear - H1.
       induction H1.
@@ -1316,7 +1316,7 @@ Proof using.
       induction H2.
       * econstructor.
       * econstructor 3; eauto.
-        cbn. psimpl. rewrite drop_app. eauto. cbn. psimpl.
+        cbn. psimpl. rewrite drop_app_length. eauto. cbn. psimpl.
 Qed.
 
 (** Computability of case analysis  *)
@@ -1438,7 +1438,7 @@ Proof.
       2:{ cbn. psimpl.
           unfold lastn. rewrite app_length.
           replace ((length ans + length ans' - length ans')) with (length ans) by lia.
-          rewrite drop_app. eauto.
+          rewrite drop_app_length. eauto.
           cbn. psimpl.
       }
       clear - Hint'.
@@ -1448,7 +1448,7 @@ Proof.
         cbn. psimpl.
         unfold lastn. rewrite app_length.
         replace ((length ans + length ans0 - length ans0)) with (length ans) by lia.
-        rewrite drop_app. eauto.
+        rewrite drop_app_length. eauto.
         cbn. eapply ret_hasvalue_iff. repeat f_equal.
         rewrite app_length. cbn. lia.
 Qed.
@@ -1771,7 +1771,7 @@ Proof.
         destruct H as [ll ->].
         eapply Forall2_length in H0. rewrite <- H0.
         rewrite nth_error_app1. 2: rewrite app_length; cbn; lia.
-        rewrite nth_error_app2. 2: lia. rewrite minus_diag. cbn. psimpl.
+        rewrite nth_error_app2. 2: lia. rewrite Nat.sub_diag. cbn. psimpl.
         eauto.
     + intros (qs & ans & H1 & H2).
       eapply interrogation_length in H1 as Hlen. rewrite <- Hlen in H2.
@@ -1787,19 +1787,19 @@ Proof.
         rewrite <- Hlen in E. 
         rewrite <- (firstn_skipn (length qs) (projT1 (f x))).
         rewrite firstn_app.
-        rewrite take_length.
+        rewrite firstn_length.
         assert (length qs < length (projT1 (f x))). eapply nth_error_Some. rewrite E. congruence.
         rewrite Nat.min_l. 2: lia.
         rewrite firstn_all2.
-        2:{ rewrite take_length. lia. }
+        2:{ rewrite firstn_length. lia. }
         enough (take (length qs + 1 - length qs) (drop (length qs) (projT1 (f x))) = [q]) as ->.
         eapply Forall2_app; eauto.
         replace (length qs + 1 - length qs) with 1 by lia.
         rewrite <- (firstn_skipn (length qs) (projT1 (f x)) ) in E.
         rewrite nth_error_app2 in E.
-        2: rewrite take_length; lia.
-        rewrite take_length in E. rewrite Nat.min_l in E. 2: lia.
-        rewrite minus_diag in E.
+        2: rewrite firstn_length; lia.
+        rewrite firstn_length in E. rewrite Nat.min_l in E. 2: lia.
+        rewrite Nat.sub_diag in E.
         destruct drop; cbn in *; try congruence.
         inversion E. subst. rewrite take_0. reflexivity.
   - cbn. intros x b. split.
@@ -1873,7 +1873,7 @@ Proof.
   intros H x. apply H.
   induction (f x).
   - intros y. lia.
-  - intros y. intros [] % le_lt_or_eq.
+  - intros y. intros [] % Nat.lt_eq_cases. 
     + apply IHn; lia.
     + apply H. injection H0. now intros ->.
 Qed.

@@ -325,11 +325,11 @@ Proof.
     + eapply Hg. eapply Forall2_take with (n := length (g a).1) in H.
       rewrite map_app in H.
       erewrite <- map_length with (f := r) in H at 2.
-      now rewrite take_app in H.
+      now rewrite take_app_length' in H.
     + eapply IHfx. eapply Forall2_drop with (n := length (g a).1) in H.
       erewrite <- map_length with (f := r) in H at 2.
       rewrite map_app in H.
-      now rewrite drop_app in H.
+      now rewrite drop_app_length' in H.
 Qed.
 
 Lemma red_tt_transports {X Y} (p : X -> Prop) (q : Y -> Prop) :

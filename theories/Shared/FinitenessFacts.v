@@ -1,6 +1,6 @@
 Require Import SyntheticComputability.Shared.Dec SyntheticComputability.Shared.ListAutomation.
 Require Import Setoid Morphisms.
-Require Import SyntheticComputability.Synthetic.Definitions Lia List NPeano.
+Require Import SyntheticComputability.Synthetic.Definitions Lia List.
 From SyntheticComputability.Shared Require Import mu_nat equiv_on Pigeonhole Dec partial.
 Import ListNotations.
 

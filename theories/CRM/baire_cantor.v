@@ -61,7 +61,7 @@ Lemma max_list_incl A B :
 Proof.
   induction A.
   - cbn. lia.
-  - cbn. intros H. eapply Max.max_lub.
+  - cbn. intros H. eapply Nat.max_lub.
     2: firstorder. eapply max_list_spec, H. firstorder.
 Qed.
 
@@ -89,7 +89,7 @@ Proof.
     
     specialize (H (map f_N (seq 0 n))).
     rewrite map_length seq_length in H.
-    specialize (H (le_refl _)).
+    specialize (H (Nat.le_refl _)).
     edestruct (listable_exists_dec (p := fun i => 0 < i <= n) ( q := fun i => ~ Exists (le i) (M (extend (take i (map f_N (seq 0 n)))) 0))).
     + exists (seq 1 n). clear. intros. rewrite in_seq. lia.
     + intros x. eapply not_dec. eapply Exists_dec. intros. eapply le_dec.
@@ -125,19 +125,19 @@ Proof.
     exists N. intros H.
     enough (N < N) by lia.
 
-    eapply lt_le_trans with (m := 1 + max_list (M (extend (map f (seq 0 N))) 0)).
+    eapply Nat.lt_le_trans with (m := 1 + max_list (M (extend (map f (seq 0 N))) 0)).
     + specialize (H N). setoid_rewrite List.Exists_exists in H.
       destruct H as [i Hi].
       * split. unfold N. cbn. lia. now rewrite map_length seq_length.
-      * eapply le_lt_trans. eapply Hi.
+      * eapply Nat.le_lt_trans. eapply Hi.
         enough (max_list [i] <=  max_list (M (extend (map f (seq 0 N))) 0)) as H0.
-        unfold max_list in H0 at 1. rewrite Max.max_0_r in H0. unfold id in H0 at 1. lia.
+        unfold max_list in H0 at 1. rewrite Nat.max_0_r in H0. unfold id in H0 at 1. lia.
         eapply max_list_incl. intros ? [-> | []].
         replace N with (length (map f (seq 0 N))) in Hi at 1.
         rewrite firstn_all in Hi. eapply Hi.
         now rewrite map_length seq_length.
     + unfold N. rewrite <- HL.
-      eapply plus_le_compat_l.
+      enough (max_list (M f 0) ≤ max_list (1 + length L :: L ++ M f 0)). lia.
       eapply max_list_incl, incl_tl, incl_appr, incl_refl.
       eapply map_ext_in.
       intros a Ha. unfold extend. 
@@ -145,11 +145,11 @@ Proof.
       erewrite map_nth, seq_nth.
       * reflexivity.
       * enough (max_list [a] <=  max_list (1 + length L :: L ++ M f 0)) as H0.
-        unfold max_list in H0 at 1. rewrite Max.max_0_r in H0. unfold id in H0 at 1. lia.
+        unfold max_list in H0 at 1. rewrite Nat.max_0_r in H0. unfold id in H0 at 1. lia.
         eapply max_list_incl. intros ? [-> | []]. eapply in_cons, in_app_iff. eauto.
       * rewrite map_length seq_length.
         enough (max_list [a] <=  max_list (1 + length L :: L ++ M f 0)) as H0.
-        unfold max_list in H0 at 1. rewrite Max.max_0_r in H0. unfold id in H0 at 1. lia.
+        unfold max_list in H0 at 1. rewrite Nat.max_0_r in H0. unfold id in H0 at 1. lia.
         eapply max_list_incl. intros ? [-> | []]. eapply in_cons, in_app_iff. eauto.
         Unshelve. all:econstructor.
 Qed.
@@ -239,9 +239,15 @@ Proof.
   rewrite <- app_assoc in Heq.
   destruct (lt_eq_lt_dec (length l2') (length l1')) as [[Hlt|e] | Hgt].
   - eapply (f_equal (take (length l1'))) in Heq.
-    rewrite take_app take_ge in Heq.
-    rewrite app_length. cbn. lia.
-    subst. exfalso. eauto.
+    rewrite take_app in Heq.
+    rewrite take_app_ge in Heq. lia.
+    cbn in Heq.
+    exfalso. destruct (length l1' - length l2') eqn:E. lia.
+    cbn in *. subst. 
+    eapply nH2, tree_p. eapply (Kleene_T T_K). 2:exact H1.
+    rewrite Nat.sub_diag in Heq. cbn in Heq.
+    rewrite app_nil_r in Heq. rewrite <- Heq.
+    rewrite take_ge. lia. destruct n; cbn; eauto.
   - eapply app_inj_1 in Heq as [-> Heq]; eauto.
     destruct l3; cbn in *; congruence.
   - eapply (f_equal (take (length l2'))) in Heq.
@@ -251,6 +257,8 @@ Proof.
     exfalso. destruct (length l2' - length l1') eqn:E. lia.
     cbn in *. subst. 
     eapply nH1, tree_p. eapply (Kleene_T T_K). 2:exact H2.
+    rewrite Nat.sub_diag in Heq. cbn in Heq.
+    rewrite app_nil_r in Heq. rewrite firstn_all in Heq. subst.
     eexists. now rewrite <- app_assoc.
 Qed.
 
@@ -311,12 +319,12 @@ Proof.
     rewrite IHk. f_equal.
     destruct (drop k (F' f 0 k ++ ℓ (f k))) eqn:E1.
     + eapply (f_equal length) in E1.
-      rewrite drop_length in E1. cbn in E1.
+      rewrite skipn_length in E1. cbn in E1.
       pose proof (F'_length f 0 (S k)). cbn in H2. rewrite app_length in H2, E1.
       lia.
     + destruct (drop k (F' g 0 k ++ ℓ (g k))) eqn:E2.
       * eapply (f_equal length) in E2.
-        rewrite drop_length in E2. cbn in E2.
+        rewrite skipn_length in E2. cbn in E2.
         pose proof (F'_length g 0 (S k)). cbn in H2. rewrite app_length in H2, E2.
         lia.
       * cbn. rewrite !firstn_O. f_equal.
@@ -405,16 +413,16 @@ Proof.
         assert (k''' <= k''). {
           subst k''' k'' k.
           cbn. rewrite app_length. lia.
-        } 
+        }
         rewrite !take_take in Heq; eauto.
         rewrite firstn_app in Heq.
         rewrite !Nat.add_0_r in Heq.
         unfold k''' in Heq at 3.
-        rewrite take_app in Heq.
+        rewrite take_app_length in Heq.
         setoid_rewrite take_ge in Heq at 1. 2:eassumption.
         eapply leaf_prefix. eauto. eauto.
         eapply prefix_take_iff. rewrite <- Heq.
-        now rewrite take_app.
+        now rewrite take_app_length.
       * pose (k := (length (F' f 0 (S (S n))))).
         pose proof (F_inj_help H k) as Heq.
         pose proof (F'_eq_lt (o := 0) IH) as Hpref.
@@ -443,13 +451,13 @@ Proof.
         rewrite firstn_app in Heq.
         rewrite !Nat.add_0_r in Heq.
         unfold k''' in Heq at 3.
-        rewrite take_app in Heq.
+        rewrite take_app_length in Heq.
         setoid_rewrite take_ge in Heq at 1. 2:eassumption.
         symmetry.
         eapply leaf_prefix. eauto. eauto.
         eapply prefix_take_iff. rewrite <- Heq.
-        now rewrite take_app.
-Qed.      
+        now rewrite take_app_length.
+Qed.
 
 Lemma exists_leaf l2 :
   ~ T_K l2 -> exists l1, l1 `prefix_of` l2 /\ leaf l1.
@@ -767,7 +775,7 @@ Proof.
   - reflexivity.
   - cbn. rewrite app_length seq_app map_app.
     cbn. rewrite app_nth2. lia.
-    rewrite minus_diag. cbn. f_equal.
+    rewrite Nat.sub_diag. cbn. f_equal.
     rewrite <- IHl at 2.
     eapply map_ext_in.
     intros ? [_ ?] % in_seq. cbn in *.

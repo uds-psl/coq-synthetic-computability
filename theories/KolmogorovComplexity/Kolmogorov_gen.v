@@ -265,7 +265,7 @@ Proof.
     exists snd. firstorder.
 Qed.
 
-#[export] Hint Rewrite List.app_nil_l @list.nil_length : length.
+#[export] Hint Rewrite List.app_nil_l @List.length_nil : length.
 
 Section Kolmogorov.
 
@@ -288,7 +288,7 @@ Proof.
   - intros (y & ((c & -> & H2) & H3) & H4).
     firstorder.
   - intros (y & H1 & H2) y' ((c & -> & ?) & ?).
-    eapply le_lt_trans with (m := |y|); eauto.
+    eapply Nat.le_lt_trans with (m := |y|); eauto.
   - firstorder.
 Qed.
 
@@ -433,11 +433,11 @@ Proof.
   destruct (list_for_k k) as (l & H1 & H2 & H3).
   eapply (functional_NoDup (fun x y => Θ y ▷ x ∧ | y | < | x |)) in H2 as (l' & H4 & H5).
   - assert (Forall (fun y => |y| < k) l'). {
-      eapply list.Forall2_Forall_r; eauto.
+      eapply list_relations.Forall2_Forall_r; eauto.
       cbn. eapply Forall_forall.
       intros ? ? % H1. lia.
     } 
-    assert (length l' = 2 ^ k). { erewrite <- list.Forall2_length; eauto. }
+    assert (length l' = 2 ^ k). { erewrite <- list_relations.Forall2_length; eauto. }
     destruct k.
     + cbn in *. destruct H0.  1:inversion H2. cbn in *. lia.
     + unshelve epose proof (@at_most (S k) _ l' _ _).
@@ -465,8 +465,8 @@ Proof.
   - eapply H.
     + now left.
     + intros Ha. eapply IHl.
-      * intros HH. eapply H0. intros. inversion H1 as [-> | ]; eauto.
       * firstorder.
+      * intros HH. eapply H0. intros. inversion H1 as [-> | ]; eauto.
 Qed.
 
 Lemma non_finite_length (p : nat -> Prop) :
@@ -760,8 +760,8 @@ Module universal.
     intros H c'. red in H. setoid_rewrite <- H. exists c'. reflexivity.
   Qed.
 
-  Variable invert : nat -> nat * nat.
-  Variable invert_spec :     (forall x y, invert ⟨x, y⟩ = (x,y)).                      
+  Axiom invert : nat -> nat * nat.
+  Axiom invert_spec :     (forall x y, invert ⟨x, y⟩ = (x,y)).                      
 
   Lemma strongly_universal_ex :
     exists u, strongly_universal u.
@@ -778,7 +778,7 @@ Module universal.
 
     Definition invert x :=
       let l := ofnat x in
-      if list.list_find (fun x => x = false) l is Some (n, _)
+      if list_misc.list_find (fun x => x = false) l is Some (n, _)
       then
         let l := skipn (n + 1) l in
         (tonat (firstn n l), tonat (skipn n l))
@@ -792,11 +792,11 @@ Module universal.
       intros x y.
       unfold invert, info.
       autorewrite with length.
-      erewrite list.list_find_app_l.
-      2:{ eapply list.list_find_app_l.
+      erewrite list_misc.list_find_app_l.
+      2:{ eapply list_misc.list_find_app_l.
           etransitivity.
-          1:{ eapply list.list_find_app_r.
-              eapply list.list_find_None.
+          1:{ eapply list_misc.list_find_app_r.
+              eapply list_misc.list_find_None.
               eapply Forall_forall.
               intros ? ? % repeat_spec. congruence.
           }
@@ -805,9 +805,10 @@ Module universal.
           now rewrite repeat_length.
       }
       replace (|x| + 1) with (length (repeat true (|x|) ++ [false])) by now autorewrite with list.
-      rewrite list.drop_app_le. 2: autorewrite with list; lia.
-      rewrite list.drop_app, list.take_app, list.drop_app.
-      now autorewrite with length.
+      rewrite list_basics.drop_app_le. 2: autorewrite with list; lia.
+      rewrite !list_basics.drop_app_length.
+      rewrite !list_basics.take_app_length.
+      now rewrite !tonat_ofnat.
     Qed.
 
     (* Variable info : nat -> nat. *)
@@ -859,7 +860,7 @@ End universal.
 
 Module fixed_input.
 
-  Variable input : nat.
+  Axiom input : nat.
 
   Definition C := the_least (fun x s => exists c, s = |c| /\ ϕ c input ▷ x).
 
@@ -875,7 +876,7 @@ Module fixed_input.
   Definition N (x : nat) :=
     exists c, ϕ c input ▷ x /\ |c| < |x|.
 
-  Variable dist_part :
+  Axiom dist_part :
     forall f : nat ↛ nat, exists γ d, forall x, ϕ (γ x) input ≡{_} f x /\ (ter (f x) ->  |γ x| < |x| + d).
 
   Lemma simple_N : simple N.

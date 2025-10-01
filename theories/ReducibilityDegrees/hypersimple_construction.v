@@ -155,7 +155,7 @@ Section HS.
       + specialize (IH y (proj2 h)). destruct (le_dec (E_I y) n).
         * right. exists y; lia.
         * apply IH. lia.  
-    - left. exists x. intuition.
+    - left. exists x. intuition. lia.
   Qed. 
 
   Lemma outer_loop step:
@@ -173,7 +173,8 @@ Section HS.
         * exact H1. 
         * intros x0 E % list_max_in. now instantiate (1:= list_max L).
         * exact H4.
-      + destruct H0 as [<- | E]; firstorder. 
+      + firstorder.
+      + destruct H0 as [<- | E]; firstorder.
   Qed.
 
   Lemma all_boundable:
@@ -254,7 +255,7 @@ Section HS.
     - intros x E. intros H. ccase (HS x) as [H0 | H0].
       + destruct H0 as [x0 H2]. apply (IHn x0).
         * lia.
-        * intros [y H1]. apply H. exists y. intuition. 
+        * intros [y H1]. apply H. exists y. intuition. lia.
       + apply H. exists x. firstorder. 
   Qed.
  

@@ -114,7 +114,7 @@ Section Step_Eval.
     { unshelve rewrite (interrogation_quantifiers) in H1; eauto.
     destruct H1 as [-> _]. lia. } induction HE2 as [sth Hs].
     destruct (H12 _ H') as [H12' _]. rewrite Hs in H12'.
-    rewrite take_app in H12'. 
+    rewrite take_app_length in H12'. 
     specialize (hasvalue_det H12' H1a). congruence.
   Qed.
 

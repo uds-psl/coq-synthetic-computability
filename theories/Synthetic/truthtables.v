@@ -222,8 +222,8 @@ Proof.
   - rewrite <- (firstn_skipn m t).
     rewrite nth_error_app2.
     rewrite drop_app_le. rewrite skipn_firstn_comm.
-    rewrite minus_diag. rewrite firstn_O. cbn. f_equal.
-    assert (length (take m t) = m). rewrite take_length. lia. lia. rewrite take_length. lia. rewrite take_length. lia.
+    rewrite Nat.sub_diag. rewrite firstn_O. cbn. f_equal.
+    assert (length (take m t) = m). rewrite firstn_length. lia. lia. rewrite firstn_length. lia. rewrite firstn_length. lia.
   - rewrite drop_ge. 2: lia.
     assert (nth_error [] n0 = None) as -> by now destruct n0.
     symmetry. eapply nth_error_None. lia.

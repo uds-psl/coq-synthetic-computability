@@ -130,7 +130,7 @@ Section fixes.
     - destruct (in_dec eY x l2) as [Hi | Hni].
       2: firstorder.
       destruct (IHNoDup (remove eY x l2)) as (x0 & H1 & H2 & H3).
-      + eapply lt_le_trans. eapply remove_length_lt. 1: eauto. lia.
+      + eapply Nat.lt_le_trans. eapply remove_length_lt. 1: eauto. lia.
       + exists x0. firstorder. intros Hx0.
         eapply H3. eapply in_in_remove. 2: eauto.
         congruence.
@@ -276,8 +276,8 @@ Section fixes2.
       eapply build_corr_mono; eauto.
   Qed.
   
-  Definition f' x := proj1_sig (In1_compute _ _ (build_corrX x (S (IX x)) ltac:(abstract lia))).
-  Definition g' y := proj1_sig (In2_compute _ _ (build_corrY y (S (IY y)) ltac:(abstract lia))).
+  #[program] Definition f' x := proj1_sig (In1_compute _ _ (build_corrX x (S (IX x)) _)).
+  #[program] Definition g' y := proj1_sig (In2_compute _ _ (build_corrY y (S (IY y)) _)).
   
   Lemma f'_g' y :
     f' (g' y) = y.

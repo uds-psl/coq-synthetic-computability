@@ -44,7 +44,7 @@ Proof.
   - exists (fun f x => negb (Nat.eqb (f x) 0)).
     intros f. unfold K_nat_nat, K_nat_bool.
     setoid_rewrite Bool.negb_true_iff.
-    now setoid_rewrite NPeano.Nat.eqb_neq.
+    now setoid_rewrite PeanoNat.Nat.eqb_neq.
 Qed.
 
 Lemma K_nat_equiv :

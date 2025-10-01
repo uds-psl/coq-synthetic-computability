@@ -173,19 +173,9 @@ End AssumePartiality.
 
 From SyntheticComputability Require Import EnumerabilityFacts ListEnumerabilityFacts.
 
-Theorem PostProblem_from_neg_negLPO {Part : partial.partiality} :
-(exists θ, EPF.EPF_for θ) ->
-  ∃ p: nat → Prop, ¬ decidable p ∧ semi_decidable p ∧ (¬¬ (¬¬Σ⁰₁)-LEM → forall K : nat -> Prop, (forall q : nat -> Prop, semi_decidable q -> q ⪯ₘ K) -> ~ K ⪯ᴛ p).
+Theorem PostProblem_from_neg_negLPO {Part : partial.partiality} {epf : EPF.EPF} {enc : encoding unit} :
+  ∃ p: nat → Prop, ¬ decidable p ∧ semi_decidable p ∧ (¬¬ (¬¬Σ⁰₁)-LEM → ¬ K ⪯ᴛ p).
 Proof.
-  intros [θ EPF].
-  destruct (EnumerabilityFacts.datatype_retract (nat * list bool)) as [(I & R & HIR) _].
-  {
-    split. eapply discrete_iff. econstructor. exact _.
-    apply enumerableᵗ_prod. 
-    eapply enumerableᵗ_nat.
-    apply enum_enumT.
-    apply enumerable_list. apply enum_enumT.  eapply enumerableᵗ_bool.
-  }
   destruct (EnumerabilityFacts.datatype_retract (list bool)) as [(I2 & R2 & HIR2) _].
   {
     split. eapply discrete_iff. econstructor. exact _.
@@ -194,14 +184,8 @@ Proof.
   }
   unshelve edestruct @PostProblem_from_neg_negLPO_aux as (p & undec & semidec & H).
   - assumption.
-  - unshelve econstructor.
-    exact I. exact (fun x => match x with inl n => S n | inr _ => 0 end).
-    exact (fun n => match R n with None => (0, []) | Some x => x end).
-    exact (fun v => match v with 0 => inr tt | S n => inl n end).
-    cbn. intros n.
-    now destruct (HIR n) as [-> _]. 
-    intros []. reflexivity. now destruct u.
-  - exists θ. assumption.
+  - assumption. 
+  - assumption.
   - unshelve econstructor.
     3: eapply VectorEmbedding.vec_nat_inv.
   - eassert (forall k, enumeratorᵗ _ (list (vec nat k))).
@@ -244,6 +228,32 @@ Proof.
     exact (fun _ n => match R2 n with None => [] | Some x => x end).
     cbn. intros _ n.
     now destruct (HIR2 n) as [-> _]. 
+  - exists p. auto.
+Qed.
+
+Theorem PostProblem_from_neg_negLPO_noK {Part : partial.partiality} :
+(exists θ, EPF.EPF_for θ) ->
+  ∃ p: nat → Prop, ¬ decidable p ∧ semi_decidable p ∧ (¬¬ (¬¬Σ⁰₁)-LEM → forall K : nat -> Prop, (forall q : nat -> Prop, semi_decidable q -> q ⪯ₘ K) -> ~ K ⪯ᴛ p).
+Proof.
+  destruct (EnumerabilityFacts.datatype_retract (nat * list bool)) as [(I & R & HIR) _].
+  {
+    split. eapply discrete_iff. econstructor. exact _.
+    apply enumerableᵗ_prod. 
+    eapply enumerableᵗ_nat.
+    apply enum_enumT.
+    apply enumerable_list. apply enum_enumT.  eapply enumerableᵗ_bool.
+  }
+  intros [θ EPF].
+  unshelve edestruct @PostProblem_from_neg_negLPO as (p & undec & semidec & H).
+  - assumption.
+  - exists θ. assumption.
+  - unshelve econstructor.
+    exact I. exact (fun x => match x with inl n => S n | inr _ => 0 end).
+    exact (fun n => match R n with None => (0, []) | Some x => x end).
+    exact (fun v => match v with 0 => inr tt | S n => inl n end).
+    cbn. intros n.
+    now destruct (HIR n) as [-> _]. 
+    intros []. reflexivity. now destruct u.
   - exists p. repeat split. assumption. assumption.
     intros lpo K HK Hp.
     apply H. assumption.
@@ -255,6 +265,9 @@ Qed.
 
 Check @PostProblem_from_neg_negLPO.
 Print Assumptions PostProblem_from_neg_negLPO.
+
+Check @PostProblem_from_neg_negLPO_noK.
+Print Assumptions PostProblem_from_neg_negLPO_noK.
 
 (* general proof that (¬¬Σ⁰₁)-LEM <-> ¬¬(Σ⁰₁)-LEM under many-one complete Σ⁰₁ predicate  *)
 Section assume.
