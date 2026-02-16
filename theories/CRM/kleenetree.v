@@ -955,6 +955,10 @@ Proof.
   intros. eapply DM_Sigma_0_1_iff_totality; eauto.
 Qed.
 
+Definition coS_AUC_on X Y := forall R : X -> Y -> Prop,
+    co_semi_decidable (fun '(x,y) => R x y) ->
+    (∀ x : X, exists! y : Y, R x y) → ∃ f : X → Y, ∀ x : X, R x (f x).
+
 Lemma cos_AC_on_weak_to_coS_ADC_on_weak :
   coS_AC_on_weak nat bool -> coS_ADC_on_weak bool.
 Proof.
