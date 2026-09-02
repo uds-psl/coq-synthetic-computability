@@ -1,4 +1,6 @@
-From SyntheticComputability Require Import ArithmeticalHierarchySemantic PostsTheorem reductions SemiDec TuringJump OracleComputability Definitions partial Pigeonhole.
+From SyntheticComputability Require Import ArithmeticalHierarchySemantic PostsTheorem reductions SemiDec TuringJump OracleComputability Definitions partial Pigeonhole embed_nat.
+
+Import EmbedNatNotations.
 
 Require Import stdpp.list Vectors.VectorDef Arith.Compare_dec Lia.
 Import Vector.VectorNotations.
@@ -44,29 +46,29 @@ Convention:
     - intros []; destruct (Hf x) as [h1 h2]; eauto.
   Qed.
 
-  Lemma char_rel_limit_equiv' {X} (P: X → Prop):
-    definite P → char_rel_limit_computable (char_rel P) ↔ char_rel_limit_computable' (char_rel P) .
-  Proof.
-    intros HP; split.
-    - intros [f Hf]. exists f; intros.
-      destruct (Hf x y) as [Hf' _].
-      now apply Hf'.
-    - intros [f Hf]. exists f. intros x y.
-      split. intro H. now apply Hf.
-      intros [N HN]. destruct (HP x).
-      destruct y; [easy|].
-      destruct (Hf x true H) as [N' HfN].
-      intros _. enough (true = false) by congruence.
-      specialize (HN (max N N')).
-      specialize (HfN (max N N')).
-      rewrite <- HN, <- HfN; eauto; lia.
-      destruct y; [|easy].
-      destruct (Hf x false H) as [N' HfN]. 
-      enough (true = false) by congruence.
-      specialize (HN (max N N')).
-      specialize (HfN (max N N')).
-      rewrite <- HN, <- HfN; eauto; lia.
-  Qed.
+  (* Lemma char_rel_limit_equiv' {X} (P: X → Prop): *)
+  (*   definite P → char_rel_limit_computable (char_rel P) ↔ char_rel_limit_computable' (char_rel P) . *)
+  (* Proof. *)
+  (*   intros HP; split. *)
+  (*   - intros [f Hf]. exists f; intros. *)
+  (*     destruct (Hf x y) as [Hf' _]. *)
+  (*     now apply Hf'. *)
+  (*   - intros [f Hf]. exists f. intros x y. *)
+  (*     split. intro H. now apply Hf. *)
+  (*     intros [N HN]. destruct (HP x). *)
+  (*     destruct y; [easy|]. *)
+  (*     destruct (Hf x true H) as [N' HfN]. *)
+  (*     intros _. enough (true = false) by congruence. *)
+  (*     specialize (HN (max N N')). *)
+  (*     specialize (HfN (max N N')). *)
+  (*     rewrite <- HN, <- HfN; eauto; lia. *)
+  (*     destruct y; [|easy]. *)
+  (*     destruct (Hf x false H) as [N' HfN].  *)
+  (*     enough (true = false) by congruence. *)
+  (*     specialize (HN (max N N')). *)
+  (*     specialize (HfN (max N N')). *)
+  (*     rewrite <- HN, <- HfN; eauto; lia. *)
+  (* Qed. *)
   
 
   (* Naming the halting problem as K *)
@@ -80,136 +82,253 @@ Convention:
 
     Context {EPF_assm : EPF.EPF}.
 
-  Section LimitLemma1.
-
-  (* Limit computable predicate P is reduciable to K *)
-
-    Context {vec_datatype : datatype (vec nat)}.
-
-    Notation vec_to_nat := (@X_to_nat (vec nat) _ _).
-    Notation nat_to_vec := (@nat_to_X (vec nat) _ _).
-    Notation vec_nat_inv := (@X_nat_inv (vec nat) _ _).
-
-    Context {list_vec_datatype : datatype (fun k => list (vec nat k))}.
-
-    Notation list_vec_to_nat := (@X_to_nat  (fun k => list (vec nat k)) _ _).
-    Notation nat_to_list_vec := (@nat_to_X  (fun k => list (vec nat k)) _).
-    Notation list_vec_nat_inv := (@X_nat_inv  (fun k => list (vec nat k)) _ _).
-
-    Context {list_bool_datatype : datatype (fun _ => list bool)}.
-
-    Notation list_bool_to_nat := (@X_to_nat (fun _ => list bool) _ 0).
-    Notation nat_to_list_bool := (@nat_to_X (fun _ => list bool) _ 0).
-    Notation list_bool_nat_inv := (@X_nat_inv (fun _ => list bool) _ 0).
-
-  Section def_K.
-
-    Hypothesis LEM_Σ_1: LEM_Σ 1.
-
-    Lemma semi_dec_def {X} (p: X → Prop):
-      semi_decidable p → definite p.
+    Lemma limit_turing_red_K {k: nat} (A: nat → Prop) :
+      limit_computable A →
+      A ⪯ᴛ K.
     Proof.
-      intros [f Hf]. unfold semi_decider in Hf.
-      destruct level1 as (_&H2&_).
-      assert principles.LPO as H by now rewrite <- H2.
-      intro x. destruct (H (f x)).
-      left. now rewrite Hf.
-      right. intros [k Hk]%Hf.
-      apply H0. now exists k.
+      intros [f Hf].
+      pose (P := fun xn => exists k, f (fst xn) ((snd xn) + k) <> f (fst xn) (snd xn)).
+      assert (semi_decidable P).
+      {
+        unfold P.
+        apply SemiDecidabilityFacts.semi_decidable_ex.
+        apply SemiDecidabilityFacts.decidable_semi_decidable.
+        apply DecidabilityFacts.decidable_complement.
+        apply DecidabilityFacts.decidable_iff.
+        constructor. intros. apply EqDecInstances.bool_eqdec.
+      }
+      assert (exists c, forall x n, K (c x n) <-> P (x, n)) as [c Hc].
+      {
+        edestruct red_m_iff_semidec_jump with (P := fun! ⟨x,n⟩ => P (x,n)) as [[c Hc] _].
+        apply semi_decidable_OracleSemiDecidable.
+        {
+          destruct H as [g Hg].
+          exists (fun m => g (unembed m)).
+          red. intros.
+          destruct (unembed x) as [x' n].
+          firstorder.
+        }
+        exists (fun x n => c ⟨x,n⟩).
+        red in Hc. intros.
+        specialize (Hc ⟨x,n⟩).
+        rewrite embedP in Hc.
+        rewrite Hc. unfold K. reflexivity.
+      }
+      exists (fun R x b => exists i,
+            (R (c x i) false /\ forall m, m < i -> R (c x m) true) /\ b = f x i).
+      split.
+      { 
+        eapply OracleComputable_ext.
+        { eapply computable_bind.
+          - eapply computable_comp.
+            + eapply computable_bind.
+              * eapply computable_precompose with (g := fun '(x, m) => c x m).
+                eapply computable_id.
+              * eapply computable_function with (f := fun '(_, a) => negb a).
+            + eapply computable_search.
+          - eapply computable_function with (f := fun '(x, n) => f x n). }
+        intros R x b. cbn.
+        split.
+        - intros (n & (([] & ? & ?) & H2) & ?); cbn in *; try congruence.
+          exists n.
+          repeat split; auto.
+          intros ? ([] & ? & ?) % H2; cbn in *; try congruence.
+        - intros (n & ? & ->).
+          exists n. firstorder.
+      }
+      intros x b. split. 
+      - intros Hxb.
+        assert (exists N, ∀ n : nat, n ≥ N → f x n = b) as (N & HN).
+        { 
+          destruct b; firstorder.
+        }
+        assert ( D :
+                 ∀ i : nat, {∀ m : nat, i ≤ m → m ≤ N → f x m = b} + {∃ m : nat, i <= m <= N ∧ f x m ≠ b}).
+        {
+          clear.
+          induction N. intros i.
+          - destruct (bool_eq_dec (f x 0) b).
+            + left. firstorder. assert (m = 0) as -> by lia. auto.
+            + destruct i.
+              * right. eauto.
+              * left. intros. lia.
+          - intros i.
+            destruct (IHN i) as [IH | IH].
+            + destruct (bool_eq_dec (f x (S N)) b).
+              * left. intros.
+                inversion H0; firstorder.
+              * destruct (le_dec i (S N)) as [Hi|Hi]; firstorder lia.
+            + firstorder lia.
+        }
+        destruct dec_inh_nat_subset_has_unique_least_element
+          with (P := fun i => forall m, i <= m -> m <= N -> f x m = b) as (i & (Hi & Hsmall) & Hleast).
+        { intros.
+          destruct (D n); firstorder lia.
+        }
+        { exists N. firstorder. }
+        exists i. cbn -[K]. repeat split.
+        + rewrite Hc. unfold P.
+          intros (x' & H'). cbn in *.
+          apply H'.
+          rewrite (Hi i). 2,3: firstorder lia.
+          destruct (le_dec (i + x') N).
+          { apply Hi; lia. }
+          { apply HN; lia. }
+        + intros m Hm. apply Hc. red. cbn.
+          destruct (D m) as [ | (m' & ? & ?)].
+          1: firstorder lia.
+          destruct (bool_eq_dec (f x m) b).
+          * exists (m' - m). intros e'.
+            apply H1. rewrite <- e, <- e'.
+            f_equal. lia.
+          * exists (N - m).
+            replace (m + (N - m)) with N by lia.
+            rewrite (HN N). 2: lia. auto.
+        + symmetry. apply Hi; firstorder lia.
+      - intros (i & (H1 & H2) & ->).
+        cbn - [K] in H1. rewrite Hc in H1.
+        unfold P in *. cbn -[K] in *.
+        destruct (f x i) eqn:E.
+        + cbn. apply Hf. exists i.
+          intros n Hn. replace n with (i + (n - i)) by lia.
+          destruct (f x (i + (n - i))) eqn:E'. reflexivity.
+          exfalso. apply H1. exists (n - i). rewrite E'. congruence.
+        + cbn. apply Hf. exists i.
+          intros n Hn. replace n with (i + (n - i)) by lia.
+          destruct (f x (i + (n - i))) eqn:E'. 2: reflexivity.
+          exfalso. apply H1. exists (n - i). rewrite E'. congruence.
     Qed.
 
-    Lemma def_K: definite K.
-    Proof.
-      apply semi_dec_def. 
-      assert (isΣsem 1 (@jumpNK _ _ _ 1 1)).
-      eapply jump_in_Σn; eauto.
-      assert (@jumpNK _ _ _ 1 1 ≡ₘ ­{0}^(1)).
-      apply jumpNKspec.
-      rewrite <- semi_dec_iff_Σ1 in H.
-      destruct H0 as [_ [f Hf]].
-      unfold reduces_m in Hf.
-      destruct H as [g Hg].
-      unfold semi_decider in Hg.
-      exists (fun x => g (f x)).
-      split. now intros H%Hf%Hg. now intros H%Hg%Hf.
-    Qed.
+(*   Section LimitLemma1. *)
 
-  End def_K.
+(*   (* Limit computable predicate P is reduciable to K *) *)
 
-  (* Extensionality of Σ2, i.e. P t iff ∃ x. ∀ y. f(x, y, t) = true *)
+(*     Context {vec_datatype : datatype (vec nat)}. *)
 
-  Lemma char_Σ2 {k: nat} (P: vec nat k → Prop) :
-    (∃ f: nat → nat → vec nat k → bool, ∀ x, P x ↔ (∃ n, ∀ m, f n m x = true)) →
-    isΣsem 2 P.
-  Proof.
-    intros [f H].
-    eapply isΣsemS_ with (p := fun v => ∀ y, f (hd v) y (tl v) = true).
-    eapply isΠsemS_ with (p := fun v => f (hd (tl v)) (hd v) (tl (tl v)) = true).
-    eapply isΣsem0. all: easy.
-  Qed.
+(*     Notation vec_to_nat := (@X_to_nat (vec nat) _ _). *)
+(*     Notation nat_to_vec := (@nat_to_X (vec nat) _ _). *)
+(*     Notation vec_nat_inv := (@X_nat_inv (vec nat) _ _). *)
 
-  Lemma limit_Σ2 {k: nat} (P: vec nat k → Prop) :
-    limit_computable P → isΣsem 2 P ∧ isΣsem 2 (compl P).
-  Proof.
-    intros [f H]; split; eapply char_Σ2.
-    - exists (fun N n x => if lt_dec n N then true else f x n).
-      intro w. destruct (H w) as [-> _]; split; intros [N Hn]; exists N.
-      + intro m. destruct (lt_dec m N); try apply Hn; lia.
-      + intros n He. specialize (Hn n); destruct (lt_dec n N); auto; lia.
-    - exists (fun N n x => if lt_dec n N then true else negb (f x n)).
-      intro w. destruct (H w) as [_ ->]; split; intros [N Hn]; exists N.
-      + intro m. destruct (lt_dec m N); [auto| rewrite (Hn m); lia].
-      + intros n He. specialize (Hn n).
-        destruct (lt_dec n N); auto; [lia|destruct (f w n); easy].
-  Qed.
+(*     Context {list_vec_datatype : datatype (fun k => list (vec nat k))}. *)
 
-  Lemma limit_semi_dec_K {k: nat} (P: vec nat k → Prop) :
-    LEM_Σ 1 →
-    limit_computable P →
-    OracleSemiDecidable K P ∧
-    OracleSemiDecidable K (compl P).
-  Proof.
-    intros LEM H%limit_Σ2.
-    rewrite <- !(Σ_semi_decidable_jump).
-    all: eauto.
-  Qed.
+(*     Notation list_vec_to_nat := (@X_to_nat  (fun k => list (vec nat k)) _ _). *)
+(*     Notation nat_to_list_vec := (@nat_to_X  (fun k => list (vec nat k)) _). *)
+(*     Notation list_vec_nat_inv := (@X_nat_inv  (fun k => list (vec nat k)) _ _). *)
 
-  Lemma limit_turing_red_K' {k: nat} (P: vec nat k → Prop) :
-    LEM_Σ 1 →
-    definite K →
-    limit_computable P →
-    P ⪯ᴛ K.
-  Proof.
-    intros LEM D H % (limit_semi_dec_K LEM); destruct H as [h1 h2].
-    apply PT; try assumption.
-    apply Dec.nat_eq_dec.
-  Qed.
+(*     Context {list_bool_datatype : datatype (fun _ => list bool)}. *)
 
-  Fact elim_vec (P: nat → Prop):
-    P ⪯ₘ (fun x: vec nat 1 => P (hd x)) .
-  Proof. exists (fun x => [x]). now intros x. Qed.
+(*     Notation list_bool_to_nat := (@X_to_nat (fun _ => list bool) _ 0). *)
+(*     Notation nat_to_list_bool := (@nat_to_X (fun _ => list bool) _ 0). *)
+(*     Notation list_bool_nat_inv := (@X_nat_inv (fun _ => list bool) _ 0). *)
 
-    (** ** The Limit Lemma 1 *)
+(*   Section def_K. *)
+
+(*     Hypothesis LEM_Σ_1: LEM_Σ 1. *)
+
+(*     Lemma semi_dec_def {X} (p: X → Prop): *)
+(*       semi_decidable p → definite p. *)
+(*     Proof. *)
+(*       intros [f Hf]. unfold semi_decider in Hf. *)
+(*       destruct level1 as (_&H2&_). *)
+(*       assert principles.LPO as H by now rewrite <- H2. *)
+(*       intro x. destruct (H (f x)). *)
+(*       left. now rewrite Hf. *)
+(*       right. intros [k Hk]%Hf. *)
+(*       apply H0. now exists k. *)
+(*     Qed. *)
+
+(*     Lemma def_K: definite K. *)
+(*     Proof. *)
+(*       apply semi_dec_def.  *)
+(*       assert (isΣsem 1 (@jumpNK _ _ _ 1 1)). *)
+(*       eapply jump_in_Σn; eauto. *)
+(*       assert (@jumpNK _ _ _ 1 1 ≡ₘ ­{0}^(1)). *)
+(*       apply jumpNKspec. *)
+(*       rewrite <- semi_dec_iff_Σ1 in H. *)
+(*       destruct H0 as [_ [f Hf]]. *)
+(*       unfold reduces_m in Hf. *)
+(*       destruct H as [g Hg]. *)
+(*       unfold semi_decider in Hg. *)
+(*       exists (fun x => g (f x)). *)
+(*       split. now intros H%Hf%Hg. now intros H%Hg%Hf. *)
+(*     Qed. *)
+
+(*   End def_K. *)
+
+(*   (* Extensionality of Σ2, i.e. P t iff ∃ x. ∀ y. f(x, y, t) = true *) *)
+
+(*   Lemma char_Σ2 {k: nat} (P: vec nat k → Prop) : *)
+(*     (∃ f: nat → nat → vec nat k → bool, ∀ x, P x ↔ (∃ n, ∀ m, f n m x = true)) → *)
+(*     isΣsem 2 P. *)
+(*   Proof. *)
+(*     intros [f H]. *)
+(*     eapply isΣsemS_ with (p := fun v => ∀ y, f (hd v) y (tl v) = true). *)
+(*     eapply isΠsemS_ with (p := fun v => f (hd (tl v)) (hd v) (tl (tl v)) = true). *)
+(*     eapply isΣsem0. all: easy. *)
+(*   Qed. *)
+
+(*   Lemma limit_Σ2 {k: nat} (P: vec nat k → Prop) : *)
+(*     limit_computable P → isΣsem 2 P ∧ isΣsem 2 (compl P). *)
+(*   Proof. *)
+(*     intros [f H]; split; eapply char_Σ2. *)
+(*     - exists (fun N n x => if lt_dec n N then true else f x n). *)
+(*       intro w. destruct (H w) as [-> _]; split; intros [N Hn]; exists N. *)
+(*       + intro m. destruct (lt_dec m N); try apply Hn; lia. *)
+(*       + intros n He. specialize (Hn n); destruct (lt_dec n N); auto; lia. *)
+(*     - exists (fun N n x => if lt_dec n N then true else negb (f x n)). *)
+(*       intro w. destruct (H w) as [_ ->]; split; intros [N Hn]; exists N. *)
+(*       + intro m. destruct (lt_dec m N); [auto| rewrite (Hn m); lia]. *)
+(*       + intros n He. specialize (Hn n). *)
+(*         destruct (lt_dec n N); auto; [lia|destruct (f w n); easy]. *)
+(*   Qed. *)
+
+(*   Lemma limit_semi_dec_K {k: nat} (P: vec nat k → Prop) : *)
+(*     LEM_Σ 1 → *)
+(*     limit_computable P → *)
+(*     OracleSemiDecidable K P ∧ *)
+(*     OracleSemiDecidable K (compl P). *)
+(*   Proof. *)
+(*     intros LEM H%limit_Σ2. *)
+(*     rewrite <- !(Σ_semi_decidable_jump). *)
+(*     all: eauto. *)
+(*   Qed. *)
+
+(*   Lemma limit_turing_red_K' {k: nat} (P: vec nat k → Prop) : *)
+(*     LEM_Σ 1 → *)
+(*     definite K → *)
+(*     limit_computable P → *)
+(*     P ⪯ᴛ K. *)
+(*   Proof. *)
+(*     intros LEM D H % (limit_semi_dec_K LEM); destruct H as [h1 h2]. *)
+(*     apply PT; try assumption. *)
+(*     apply Dec.nat_eq_dec. *)
+(*   Qed. *)
+
+(*   Fact elim_vec (P: nat → Prop): *)
+(*     P ⪯ₘ (fun x: vec nat 1 => P (hd x)) . *)
+(*   Proof. exists (fun x => [x]). now intros x. Qed. *)
+
+(*     (** ** The Limit Lemma 1 *) *)
   
-  Lemma limit_turing_red_K {k: nat} (P: nat → Prop) :
-    LEM_Σ 1 →
-    limit_computable P →
-    P ⪯ᴛ K.
-  Proof.
-    intros Hc [h Hh].
-    specialize (def_K Hc) as Hk.
-    eapply Turing_transitive; last eapply (@limit_turing_red_K' 1); eauto.
-    eapply red_m_impl_red_T. apply elim_vec.
-    exists (fun v n => h (hd v) n).
-    intros x; split; 
-    destruct (Hh (hd x)) as [Hh1 Hh2]; eauto.
-  Qed.
+(*   Lemma limit_turing_red_K {k: nat} (P: nat → Prop) : *)
+(*     LEM_Σ 1 → *)
+(*     limit_computable P → *)
+(*     P ⪯ᴛ K. *)
+(*   Proof. *)
+(*     intros Hc [h Hh]. *)
+(*     specialize (def_K Hc) as Hk. *)
+(*     eapply Turing_transitive; last eapply (@limit_turing_red_K' 1); eauto. *)
+(*     eapply red_m_impl_red_T. apply elim_vec. *)
+(*     exists (fun v n => h (hd v) n). *)
+(*     intros x; split;  *)
+(*     destruct (Hh (hd x)) as [Hh1 Hh2]; eauto. *)
+(*   Qed. *)
 
-End LimitLemma1.
+(* End LimitLemma1. *)
 
-Section Σ1Approximation.
+(* Section Σ1Approximation. *)
 
-  (* Turing jump of a trivial decidable problem is semi decidable *)
+(*   (* Turing jump of a trivial decidable problem is semi decidable *) *)
 
   Lemma semi_dec_halting : semi_decidable K.
   Proof.
@@ -219,193 +338,205 @@ Section Σ1Approximation.
   Qed.
 
 
-  (* Stabilizing the semi decider allows the semi decider
-     to be used as a Σ1 approximation *)
+(*   (* Stabilizing the semi decider allows the semi decider *)
+(*      to be used as a Σ1 approximation *) *)
 
-  Definition stable (f: nat → bool) := ∀ n m, n ≤ m → f n = true → f m = true.
+(*   Definition stable (f: nat → bool) := ∀ n m, n ≤ m → f n = true → f m = true. *)
 
-  Fixpoint stabilize_step {X} (f: X → nat → bool) x n :=
-    match n with
-    | O => false
-    | S n => if f x n then true else stabilize_step f x n
-    end.
+(*   Fixpoint stabilize_step {X} (f: X → nat → bool) x n := *)
+(*     match n with *)
+(*     | O => false *)
+(*     | S n => if f x n then true else stabilize_step f x n *)
+(*     end. *)
 
-  Lemma stabilize {X} (P: X → Prop) :
-    semi_decidable P → ∃ f, semi_decider f P ∧ ∀ x, stable (f x).
-  Proof.
-    intros [f Hf].
-    exists (fun x n => stabilize_step f x n); split.
-    - intro x; split; intro h.
-      rewrite (Hf x) in h.
-      destruct h as [c Hc].
-      now exists (S c); cbn; rewrite Hc.
-      rewrite (Hf x).
-      destruct h as [c Hc].
-      induction c; cbn in Hc; [congruence|].
-      destruct (f x c) eqn: E; [now exists c|now apply IHc].
-    - intros x n m Lenm Hn.
-      induction Lenm; [trivial|].
-      cbn; destruct (f x m) eqn: E; [trivial|assumption].
-  Qed.
+(*   Lemma stabilize {X} (P: X → Prop) : *)
+(*     semi_decidable P → ∃ f, semi_decider f P ∧ ∀ x, stable (f x). *)
+(*   Proof. *)
+(*     intros [f Hf]. *)
+(*     exists (fun x n => stabilize_step f x n); split. *)
+(*     - intro x; split; intro h. *)
+(*       rewrite (Hf x) in h. *)
+(*       destruct h as [c Hc]. *)
+(*       now exists (S c); cbn; rewrite Hc. *)
+(*       rewrite (Hf x). *)
+(*       destruct h as [c Hc]. *)
+(*       induction c; cbn in Hc; [congruence|]. *)
+(*       destruct (f x c) eqn: E; [now exists c|now apply IHc]. *)
+(*     - intros x n m Lenm Hn. *)
+(*       induction Lenm; [trivial|]. *)
+(*       cbn; destruct (f x m) eqn: E; [trivial|assumption]. *)
+(*   Qed. *)
 
-  (* The Σ1 approximation output correct answers for arbitray list of questions *)
-  Definition approximation_list {A} (P: A → Prop) (f: A → bool) L :=
-    ∀ i, List.In i L → P i ↔ f i = true.
+(*   (* The Σ1 approximation output correct answers for arbitray list of questions *) *)
+(*   Definition approximation_list {A} (P: A → Prop) (f: A → bool) L := *)
+(*     ∀ i, List.In i L → P i ↔ f i = true. *)
 
-  Definition approximation_Σ1 {A} (P: A → Prop) :=
-    ∃ P_ : nat → A → bool,
-    ∀ L, ∃ c, ∀ c', c' ≥ c → approximation_list P (P_ c') L.
+(*   Definition approximation_Σ1 {A} (P: A → Prop) := *)
+(*     ∃ P_ : nat → A → bool, *)
+(*     ∀ L, ∃ c, ∀ c', c' ≥ c → approximation_list P (P_ c') L. *)
 
-  Definition approximation_Σ1_strong {A} (P: A → Prop) :=
-     ∃ P_ : nat → A → bool,
-       (∀ L, ∃ c, ∀ c', c' ≥ c → approximation_list P (P_ c') L) ∧
-       (∀ tau q a, @interrogation _ _ _ bool tau (char_rel P) q a → ∃ n, ∀ m, m ≥ n → interrogation tau (fun q a => P_ m q = a) q a).
+(*   Definition approximation_Σ1_strong {A} (P: A → Prop) := *)
+(*      ∃ P_ : nat → A → bool, *)
+(*        (∀ L, ∃ c, ∀ c', c' ≥ c → approximation_list P (P_ c') L) ∧ *)
+(*        (∀ tau q a, @interrogation _ _ _ bool tau (char_rel P) q a → ∃ n, ∀ m, m ≥ n → interrogation tau (fun q a => P_ m q = a) q a). *)
 
-  Definition approximation_Σ1_weak {A} (P: A → Prop) :=
-    ∃ P_ : nat → A → bool,
-      (∀ tau q a, @interrogation _ _ _ bool tau (char_rel P) q a → ∃ n, ∀ m, m ≥ n → interrogation tau (λ q a, P_ m q = a) q a).
+(*   Definition approximation_Σ1_weak {A} (P: A → Prop) := *)
+(*     ∃ P_ : nat → A → bool, *)
+(*       (∀ tau q a, @interrogation _ _ _ bool tau (char_rel P) q a → ∃ n, ∀ m, m ≥ n → interrogation tau (λ q a, P_ m q = a) q a). *)
 
-  Lemma semi_dec_approximation_Σ1 {X} (P: X → Prop) :
-    definite P →
-    semi_decidable P → approximation_Σ1 P.
-  Proof.
-    intros defP semiP; unfold approximation_Σ1, approximation_list.
-    destruct (stabilize semiP)  as [h [Hh HS]].
-    exists (fun n x => h x n). intro l. induction l as [|a l [c Hc]].
-    - exists 42; eauto.
-    - destruct (defP a) as [h1| h2].
-      + destruct (Hh a) as [H _].
-        destruct (H h1) as [N HN].
-        exists (max c N); intros c' Hc' e [->| He].
-        split; [intros _|easy].
-        eapply HS; [|eapply HN]; lia.
-        rewrite <- (Hc c'); [trivial|lia | assumption].
-      + exists c; intros c' Hc' e [->| He].
-        split; [easy| intros h'].
-        unfold semi_decider in Hh.
-        now rewrite Hh; exists c'.
-        rewrite Hc; eauto.
-  Qed.
+(*   Lemma semi_dec_approximation_Σ1 {X} (P: X → Prop) : *)
+(*     definite P → *)
+(*     semi_decidable P → approximation_Σ1 P. *)
+(*   Proof. *)
+(*     intros defP semiP; unfold approximation_Σ1, approximation_list. *)
+(*     destruct (stabilize semiP)  as [h [Hh HS]]. *)
+(*     exists (fun n x => h x n). intro l. induction l as [|a l [c Hc]]. *)
+(*     - exists 42; eauto. *)
+(*     - destruct (defP a) as [h1| h2]. *)
+(*       + destruct (Hh a) as [H _]. *)
+(*         destruct (H h1) as [N HN]. *)
+(*         exists (max c N); intros c' Hc' e [->| He]. *)
+(*         split; [intros _|easy]. *)
+(*         eapply HS; [|eapply HN]; lia. *)
+(*         rewrite <- (Hc c'); [trivial|lia | assumption]. *)
+(*       + exists c; intros c' Hc' e [->| He]. *)
+(*         split; [easy| intros h']. *)
+(*         unfold semi_decider in Hh. *)
+(*         now rewrite Hh; exists c'. *)
+(*         rewrite Hc; eauto. *)
+(*   Qed. *)
 
-  Lemma semi_dec_approximation_Σ1_strong {X} (P: X → Prop) :
-    definite P →
-    semi_decidable P → approximation_Σ1_strong P.
-  Proof.
-    intros defP semiP.
-    destruct (semi_dec_approximation_Σ1 defP semiP) as [P_ HP_].
-    exists P_; split; [apply HP_|].
-    intros tau q ans Htau.
-    destruct (HP_ q) as [w Hw].
-    exists w. intros m Hm. rewrite interrogation_ext.
-    exact Htau. eauto.
-    intros q_ a H1.
-    specialize (Hw m Hm q_ H1).
-    unfold char_rel; cbn.
-    destruct a; eauto; split; intro h2.
-    intro h. rewrite Hw in h. congruence.
-    firstorder.
-  Qed.
+(*   Lemma semi_dec_approximation_Σ1_strong {X} (P: X → Prop) : *)
+(*     definite P → *)
+(*     semi_decidable P → approximation_Σ1_strong P. *)
+(*   Proof. *)
+(*     intros defP semiP. *)
+(*     destruct (semi_dec_approximation_Σ1 defP semiP) as [P_ HP_]. *)
+(*     exists P_; split; [apply HP_|]. *)
+(*     intros tau q ans Htau. *)
+(*     destruct (HP_ q) as [w Hw]. *)
+(*     exists w. intros m Hm. rewrite interrogation_ext. *)
+(*     exact Htau. eauto. *)
+(*     intros q_ a H1. *)
+(*     specialize (Hw m Hm q_ H1). *)
+(*     unfold char_rel; cbn. *)
+(*     destruct a; eauto; split; intro h2. *)
+(*     intro h. rewrite Hw in h. congruence. *)
+(*     firstorder. *)
+(*   Qed. *)
 
-  Lemma approximation_Σ1_halting : definite K → approximation_Σ1 K.
-  Proof. now intros H; apply semi_dec_approximation_Σ1, semi_dec_halting. Qed.
+(*   Lemma semi_dec_approximation_Σ1_weak {X} (P: X → Prop) : *)
+(*     semi_decidable P → approximation_Σ1_weak P. *)
+(*   (* Proof. *) *)
+(*   (*   intros defP semiP. *) *)
+(*   (*   destruct (semi_dec_approximation_Σ1 defP semiP) as [P_ HP_]. *) *)
+(*   (*   exists P_; split; [apply HP_|]. *) *)
+(*   (*   intros tau q ans Htau. *) *)
+(*   (*   destruct (HP_ q) as [w Hw]. *) *)
+(*   (*   exists w. intros m Hm. rewrite interrogation_ext. *) *)
+(*   (*   exact Htau. eauto. *) *)
+(*   (*   intros q_ a H1. *) *)
+(*   (*   specialize (Hw m Hm q_ H1). *) *)
+(*   (*   unfold char_rel; cbn. *) *)
+(*   (*   destruct a; eauto; split; intro h2. *) *)
+(*   (*   intro h. rewrite Hw in h. congruence. *) *)
+(*   (*   firstorder. *) *)
+(*   (* Qed. *) *)
+(*   Admitted. *)
 
-  Lemma approximation_Σ1_halting_strong: definite K → approximation_Σ1_strong K.
-  Proof. now intros H; apply semi_dec_approximation_Σ1_strong, semi_dec_halting. Qed.
+(*   Lemma approximation_Σ1_halting : definite K → approximation_Σ1 K. *)
+(*   Proof. now intros H; apply semi_dec_approximation_Σ1, semi_dec_halting. Qed. *)
+
+(*   Lemma approximation_Σ1_halting_strong: definite K → approximation_Σ1_strong K. *)
+(*   Proof. now intros H; apply semi_dec_approximation_Σ1_strong, semi_dec_halting. Qed. *)
 
 
-End Σ1Approximation.
+(* End Σ1Approximation. *)
 
 
-Section LimitLemma2.
+(* Section LimitLemma2. *)
 
-  (* A predicate P is reduciable to K if P is limit computable *)
+(*   (* A predicate P is reduciable to K if P is limit computable *) *)
 
-  Section Construction.
+(*   Section Construction. *)
 
-    Variable f : nat → nat → bool.
-    Variable tau : nat → tree nat bool bool.
-    Hypothesis Hf: ∀ L, ∃ c, ∀ c', c' ≥ c → approximation_list K (f c') L.
+(*     Variable f : nat → nat → bool. *)
+(*     Variable tau : nat → tree nat bool bool. *)
+(*     Hypothesis Hf: ∀ L, ∃ c, ∀ c', c' ≥ c → approximation_list K (f c') L. *)
 
-    Definition K_ n := fun i o => f n i = o.
-    Definition char_K_ n := fun i => ret (f n i).
+(*     Definition K_ n := fun i o => f n i = o. *)
+(*     Definition char_K_ n := fun i => ret (f n i). *)
 
-    Lemma dec_K_ n : decidable (λ i, f n i = true).
-    Proof.
-      exists (f n). easy.
-    Qed.
+(*     Lemma dec_K_ n : decidable (λ i, f n i = true). *)
+(*     Proof. *)
+(*       exists (f n). easy. *)
+(*     Qed. *)
 
-    Lemma pcomputes_K_ n: pcomputes (char_K_ n) (λ i o, f n i = o).
-    Proof.
-      intros i o; split; intro H.
-      now apply ret_hasvalue_inv.
-      now apply ret_hasvalue'.
-    Qed.
+(*     Lemma pcomputes_K_ n: pcomputes (char_K_ n) (λ i o, f n i = o). *)
+(*     Proof. *)
+(*       intros i o; split; intro H. *)
+(*       now apply ret_hasvalue_inv. *)
+(*       now apply ret_hasvalue'. *)
+(*     Qed. *)
 
-  End Construction.
+(*   End Construction. *)
 
-    (** ** The Limit Lemma 2 *)
+(*     (** ** The Limit Lemma 2 *) *)
 
-  Theorem turing_red_K_lim (P: nat → Prop) :
-    P ⪯ᴛ K →
-    definite K →
-    definite P →
-    limit_computable P.
-  Proof.
-    intros [F [H HF]] defK defP.
-    rewrite <- char_rel_limit_equiv.
-    destruct (approximation_Σ1_halting_strong defK) as [k_ [_ Hk_2]].
-    destruct H as [tau Htau].
-    pose (char_K_ n := char_K_ k_ n).
-    pose (K_ n := K_ k_ n).
-    pose (Phi x n := evalt_comp (tau x) (k_ n) n n).
-    assert (∀ x y, char_rel P x y → ∃ N : nat, ∀ n : nat, n ≥ N → (evalt_comp (tau x) (k_ n)) n n = Some (inr y)) as HL.
-    {
-    intros x y H.
-    rewrite HF in H.
-    rewrite Htau in H.
-    destruct H as (qs & ans & Hint & Out).
-    specialize (Hk_2 (tau x) qs ans Hint).
-    destruct Hk_2 as [nth Hnth].
-    assert (interrogation (tau x)
-              (fun (q : nat) (a : bool) => (k_ nth) q = a) qs ans) as Hnthbase.
-    eapply Hnth. lia.
-    edestruct (interrogation_evalt_comp_limit (tau x) k_ qs ans y) as [L Hlimt].
-    exists nth. intros. eapply Hnth. easy.
-    eapply Out.
-    exists L. intros. now apply Hlimt.
-    }
-    assert (∃ f, ∀ x y, char_rel P x y → ∃ N : nat, ∀ n : nat, n ≥ N → f x n = y) as [f HL'].
-    {
-      exists (λ x n, match (Phi x n) with
-               | Some (inr y) => y | _ => false end).
-    intros x y Hxy%HL.
-    destruct (Hxy) as [N HN].
-    exists N; intros.
-    unfold Phi. rewrite HN; eauto.
-    }
-    exists f. intros x y; split.
-    - now intros; apply HL'.
-    - intro H0. destruct y; cbn.
-      destruct (defP x); [easy|].
-      assert (char_rel P x false); [easy|].
-      apply HL' in H1.
-      destruct H0 as [N1 HN1].
-      destruct H1 as [N2 HN2].
-      specialize (HN1 (S (max N1 N2))).
-      specialize (HN2 (S (max N1 N2))).
-      enough (true = false) by congruence.
-      rewrite <- HN1, HN2; lia.
-      destruct (defP x); [|easy].
-      assert (char_rel P x true); [easy|].
-      apply HL' in H1.
-      destruct H0 as [N1 HN1].
-      destruct H1 as [N2 HN2].
-      specialize (HN1 (S (max N1 N2))).
-      specialize (HN2 (S (max N1 N2))).
-      enough (true = false) by congruence.
-      rewrite <- HN2, HN1; lia.
-  Qed.
+(*   (* Theorem turing_red_K_lim (P: nat → Prop) : *) *)
+(*   (*   P ⪯ᴛ K → *) *)
+(*   (*   (* definite K → *) *) *)
+(*   (*   (* definite P → *) *) *)
+(*   (*   limit_computable P. *) *)
+(*   (* Proof. *) *)
+(*   (*   intros [F [H HF]]. *) *)
+(*   (*   rewrite <- char_rel_limit_equiv. *) *)
+(*   (*   destruct (semi_dec_approximation_Σ1_weak semi_dec_halting) as [k_ Hk_2]. *) *)
+(*   (*   destruct H as [tau Htau]. *) *)
+(*   (*   pose (Phi x n := evalt_comp (tau x) (k_ n) n n). *) *)
+(*   (*   assert (∀ x y, char_rel P x y → ∃ N : nat, ∀ n : nat, n ≥ N → (evalt_comp (tau x) (k_ n)) n n = Some (inr y)) as HL. *) *)
+(*   (*   { *) *)
+(*   (*   intros x y H. *) *)
+(*   (*   rewrite HF in H. *) *)
+(*   (*   rewrite Htau in H. *) *)
+(*   (*   destruct H as (qs & ans & Hint & Out). *) *)
+(*   (*   unshelve epose proof (semi_dec_approximation_Σ1_weak (P := K) _).  *) *)
+(*   (*   1: apply semi_dec_halting. *) *)
+(*   (*   specialize (Hk_2 (tau x) qs ans Hint). *) *)
+(*   (*   destruct Hk_2 as [nth Hnth]. *) *)
+(*   (*   assert (interrogation (tau x) *) *)
+(*   (*             (fun (q : nat) (a : bool) => (k_ nth) q = a) qs ans) as Hnthbase. *) *)
+(*   (*   eapply Hnth. lia. *) *)
+(*   (*   edestruct (interrogation_evalt_comp_limit (tau x) k_ qs ans y) as [L Hlimt]. *) *)
+(*   (*   exists nth. intros. eapply Hnth. easy. *) *)
+(*   (*   eapply Out. *) *)
+(*   (*   exists L. intros. now apply Hlimt. *) *)
+(*   (*   } *) *)
+(*   (*   assert (∃ f, ∀ x y, char_rel P x y → ∃ N : nat, ∀ n : nat, n ≥ N → f x n = y) as [f HL']. *) *)
+(*   (*   { *) *)
+(*   (*     exists (λ x n, match (Phi x n) with *) *)
+(*   (*              | Some (inr y) => y | _ => false end). *) *)
+(*   (*   intros x y Hxy%HL. *) *)
+(*   (*   destruct (Hxy) as [N HN]. *) *)
+(*   (*   exists N; intros. *) *)
+(*   (*   unfold Phi. rewrite HN; eauto. *) *)
+(*   (*   } *) *)
+(*   (*   exists f. intros x; split. *) *)
+(*   (*   - now intros; apply HL'.     *) *)
+(*   (*   - intro H0. destruct y; cbn. *) *)
+(*   (*     1:{ admit. } *) *)
+(*   (*     1: intros H1. *) *)
+(*   (*     assert (char_rel P x true); [easy|]. *) *)
+(*   (*     apply HL' in H1. *) *)
+(*   (*     destruct H0 as [N1 HN1]. *) *)
+(*   (*     destruct H1 as [N2 HN2]. *) *)
+(*   (*     specialize (HN1 (S (max N1 N2))). *) *)
+(*   (*     specialize (HN2 (S (max N1 N2))). *) *)
+(*   (*     enough (true = false) by congruence. *) *)
+(*   (*     rewrite <- HN2, HN1; lia. *) *)
+(*   (* Qed. *) *)
 
-End LimitLemma2.
+(* End LimitLemma2. *)
 
 End AssumePartiality.
+
