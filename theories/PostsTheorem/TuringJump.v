@@ -262,6 +262,30 @@ End Reverse.
 
 Notation oracle_semi_decidable := OracleSemiDecidable.
 
+Definition OracleSemiDecidable_classical {Part : partiality} {X Y} (q : Y -> Prop) (p : X -> Prop) :=
+  exists R : Functional Y bool X unit,
+    OracleComputable R /\
+      forall x, ~~ (p x <-> R (char_rel q) x tt).
+
+Notation oracle_semi_decidable_classical := OracleSemiDecidable_classical.
+
+Lemma Turing_to_sdec_compl_classical {X Y} (q : Y -> Prop) (p : X -> Prop) :
+  red_Turing_classical p q ->
+  OracleSemiDecidable_classical q (compl p).
+Proof.
+  intros [F [HF H2]].
+  exists (fun R x o => F R x false). split.
+  - eapply OracleComputable_ext.
+    eapply computable_bind. eapply HF.
+    eapply computable_if with (test := snd).
+    eapply computable_nothing.
+    eapply computable_ret with (v := tt).
+    cbn; split.
+    + intros [[]]; firstorder.
+    + destruct o. exists false; firstorder.
+  - firstorder.
+Qed.
+
 Section jump.
   (** ** Synthetic Turing Jump *)
 
@@ -284,6 +308,14 @@ Section jump.
   (** Complement not semi-decidable ***)
 
   Lemma not_semidecidable_compl_J Q : ~ oracle_semi_decidable Q (compl (J Q)).
+  Proof.
+    intros (F & Hcomp & H).
+    specialize (surjective Hcomp) as [c Hc].
+    unfold J in H. specialize (H c).
+    rewrite <- Hc in H. tauto.
+  Qed.
+
+  Lemma not_semidecidable_compl_J_classical Q : ~ oracle_semi_decidable_classical Q (compl (J Q)).
   Proof.
     intros (F & Hcomp & H).
     specialize (surjective Hcomp) as [c Hc].
@@ -318,6 +350,12 @@ Section jump.
   Proof.
     intros H % Turing_to_sdec_compl.
     eapply not_semidecidable_compl_J; eassumption.
+  Qed.
+
+  Lemma not_turing_red_classical_J Q: ~ (red_Turing_classical (J Q) Q).
+  Proof.
+    intros H % Turing_to_sdec_compl_classical.
+    eapply not_semidecidable_compl_J_classical; eassumption.
   Qed.
 
   (** # <a id="J_self_J_m_red" /> #*)

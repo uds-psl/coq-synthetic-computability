@@ -45,30 +45,6 @@ Convention:
     - split; firstorder.
     - intros []; destruct (Hf x) as [h1 h2]; eauto.
   Qed.
-
-  (* Lemma char_rel_limit_equiv' {X} (P: X → Prop): *)
-  (*   definite P → char_rel_limit_computable (char_rel P) ↔ char_rel_limit_computable' (char_rel P) . *)
-  (* Proof. *)
-  (*   intros HP; split. *)
-  (*   - intros [f Hf]. exists f; intros. *)
-  (*     destruct (Hf x y) as [Hf' _]. *)
-  (*     now apply Hf'. *)
-  (*   - intros [f Hf]. exists f. intros x y. *)
-  (*     split. intro H. now apply Hf. *)
-  (*     intros [N HN]. destruct (HP x). *)
-  (*     destruct y; [easy|]. *)
-  (*     destruct (Hf x true H) as [N' HfN]. *)
-  (*     intros _. enough (true = false) by congruence. *)
-  (*     specialize (HN (max N N')). *)
-  (*     specialize (HfN (max N N')). *)
-  (*     rewrite <- HN, <- HfN; eauto; lia. *)
-  (*     destruct y; [|easy]. *)
-  (*     destruct (Hf x false H) as [N' HfN].  *)
-  (*     enough (true = false) by congruence. *)
-  (*     specialize (HN (max N N')). *)
-  (*     specialize (HfN (max N N')). *)
-  (*     rewrite <- HN, <- HfN; eauto; lia. *)
-  (* Qed. *)
   
 
   (* Naming the halting problem as K *)
@@ -199,6 +175,17 @@ Convention:
           exfalso. apply H1. exists (n - i). rewrite E'. congruence.
     Qed.
 
+    (*   (* Turing jump of a trivial decidable problem is semi decidable *) *)
+
+    Lemma semi_dec_halting : semi_decidable K.
+    Proof.
+      eapply OracleSemiDecidable_semi_decidable with (q := ­{0}).
+      - exists (λ n, match n with | O => true | _ => false end); intros [|n]; easy.
+      - eapply semidecidable_J.
+    Qed.
+
+    (* commented out code for backwards direction *)
+
 (*   Section LimitLemma1. *)
 
 (*   (* Limit computable predicate P is reduciable to K *) *)
@@ -327,15 +314,6 @@ Convention:
 (* End LimitLemma1. *)
 
 (* Section Σ1Approximation. *)
-
-(*   (* Turing jump of a trivial decidable problem is semi decidable *) *)
-
-  Lemma semi_dec_halting : semi_decidable K.
-  Proof.
-    eapply OracleSemiDecidable_semi_decidable with (q := ­{0}).
-    - exists (λ n, match n with | O => true | _ => false end); intros [|n]; easy.
-    - eapply semidecidable_J.
-  Qed.
 
 
 (*   (* Stabilizing the semi decider allows the semi decider *)
@@ -540,3 +518,193 @@ Convention:
 
 End AssumePartiality.
 
+
+(** Forward direction again, for classical variants
+
+ **)
+
+  Definition limit_computable_classical {X} (P: X → Prop) :=
+    ∃ f: X → nat → bool, ∀ x,
+      ~~ (P x ↔ ∃ N, ∀ n, n ≥ N → f x n = true) ∧
+        ~~ (¬ P x ↔ ∃ N, ∀ n, n ≥ N → f x n = false).
+
+  Lemma limit_computable_to_classical {X} (P : X -> Prop) :
+    limit_computable P -> limit_computable_classical P.
+  Proof.
+    firstorder.
+  Qed.
+
+  Lemma limit_computable_from_classical {X} (P : X -> Prop) :
+    DNE -> limit_computable_classical P -> limit_computable P.
+  Proof.
+    intros lem [f Hf]. exists f.
+    intros x.
+    specialize (Hf x).
+    apply lem; tauto.
+  Qed.
+
+  Definition char_rel_limit_computable_classical {X} (P: X → bool → Prop) :=
+    ∃ f: X → nat → bool, ∀ x y, ~~ (P x y ↔ ∃ N, ∀ n, n ≥ N → f x n = y).
+
+  Lemma char_rel_limit_equiv_classical {X} (P: X → Prop):
+    char_rel_limit_computable_classical (char_rel P) ↔ limit_computable_classical P.
+  Proof.
+    split; intros [f Hf]; exists f; intros x.
+    - split; firstorder.
+    - intros []; destruct (Hf x) as [h1 h2]; eauto.
+  Qed.
+
+  Section AssumePartiality.
+
+    Context {Part : partiality}.
+
+    Context {enc : encoding ()}.
+
+    Context {EPF_assm : EPF.EPF}.
+
+    Lemma nn_split P Q :
+      (P -> ~~ Q) -> (Q -> ~~ P) ->
+      ~~ (P <-> Q).
+    Proof.
+      tauto.
+    Qed.
+
+    Ltac strip HNN :=
+      match goal with
+      | [ |- False ] => apply HNN; clear HNN; intros HNN
+      | [  |- ~~ ?gl ] =>
+          let G := fresh "G" in
+          (intros G;
+          apply HNN; clear HNN; intros HNN;
+          revert G; change (~~gl))
+      end.
+
+    Lemma limit_turing_red_K_classical (A: nat → Prop) :
+      limit_computable_classical A →
+      red_Turing_classical A K. 
+    Proof.
+      intros [f Hf].
+      pose (P := fun xn => exists k, f (fst xn) ((snd xn) + k) <> f (fst xn) (snd xn)).
+      assert (semi_decidable P).
+      {
+        unfold P.
+        apply SemiDecidabilityFacts.semi_decidable_ex.
+        apply SemiDecidabilityFacts.decidable_semi_decidable.
+        apply DecidabilityFacts.decidable_complement.
+        apply DecidabilityFacts.decidable_iff.
+        constructor. intros. apply EqDecInstances.bool_eqdec.
+      }
+      assert (exists c, forall x n, K (c x n) <-> P (x, n)) as [c Hc].
+      {
+        edestruct red_m_iff_semidec_jump with (P := fun! ⟨x,n⟩ => P (x,n)) as [[c Hc] _].
+        apply semi_decidable_OracleSemiDecidable.
+        {
+          destruct H as [g Hg].
+          exists (fun m => g (unembed m)).
+          red. intros.
+          destruct (unembed x) as [x' n].
+          firstorder.
+        }
+        exists (fun x n => c ⟨x,n⟩).
+        red in Hc. intros.
+        specialize (Hc ⟨x,n⟩).
+        rewrite embedP in Hc.
+        rewrite Hc. unfold K. reflexivity.
+      }
+      exists (fun R x b => exists i,
+            (R (c x i) false /\ forall m, m < i -> R (c x m) true) /\ b = f x i).
+      split.
+      { 
+        eapply OracleComputable_ext.
+        { eapply computable_bind.
+          - eapply computable_comp.
+            + eapply computable_bind.
+              * eapply computable_precompose with (g := fun '(x, m) => c x m).
+                eapply computable_id.
+              * eapply computable_function with (f := fun '(_, a) => negb a).
+            + eapply computable_search.
+          - eapply computable_function with (f := fun '(x, n) => f x n). }
+        intros R x b. cbn.
+        split.
+        - intros (n & (([] & ? & ?) & H2) & ?); cbn in *; try congruence.
+          exists n.
+          repeat split; auto.
+          intros ? ([] & ? & ?) % H2; cbn in *; try congruence.
+        - intros (n & ? & ->).
+          exists n. firstorder.
+      }
+      intros x b. apply nn_split.
+      - intros Hxb. red in Hxb.
+        assert (~~ exists N, ∀ n : nat, n ≥ N → f x n = b) as HNN.
+        { 
+          destruct b; firstorder.
+        }
+        strip HNN. destruct HNN as [N HN].
+        assert ( D :
+                 ∀ i : nat, {∀ m : nat, i ≤ m → m ≤ N → f x m = b} + {∃ m : nat, i <= m <= N ∧ f x m ≠ b}).
+        {
+          clear.
+          induction N. intros i.
+          - destruct (bool_eq_dec (f x 0) b).
+            + left. firstorder. assert (m = 0) as -> by lia. auto.
+            + destruct i.
+              * right. eauto.
+              * left. intros. lia.
+          - intros i.
+            destruct (IHN i) as [IH | IH].
+            + destruct (bool_eq_dec (f x (S N)) b).
+              * left. intros.
+                inversion H0; firstorder.
+              * destruct (le_dec i (S N)) as [Hi|Hi]; firstorder lia.
+            + firstorder lia.
+        }
+        destruct dec_inh_nat_subset_has_unique_least_element
+          with (P := fun i => forall m, i <= m -> m <= N -> f x m = b) as (i & (Hi & Hsmall) & Hleast).
+        { intros.
+          destruct (D n).
+          - firstorder lia.
+          - right. destruct e as (? & ? & H1). intros h. apply H1. apply h.
+            lia. lia.
+        }
+        { exists N. firstorder. }
+        intros G; apply G; clear G.
+        exists i. cbn -[K]. repeat split.
+        + rewrite Hc. unfold P.
+          intros (x' & H'). cbn in *.
+          apply H'.
+          rewrite (Hi i). 2,3: firstorder lia.
+          destruct (le_dec (i + x') N).
+          { apply Hi; lia. }
+          { apply HN; lia. }
+        + intros m Hm. apply Hc. red. cbn.
+          destruct (D m) as [ | (m' & ? & ?)].
+          1: firstorder lia.
+          destruct (bool_eq_dec (f x m) b).
+          * exists (m' - m). intros e'.
+            apply H1. rewrite <- e, <- e'.
+            f_equal. lia.
+          * exists (N - m).
+            replace (m + (N - m)) with N by lia.
+            rewrite (HN N). 2: lia. auto.
+        + symmetry. apply Hi; firstorder lia.
+      - intros (i & (H1 & H2) & ->).
+        cbn - [K] in H1. rewrite Hc in H1.
+        unfold P in *. cbn -[K] in *.
+        specialize (Hf x). destruct Hf as [Hf1 Hf2].
+        strip Hf1. strip Hf2.
+        destruct (f x i) eqn:E.
+        + cbn.
+          intros G; apply G; clear G.
+          apply Hf1. exists i.
+          intros n Hn. replace n with (i + (n - i)) by lia.
+          destruct (f x (i + (n - i))) eqn:E'. reflexivity.
+          exfalso. apply H1. exists (n - i). rewrite E'. congruence.
+        + cbn.
+          intros G; apply G; clear G.
+          apply Hf2. exists i.
+          intros n Hn. replace n with (i + (n - i)) by lia.
+          destruct (f x (i + (n - i))) eqn:E'. 2: reflexivity.
+          exfalso. apply H1. exists (n - i). rewrite E'. congruence.
+    Qed.
+
+End AssumePartiality.

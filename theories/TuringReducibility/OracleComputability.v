@@ -118,6 +118,32 @@ Proof.
   - eapply H. rewrite in_app_iff; firstorder. firstorder.
 Qed.
 
+Lemma interrogation_ext_classical {Q A O} τ τ' (f f' : Rel Q A) q a :
+  (forall l v, τ l =! v <-> τ' l =! v) ->
+  (forall q_ a, In q_ q -> ~~ f q_ a <-> ~~ f' q_ a) ->
+  ~~ interrogation τ f q a <-> ~~ @interrogation Q A O τ' f' q a.
+Proof.
+  enough (forall τ τ' (f f' : Rel Q A) q a,
+             (forall l v, τ l =! v <-> τ' l =! v) ->
+             (forall q_ a, In q_ q -> ~~ f q_ a <-> ~~ f' q_ a) ->
+             ~~ interrogation τ f q a -> ~~ @interrogation Q A O τ' f' q a).
+  { split; eapply H; firstorder. }
+  clear. intros ? ? ? ? ? ? Heq ?.
+  intros Ass G.
+  apply Ass. clear Ass. intros Ass. revert G.
+  induction Ass.
+  - intros G. apply G. econstructor.
+  - intros G. apply IHAss.
+    { intros. eapply H. rewrite in_app_iff. firstorder. }
+    intros IHinterrogation.
+    assert (~~ f' q a) as Hq.
+    apply H. rewrite in_app_iff. firstorder.
+    firstorder. apply Hq. clear Hq. intros Hq.
+    apply G.
+    econstructor.
+    eapply IHinterrogation. firstorder. firstorder.
+Qed.
+
 Lemma interrogation_quantifiers {Q A O} (τ : (list A) ↛ (Q + O)) (R : Q -> A -> Prop) qs ans q0 a0 :
   interrogation τ R qs ans <-> length ans = length qs /\ forall n, n < length ans -> τ (take n ans) =! inl (nth n qs q0)
                                                                             /\ R (nth n qs q0) (nth n ans a0).
@@ -258,6 +284,30 @@ Proof.
   intros. rewrite !H.
   eapply ex_iff_forall. intros qs. eapply ex_iff_forall. intros ans.
   erewrite interrogation_ext. reflexivity. reflexivity. firstorder.
+Qed.
+
+Lemma ex_iff_forall_classical {X} (P1 P2 : X -> Prop) :
+  (forall x, ~~ P1 x <-> ~~ P2 x) ->
+  (~~ exists x, P1 x) <-> (~~ exists x, P2 x).
+Proof.
+  firstorder; do 2 eexists; eapply H; eauto.
+Qed.
+
+Lemma OracleComputable_extensional_classical {Q A I O F} {R R' : Rel Q A} :
+  @OracleComputable Q A I O F ->
+  (forall q a, ~~ R q a <-> ~~ R' q a) ->
+  forall i o, ~~ F R i o <-> ~~ F R' i o.
+Proof.
+  intros [tau H] He.
+  intros. rewrite !H.
+  eapply ex_iff_forall_classical. intros qs. eapply ex_iff_forall_classical. intros ans.
+  split; intros Ass G.
+  - assert (¬ ¬ (interrogation (tau i) R qs ans)) as Hi by tauto.
+    rewrite interrogation_ext_classical in Hi. 3: intros; eapply He. 2: intros; reflexivity.
+    tauto.
+  - assert (¬ ¬ (interrogation (tau i) R' qs ans)) as Hi by tauto.
+    rewrite <- interrogation_ext_classical in Hi. 3: intros; eapply He. 2: intros; reflexivity.
+    tauto.
 Qed.
 
 Lemma OracleComputable_functional {Q A I O F} {R : Rel Q A} :
@@ -1489,6 +1539,25 @@ Proof.
     firstorder.
 Qed.
 
+Definition red_Turing_classical {X Y} (p : X -> Prop) (q : Y -> Prop) :=
+  exists r : Functional Y bool X bool, OracleComputable r /\ forall x b, ~~ (char_rel p x b <-> r (char_rel q) x b).
+
+Notation "P ⪯ᴛc Q" := (red_Turing_classical P Q) (at level 50).
+
+Lemma Turing_classical_transitive {X Y Z} {p : X -> Prop} (q : Y -> Prop) (r : Z -> Prop) :
+  p ⪯ᴛc q -> q ⪯ᴛc r -> p ⪯ᴛc r.
+Proof.
+  intros (r1 & Hr1 & H1) (r2 & Hr2 & H2).
+  exists (fun R => r1 (r2 R)). split.
+  - eapply computable_comp with (F2 := r1). eapply Hr2. eapply Hr1.
+  - intros.
+    intros G.
+    apply (H1 x b). intros H1'. rewrite H1' in G. clear H1'.
+    enough  (~~ r1 (char_rel q) x b ↔ ~~ r1 (r2 (char_rel r)) x b) by tauto.
+    eapply (OracleComputable_extensional_classical Hr1).
+    firstorder.
+Qed.
+
 Definition join {X Y} (p : X -> Prop) (q : Y -> Prop) xy :=
  match xy with
  | inl x => p x
@@ -2019,3 +2088,4 @@ End part.
 Notation "P ⪯ᴛ Q" := (red_Turing P Q) (at level 50).
 
 Search evalt.
+

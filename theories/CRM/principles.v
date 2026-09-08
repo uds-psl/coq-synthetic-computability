@@ -132,6 +132,11 @@ End CT_wrong.
 
 (** ** Classical logical axioms  *)
 
+Lemma constructive_case P : ~~ (P \/ ~ P).
+Proof.
+  tauto.
+Qed.
+
 Definition LEM := forall P, P \/ ~ P.
 Definition DNE := forall P, ~~P -> P.
 Definition DGP := forall P Q : Prop, (P -> Q) \/ (Q -> P).

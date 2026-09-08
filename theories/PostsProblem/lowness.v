@@ -45,32 +45,36 @@ Section Requirements_Verification.
 
     (** ** Requirements *)
 
-  Hypothesis step_ex_spec: ∀ e, (∞∃ n, Ω e n ↓) → Ξ e (char_rel P) e.
-  Hypothesis N_requirements: ∀ e, (∞∀ n, Ω e n ↓) ∨ (∞∀ n, ¬ Ω e n ↓).
-  
-  Lemma Jump_limit : limit_computable (P´).
+  Hypothesis step_ex_spec: ∀ e, (∞∃ n, Ω e n ↓) → ~~ Ξ e (char_rel P) e.
+  Hypothesis N_requirements: ∀ e, ~~ ((∞∀ n, Ω e n ↓) ∨ (∞∀ n, ¬ Ω e n ↓)).
+
+  Ltac ok := let G := fresh "G" in intros G; apply G; clear G.
+
+  Lemma Jump_limit : limit_computable_classical (P´).
   Proof.
     exists limit_decider; split; intros.
-    - unfold J. split. 
-      intros [w Hw]%Φ_spec; exists w; intros??.
+    - unfold J. apply nn_split. 
+      intros [w Hw]%Φ_spec. ok. exists w; intros??.
       apply Dec_auto. by eapply Hw.
       intros [N HN]. eapply step_ex_spec. 
       intros m. exists (Datatypes.S N + m); split; first lia.
       eapply Dec_true. eapply HN. lia.
-    - unfold J. split; intros H. 
-      destruct (N_requirements x) as [[k Hk]|h2].
-      enough (Ξ x (char_rel P) x) by easy.
-      eapply step_ex_spec. intros m. exists (Datatypes.S k + m).
-      split; first lia. eapply Hk. lia.
-      destruct h2 as [w Hw]. exists w.
-      intros. specialize (Hw n H0). unfold limit_decider.
-      destruct (Dec _); eauto.
-      destruct H as [w Hw].
-      intros [k Hneg]%Φ_spec.
-      set (N := Datatypes.S (max w k)).
-      assert (Ω x N ↓). { eapply Hneg. lia. }
-      enough (¬ Ω x N ↓) by eauto.
-      eapply Dec_false. eapply Hw. lia.  
+    - unfold J. apply nn_split; intros H. 
+      intros G.
+      apply (@N_requirements x). intros [[k Hk] | h2].
+      + eapply step_ex_spec. 2: eassumption.
+        intros m. exists (Datatypes.S k + m).
+        split; first lia. eapply Hk. lia.
+      + destruct h2 as [w Hw]. apply G. exists w.
+        intros. specialize (Hw n H0). unfold limit_decider.
+        destruct (Dec _); eauto.
+      + destruct H as [w Hw].
+        ok.
+        intros [k Hneg]%Φ_spec.
+        set (N := Datatypes.S (max w k)).
+        assert (Ω x N ↓). { eapply Hneg. lia. }
+        enough (¬ Ω x N ↓) by eauto.
+        eapply Dec_false. eapply Hw. lia.
   Qed.
 
 End Requirements_Verification.
@@ -166,7 +170,6 @@ Section Requirements_Meet.
         congruence.
     Qed.
 
-
     Fact wall_convergence_classically e : ¬¬ ∃ b n: nat, ∀ m : nat, n ≤ m → use e m = b.
     Proof.
       intros H. eapply (eventally_greater_than_use_classically). intros [N HN].
@@ -179,33 +182,12 @@ Section Requirements_Meet.
       exists N; eauto.
     Qed.
 
-    Hypothesis Σ_1_lem: LEM_Σ 1.
-
-    Lemma attention_bound:  
-      ∀ k, ∃ s, ∀ e, e < k → ∀ s', s < s' → ~ recv_att wall e s'.
-    Proof. by apply recv_at_most_once_bound. Qed.
-
-    Lemma eventally_greater_than_use e: 
-      (∞∀ s, ∀ x, extendP (P_func s) s x → use e s < x).
-    Proof. apply eventally_greater_than_use_gen, attention_bound. Qed.
-
-    Fact wall_convergence e : ∃ b n: nat, ∀ m : nat, n ≤ m → use e m = b.
+    Corollary N_requirements e : ~~ ((∞∀ n, P_Ω e n ↓) ∨ (∞∀ n, ¬ P_Ω e n ↓)).
     Proof.
-      apply wall_convergence_gen.
-      destruct (eventally_greater_than_use e) as [N HN].
-      exists N. split; first done.
-      destruct level1 as (_&h2&_).
-      rewrite h2 in Σ_1_lem.
-      unfold principles.LPO in *.
-      destruct (@Σ_1_lem (λ x, Dec (N ≤ x ∧ use e x ≠ 0))) as [[N' HN']|].
-      left. exists N'. eauto.
-      right. intros [x Hx]. apply H. exists x. eauto.
-    Qed.
-
-    Corollary N_requirements e : ((∞∀ n, P_Ω e n ↓) ∨ (∞∀ n, ¬ P_Ω e n ↓)).
-    Proof.
-      destruct (wall_convergence e) as (b&n&Hn).
-      destruct b. 
+      intros G.
+      apply (@wall_convergence_classically e). intros (b&n&Hn).
+      apply G.
+      destruct b.
       - right. exists n. intros.
         enough(P_Ω e m = None) by congruence.
         unfold P_Ω, Ω.
@@ -219,9 +201,11 @@ Section Requirements_Meet.
     Qed.
 
     Lemma eventally_greater_than_wall e: 
-      (∞∀ s, ∀ x, extendP (P_func s) s x → wall e (P_func s) s < x).
+      ~~ (∞∀ s, ∀ x, extendP (P_func s) s x → wall e (P_func s) s < x).
     Proof.
-      destruct (@attention_bound (S e)) as [s Hs].
+      intros G.
+      eapply (recv_at_most_once_bound_classically (k := S e) (wall := wall)). intros [s Hs].
+      apply G.
       exists (S s). intros m Hm x [e_ [He_ He_']].
       destruct (Dec (e_ < e)) as [E|E].
       { exfalso. enough (recv_att wall e_ m).
@@ -233,13 +217,14 @@ Section Requirements_Meet.
       by eapply H5.
     Qed.
 
-    Lemma step_ex_spec: ∀ e, (∞∃ n, P_Ω e n ↓) → Ξ e (char_rel P) e.
+    Lemma step_ex_spec: ∀ e, (∞∃ n, P_Ω e n ↓) → ~~ Ξ e (char_rel P) e.
     Proof.
-      intros e He.
-      destruct (eventally_greater_than_wall e) as [N HN].
-      destruct (wall_convergence e) as [B [b Hb]].
+      intros e He G.
+      apply (@eventally_greater_than_wall e). intros [N HN].
+      apply (@wall_convergence_classically e). intros [B [b Hb]].
       set (M := max N b). destruct (He M) as [k [Hk Hk']].
-      eapply (@φ_spec _ _ _ χ e e k); first apply Hk'. 
+      apply G.
+      eapply (@φ_spec _ _ _ χ e e k); first apply Hk'.
       intros x Hx. unfold P, simpleness.P.
       rewrite F_with_top. split.
       - intros (L & m & HL & HLs &HP).
@@ -275,6 +260,14 @@ Section Requirements_Meet.
         eapply F_func_correctness.
     Qed.
 
+    Fact jump_limit_wall : limit_computable_classical (P´).
+    Proof.
+      eapply Jump_limit; first apply F_with_χ.
+      - intros e He. 
+        eapply step_ex_spec; eauto.
+      - eapply N_requirements; eauto.
+    Qed.
+
   End wall_greater_than_use.
 
 End Requirements_Meet.
@@ -285,7 +278,6 @@ Section Concret_Wall.
 
     Definition wall: Wall := λ e L n, φ (λ x, Dec (In x L)) e e n.
     Instance E_low: Extension := simple_extension wall.
-    Hypothesis Σ_1_lem: LEM_Σ 1.
 
     Fact P_simple: simple (P wall).
     Proof. eapply P_simple, wall_convergence_classically.
@@ -295,17 +287,18 @@ End Concret_Wall.
 
 Section Results.
 
-  Hypothesis LEM_Σ_1: LEM_Σ 1.
-
-  Fact jump_P_limit: limit_computable ((P wall)´).
+  Fact jump_P_limit: limit_computable_classical ((P wall)´).
   Proof.
-    eapply Jump_limit; first apply F_with_χ.
-    - intros e He. 
-      eapply step_ex_spec; eauto.
-    - eapply N_requirements; eauto.
+    apply jump_limit_wall.
+    unfold wall. auto.
   Qed.
 
 End Results.
+
+Fact jump_P_low: red_Turing_classical ((P wall)´) K. 
+Proof.
+  apply limit_turing_red_K_classical, jump_P_limit.
+Qed.
 
 End AssumePartiality.
 

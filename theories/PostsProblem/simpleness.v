@@ -711,20 +711,26 @@ Section Assume_EA.
       Lemma P_semi_decidable : semi_decidable P.
       Proof. apply F_with_semi_decidable. Qed.
 
+      Lemma P_immune :
+        ¬ ∃ q : nat → Prop, enumerable q ∧ ¬ exhaustible q ∧ ∀ x : nat, q x → reductions.compl P x.
+      Proof.
+        intros [q (Hqenum & Hqinf & Hq)].
+        rewrite EA.enum_iff in Hqenum.
+        destruct (W_spec Hqenum) as [c HWq].
+        apply (@P_requirements_meet c).
+        intros [l Hqe]; apply Hqinf.
+        exists l. intros x Hqx. apply (Hqe x).
+        now rewrite HWq in Hqx.
+        intros x HWcx HPx. unfold W in HWcx.
+        rewrite <- (HWq x) in HWcx. apply (Hq x HWcx HPx).
+      Qed.
+
       Theorem P_simple : simple P.
       Proof.
         unfold simple; repeat split.
         - rewrite EA.enum_iff. now apply P_semi_decidable.
         - apply P_coinfinite.
-        - intros [q (Hqenum & Hqinf & Hq)].
-          rewrite EA.enum_iff in Hqenum.
-          destruct (W_spec Hqenum) as [c HWq].
-          apply (@P_requirements_meet c).
-          intros [l Hqe]; apply Hqinf.
-          exists l. intros x Hqx. apply (Hqe x).
-          now rewrite HWq in Hqx.
-          intros x HWcx HPx. unfold W in HWcx.
-          rewrite <- (HWq x) in HWcx. apply (Hq x HWcx HPx).
+        - apply P_immune.
       Qed.
 
     End Results.
