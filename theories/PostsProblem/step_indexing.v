@@ -50,35 +50,6 @@ Section Step_Eval.
   Context {Q A O: Type}.
   Definition tree := (list A) ↛ (Q + O).
 
-  Print red_Turing.
-
-  Definition red_Turing' (X Y : Type) (p : X → Prop) (q : Y → Prop) :=
-    ∃ r : Functional Y bool X bool, OracleComputable r
-      ∧ (∀ (x : X) (b : bool), char_rel p x b -> r (char_rel q) x b).
-
-  Lemma red_Turing_equive (X Y : Type) (p : X → Prop) (q : Y → Prop):
-    definite p → red_Turing p q ↔ red_Turing' p q.
-  Proof.
-    intros H. split.
-    - intros [r [Hr1 Hr2]]. exists r; split; eauto.
-      intros x b Hxb. by apply Hr2.
-    - intros [r [Hr1 Hr2]]. exists r; split; eauto.
-      intros x b. 
-      assert (functional (r (char_rel q))).
-      apply OracleComputable_functional; eauto.
-      apply char_rel_functional.
-      specialize (H0 x).
-      split. by apply Hr2.
-      intros Hr. destruct b.
-      destruct (H x); first done.
-      specialize (Hr2 x false H1).
-      firstorder.
-      destruct (H x); last done.
-      specialize (Hr2 x true H1).
-      firstorder.
-  Qed.
-  
-
   Notation Ask q := (inl q).
   Notation Output o := (inr o).
 
@@ -382,29 +353,6 @@ Section Step_Eval.
       list_simplifier. done.
   Qed.
 
-  Fact sub_tree_2 (τ: tree) f use ans use_:
-    interrogation τ (λ x y, f x = y) use ans →
-      use_ `prefix_of` use →
-    ∃ ans_ : list A, interrogation τ (λ x y, f x = y) use_ ans_ ∧ 
-      length use_ = length ans_.
-  Proof.
-  intros H1 [Hl].
-  dependent induction H1.
-  - assert (use_ = []).
-    { eapply prefix_nil_inv; eauto. exists (Hl). done. } subst.
-    exists []. split. econstructor. done.
-  - destruct Hl. list_simplifier. exists (ans ++ [f q] ).
-    split. econstructor; eauto. rewrite !app_length.
-    cbn. f_equal. eapply interrogation_length. done.
-    list_simplifier.
-    apply app_eq_inv in H2. destruct H2 as [[k [Hk Hk']]|[k [Hk Hk']]].
-    + eapply (IHinterrogation k). done.
-    + assert (k = []). destruct k; first done.
-      list_simplifier. by eapply app_cons_not_nil in H2.
-      list_simplifier.  eapply (IHinterrogation []).
-      list_simplifier. done.
-  Qed.
-
   Fact sub_tree_3 (τ: tree) f use ans use_:
     interrogation τ (λ x y, f x = y) use ans →
     use_ `prefix_of` use →
@@ -653,48 +601,6 @@ Context {EPF_assm : EPF.EPF}.
 
 Section Use_Function.
 
-Lemma extract_computation {Q O: Type} (τ: (list bool) ↛ (Q + O)) (f: Q → bool) n m v: 
-  eq_dec O → eq_dec Q →
-  evalt_comp τ f n m = Some (inr v) →  
-  Σ use ans, 
-    τ ans =! inr v ∧
-    ∀ P, (∀ q, q ∈ use → P q ↔ f q = true) → 
-    interrogation τ (char_rel P) use ans .
-Proof.
-  intros He H_ H_'.
-  destruct (evalt_comp_to_interrogation τ f v n m) as [(qs&ans&H3&_&H1&H2)|H]; try done.
-  exists qs, ans.
-  split; first done.
-  intros p Hp.
-  eapply interrogation_ext; last exact H1; eauto.
-  intros q' [|] Hqa'%elem_of_list_In; cbn; first by rewrite Hp.
-  specialize (Hp q' Hqa'). split.
-  - intros H. destruct (f q') eqn: E; last done.
-    enough (p q') by easy. by rewrite Hp.
-  - intros H H'%Hp. congruence.
-Qed.
-
-Lemma use_function' {Q O: Type} (τ: (list bool) ↛ (Q + O)) (f: Q → bool) n m v:
-  eq_dec O → eq_dec Q →
-  (evalt_comp τ f n m = Some (inr v)) + (evalt_comp τ f n m ≠ Some (inr v)).
-Proof.
-  intros h1 h2. 
-  destruct (evalt_comp_to_interrogation τ f v n m) as [(qs&ans&H3&_&H1&H2)|H]; intuition done.
-Qed.
-
-(* Lemma evalt_comp_ext_strong (τ τ': tree) f n m:
-(∀ l n, seval (τ l) n = seval (τ' l) n) → 
-(∀ (q_ : Q) (a0 : A), In q_ q → f q_ a0 ↔ f' q_ a0) →
-evalt_comp τ f n m = evalt_comp τ' f n m.
-Proof.
-intro Heq; induction n in τ, τ', Heq |- *; cbn.
-- by rewrite <- Heq.
-- rewrite <- Heq.
-  destruct (seval (A:=Q + O) (τ []) m); eauto.
-  destruct s; eauto.
-Qed. *)
-
-
   Lemma use_function {Q O: Type} (τ: (list bool) ↛ (Q + O)) (f: Q → bool) n m v:
     eq_dec O → eq_dec Q →
     (Σ use, 
@@ -727,46 +633,13 @@ Section Limit_Interrogation.
   Definition stable (f: nat → Q → bool) :=
     ∀ q n m, n ≤ m → f n q = true → f m q = true.
 
-  Fixpoint stabilize_step (f: Q -> nat -> bool) x n :=
-    match n with
-    | O => false
-    | S n => if f x n then true else stabilize_step f x n
-    end.
-
   Definition stable_semi_decider (f: nat → Q → bool) :=
     semi_decider (λ x n, f n x) P ∧ stable f.
-
-  Fact semi_decider_to_stable: ∀ f, semi_decider f P → Σ g, stable_semi_decider g.
-  Proof.
-    intros f S_P. exists (λ n x, stabilize_step f x n); split.
-    - intro x; split; intro h.
-      rewrite (S_P x) in h.
-      destruct h as [c Hc].
-      by exists (S c); cbn; rewrite Hc.
-      rewrite (S_P x).
-      destruct h as [c Hc].
-      induction c; cbn in Hc; [congruence|].
-      destruct (f x c) eqn: E; [now exists c|now apply IHc].
-    - intros x n m Lenm Hn.
-      induction Lenm; [trivial|].
-      cbn; destruct (f x m) eqn: E; [trivial|assumption].
-  Qed.
 
   Definition approx_Σ1 O  (f: nat → Q → bool) :=
       ∀ (τ: list bool ↛ (Q + O)) qs ans,
         interrogation τ (char_rel P) qs ans → 
         ∞∀ m, interrogation τ (λ q a, f m q = a) qs ans.
-
-  Definition approx_Σ1_rev O (f: nat → Q → bool) :=
-      ∀ (τ: list bool ↛ (Q + O)) qs ans,
-        (∞∀ m, interrogation τ (λ q a, f m q = a) qs ans) →
-        interrogation τ (char_rel P) qs ans.
-
-  Definition approx_list (f: Q → bool) L :=
-      ∀ i, In i L → P i ↔ f i = true.
-
-  Definition approx_list_func (f g: Q → bool) L :=
-      ∀ i, In i L → f i ↔ g i.
 
   Variable g: nat → Q → bool.
   Hypothesis S_P: stable_semi_decider g.
@@ -786,54 +659,6 @@ Section Limit_Interrogation.
         econstructor. eapply Hw; first done.
         assumption. destruct (g m q) eqn: E; last done.
         enough (P q) by done. { rewrite (H1 q). by exists m. }
-  Qed.
-
-  Lemma approx_Σ1_list: definite P → ∀ L, ∞∀ c, approx_list (g c) L.
-  Proof.
-    destruct S_P as [S_p HS].
-    intros def_p l. induction l as [|a l [c Hc]].
-    - exists 42; firstorder.
-    - destruct (def_p a) as [h1| h2].
-      + destruct (S_p a) as [H _].
-        destruct (H h1) as [N HN].
-        exists (max c N); intros c' Hc' e [->| He].
-        split; [intros _|easy].
-        eapply HS; [|eapply HN]; lia.
-        unfold approx_list in Hc.
-        rewrite (Hc c'); [trivial|lia | assumption].
-      + exists c; intros c' Hc' e [->| He].
-        split; [easy| intros h'].
-        unfold semi_decider in S_p.
-        rewrite S_p. by exists c'.
-        unfold approx_list in Hc.
-        rewrite Hc; eauto.
-  Qed.
-
-  Lemma approx_Σ1_list_rev: (∀ L, ∞∀ c, approx_list (g c) L) → definite P.
-  Proof.
-    intros H x.
-    destruct (H [x]) as [k Hk].
-    destruct (Hk k (le_n k) x); first done.
-    destruct (g k x) eqn: E.
-    left. apply H1. easy.
-    right. intro H'. 
-    by apply H0 in H'.
-  Qed.
-
-  Definition S_approx_Σ1_rev: definite P → ∀ O, approx_Σ1_rev O g.
-  Proof.
-    intros defp O τ qs ans [w Hw].
-    assert (∞∀ k, ∀ q, In q qs → P q ↔ g k q = true) as [k Hk] by by apply approx_Σ1_list.
-    assert (interrogation τ (λ q a, g (max w k) q = a) qs ans) as H by (apply Hw; lia).
-    clear Hw. induction H; first econstructor.
-    econstructor; [|done|].
-    eapply IHinterrogation.
-    { intros. rewrite Hk; try done. apply in_app_iff. by left. }
-    destruct a; cbn; rewrite Hk; try (done||lia).
-    rewrite in_app_iff; right; econstructor. done.
-    intro H'. enough (g (w`max`k) q = true) by congruence.
-    destruct S_P as [H1' H2]. eapply H2; last apply H'. lia.
-    rewrite in_app_iff; right; econstructor. done.
   Qed.
 
 End Limit_Interrogation.
@@ -885,11 +710,6 @@ Section Step_Eval_Spec.
         is inl H then S (list_max (projT1 H))
         else 0.
 
-    Definition φ' (f: nat → bool) (e x n: nat) :=
-      if (use_function' (ξ e x) f n n () unit_eq_dec nat_eq_dec) 
-        is inl H then S (list_max (projT1 (extract_computation unit_eq_dec nat_eq_dec H)))
-        else 0.
-
   Theorem φ_spec e x n p:
     Φ_ decider e x n = Some () →
     p ≡{φ (decider n) e x n}≡ to_pred (decider n) →
@@ -900,23 +720,6 @@ Section Step_Eval_Spec.
     exists ans. eapply Hans.
     intros q [i Hq]%elem_of_list_lookup_1. rewrite H1; first done.
     simpl. enough (q ≤ list_max (ans)) by lia.
-    eapply implementation.list_max_lookup. 
-    eapply Hq.
-  Qed.
-
-  Theorem φ'_spec e x n p:
-    Φ_ decider e x n = Some () →
-    p ≡{φ' (decider n) e x n}≡ to_pred (decider n) →
-    Ξ e (char_rel p) x.
-  Proof.
-    intros H2 H1. rewrite phi_iff_evalt in H2. unfold φ' in H1. 
-    destruct (use_function' (ξ e x) (decider n) n n () _ _) as [H'|H]; last done.
-    destruct (extract_computation unit_eq_dec nat_eq_dec H') as [qs [ans [Hans1 Hans2]]].
-    simpl in H1.
-    exists qs, ans; split; eauto.
-    eapply Hans2.
-    intros q [i Hq]%elem_of_list_lookup_1. rewrite H1; first done.
-    simpl. enough (q ≤ list_max (qs)) by lia. 
     eapply implementation.list_max_lookup. 
     eapply Hq.
   Qed.
@@ -1004,46 +807,6 @@ Section Step_Eval_Spec.
       { eapply interrogation_ext; last apply Hans; first done. intros; by rewrite char_rel_boring. }
       clear Hu2 S_P HSn boring1 boring2 H H2 _H_ Hans. 
       eapply final_fact; eauto.
-  Qed.
-
-  Theorem φ_spec2 e x n k :
-    φ (decider n) e x n = S k →
-    to_pred (decider n) ≡{k}≡ to_pred (decider (S n)) →
-    Φ_ decider e x (S n) = Some ().
-  Proof.
-    intros H H2. unfold φ in *.
-    destruct (use_function (ξ  e x) (decider n) n n) 
-      as [(use & Hu1 & Hu2)|]; last congruence. simpl in *.
-
-    destruct (evalt_comp (ξ  e x) (decider n) n n) eqn: E1; last congruence.
-    destruct s eqn: E2; first congruence.
-    destruct u; clear Hu1 E2. 
-    unfold Φ_; enough (evalt_comp (ξ  e x) (decider (S n)) (S n) (S n) = Some (inr ())) as H'
-      by by rewrite H'.
-    eapply evalt_comp_step_mono'.
-    eapply evalt_comp_depth_mono; last exact (le_S _ _ (le_n n)).
-
-    assert (∀ q, q ∈ use → decider (S n) q ↔ decider n q = true) as boring1.
-    { intros q Hq. destruct (H2 q). apply elem_of_list_lookup_1 in Hq.
-    destruct Hq as [i Hi]. injection H; intros <-.
-    by eapply implementation.list_max_lookup.
-    unfold to_pred in *. destruct (decider (S n) q); intuition. }
-
-    assert (∀ q a, In q use → char_rel (decider n) q a ↔ char_rel (decider (S n)) q a) as boring2.
-      { intros q a Hq. destruct (H2 q). rewrite <-elem_of_list_In in Hq.
-        apply elem_of_list_lookup_1 in Hq. destruct Hq as [i Hi].
-        injection H; intros <-. by eapply implementation.list_max_lookup.
-        unfold to_pred, char_rel in *.  
-        destruct a, (decider (S n) q), (decider n q); intuition. }
-
-    destruct (Hu2 (decider (S n)) boring1) as [ans (Hans & Hans1)].
-    assert (interrogation (ξ  e x) (λ q a, decider n q = a) use ans) as Hansn.
-    { eapply interrogation_ext; last apply Hans; first done. intros.
-      rewrite <- char_rel_boring. by apply boring2. }
-    assert (n ≤ S n) as _H_ by lia.
-    assert (interrogation (ξ  e x) (λ q a, decider (S n) q = a) use ans) as HansSn.
-    { eapply interrogation_ext; last apply Hans; first done. intros; by rewrite char_rel_boring. }
-    eapply final_fact; eauto.
   Qed.
 
 End Step_Eval_Spec.

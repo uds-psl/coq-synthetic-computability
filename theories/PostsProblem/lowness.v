@@ -100,7 +100,6 @@ Section Requirements_Meet.
   Proof. eapply P_semi_decidable. Qed.
 
   Definition χ := χ (simple_extension wall).
-  Definition P_Φ := (Φ_ χ).
   Definition P_Ω := (Ω χ).
 
   Section wall_greater_than_use.
@@ -301,7 +300,6 @@ Section Concret_Wall.
   (** ** Construction *)
 
     Definition wall: Wall := λ e L n, φ (λ x, Dec (In x L)) e e n.
-    Instance E_low: Extension := simple_extension wall.
 
     Fact P_simple: simple (P wall).
     Proof. eapply P_simple, wall_convergence_classically.

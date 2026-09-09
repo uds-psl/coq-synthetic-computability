@@ -1,4 +1,4 @@
-From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions limit_computability simple.
+From SyntheticComputability Require Import ArithmeticalHierarchySemantic reductions SemiDec TuringJump OracleComputability Definitions.
 From stdpp Require Export list.
 Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Export SyntheticComputability.Shared.FinitenessFacts.
@@ -75,14 +75,6 @@ Section Construction.
     - eapply IHF_; eauto.
   Qed.
 
-  Lemma F_pick' n x l: F_ E n (x::l) -> exists m, m < n ∧ F_ E m l ∧ extendP l m x.
-    Proof.
-      intros H. dependent induction H.
-      - exists n; eauto.
-      - destruct (IHF_ x l eq_refl) as [m (Hm1&Hm2&Hm3)].
-        exists m; eauto.
-    Qed.
-
   Lemma F_computable : Σ f: nat -> list nat, 
     forall n, F_ E n (f n) /\ length (f n) <= n.
   Proof.
@@ -105,13 +97,6 @@ Section Construction.
 
   Definition F_func := projT1 F_computable.
   Lemma F_func_correctness: forall n, F_ E n (F_func n).
-  Proof.
-    intros n; unfold F_func. 
-    destruct F_computable as [f H].
-    now destruct (H n).
-  Qed.
-
-  Lemma F_func_correctness': forall n, length (F_func n) <= n.
   Proof.
     intros n; unfold F_func. 
     destruct F_computable as [f H].
@@ -158,20 +143,6 @@ Section Construction.
     - now eapply IHHn.
   Qed.
 
-  Lemma F_with_semi_decider: Σ f, semi_decider f F_with.
-  Proof.
-    destruct F_computable as [f Hf ].
-    exists (fun x n => (Dec (In x (f n)))).
-    intros x. split.
-    - intros (l & n & Hxl & Hl).
-      exists n. rewrite Dec_auto; first easy.
-      destruct (Hf n) as [Hf' _].
-      now rewrite (F_uni Hf' Hl).
-    - intros (n & Hn%Dec_true).
-      exists (f n), n; split; eauto.
-      apply Hf.
-  Qed.
-
   Definition χ n x: bool := Dec (In x (F_func n)).
   Definition stable {Q} (f: nat → Q → bool) :=
     ∀ q n m, n ≤ m → f n q = true → f m q = true.
@@ -189,20 +160,6 @@ Section Construction.
   Qed.
 
 End Construction.
-
-Section StrongInduction.
-
-  Definition strong_induction (p: nat -> Type) :
-    (forall x, (forall y, y < x -> p y) -> p x) -> forall x, p x.
-  Proof.
-      intros H x; apply H.
-      induction x; [intros; lia| ].
-      intros; apply H; intros; apply IHx; lia.
-  Defined.
-
-End StrongInduction.
-
-Tactic Notation "strong" "induction" ident(n) := induction n using strong_induction.
 
 Section EWO.
   Variable p: nat -> Prop.
@@ -303,33 +260,6 @@ Section LeastWitness.
     - intros H k H1 H2. apply H in H2. lia.
   Qed.
 
-  Fact safe_char_S p n :
-    safe p (S n) <-> safe p n /\ ~p n.
-  Proof.
-    split.
-    - intros H. split.
-      + intros k H1. apply H. lia.
-      + apply H. lia.
-    - intros [H1 H2]. apply safe_S; assumption.
-  Qed.
-
-  Fact safe_eq p n k :
-    safe p n -> k <= n -> p k -> k = n.
-  Proof.
-    intros H1 H2 H3. unfold safe in *.
-    enough (~(k < n)) by lia.
-    specialize (H1 k). tauto.
-  Qed.
-
-  Fact E14 x y z :
-    x - y = z <-> least (fun k => x <= y + k) z.
-  Proof.
-    assert (H: least (fun k => x <= y + k) (x - y)).
-    { split; unfold safe; lia. }
-    split. congruence.
-    eapply least_unique, H.
-  Qed.  
-
   (*** Certifying LWOs *)
 
   Section LWO.
@@ -347,24 +277,6 @@ Section LeastWitness.
           * left. exists n. split. lia. easy.
           * right. apply safe_S; assumption.
     Defined.
-
-    Definition lwo' :
-      forall n, (Σ k, k <= n /\ least p k) + safe p (S n).
-    Proof.
-      intros n.
-      destruct (lwo (S n)) as [(k&H1&H2)|H].
-      - left. exists k. split. lia. exact H2.
-      - right.  exact H.
-    Qed.
-
-    Definition least_sig :
-      (Σ x, p x) -> Σ x, (least p) x.
-    Proof.
-      intros [n H].
-      destruct (lwo (S n)) as [(k&H1&H2)|H1].
-      - exists k. exact H2.
-      - exfalso. apply (H1 n). lia. exact H.
-    Qed.
 
     Definition least_ex :
       ex p -> ex (least p).
@@ -464,49 +376,5 @@ End LeastWitness.
 Section logic.
 
   Definition pdec p := p ∨ ¬ p.
-
-  Definition Π_1_lem := ∀ p : nat -> Prop,
-    (∀ x, dec (p x)) -> pdec (∀ x, p x).
-  Definition Σ_1_dne := ∀ p : nat -> Prop,
-    (∀ x, dec (p x)) -> (¬¬ ∃ x, p x) → ∃ x, p x.
-  Definition Σ_1_lem := ∀ p: nat → Prop,
-    (∀ x, dec (p x)) -> pdec (∃ x, p x).
-
-  Hypothesis LEM1: LEM_Σ 1.
-
-  Fact assume_Σ_1_lem: Σ_1_lem .
-  Proof.
-    intros p Hp.
-    destruct level1 as (_&H2&_).
-    assert principles.LPO as H by by rewrite <- H2.
-    destruct (H Hp) as [[k Hk]|H1].
-    - left. exists k. destruct (Hp k); eauto.
-      cbn in Hk. congruence.
-    - right. intros [k Hk]. apply H1. 
-      exists k. destruct (Hp k); eauto.
-  Qed.
-
-  Fact assume_Σ_1_dne: Σ_1_dne.
-  Proof.
-    intros p Hp H.
-    destruct (assume_Σ_1_lem Hp) as [H1|H1]; eauto.
-    exfalso. by apply H.
-  Qed.
-
-  Fact assume_Π_1_lem: Π_1_lem.
-  Proof.
-    intros p Hp.
-    destruct level1 as (_&H2&_).
-    assert principles.LPO as H by by rewrite <- H2.
-    apply principles.LPO_to_WLPO in H.
-    assert (∀ x : nat, dec (¬ p x)) as Hp' by eauto.
-    destruct (H Hp') as [H1|H1].
-    - left. intro x.
-      specialize (H1 x).
-      apply Dec_false in H1.
-      destruct (Hp x); firstorder.
-    - right. intros H3. apply H1. intros n.
-      specialize (H3 n). destruct (Hp' n); firstorder.
-  Qed.
 
 End logic.

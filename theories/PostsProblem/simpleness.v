@@ -19,83 +19,13 @@ Import ListNotations.
 (** * The Simple Extension *)
 (* ########################################################################## *)
 
-Section ComplToBound.
-    Definition complToBound L b : list nat 
-        := filter (λ x, Dec (¬ In x L)) (seq 0 (S b)).
-
-    Lemma complToBound_Bound L b :
-        ∀ x, In x (complToBound L b) → x <= b.
-    Proof.
-        intros x [H % in_seq ?] % in_filter_iff. lia.
-    Qed.
-    Lemma filter_length {X} f (l : list X) :
-        length l = length (filter f l) + length (filter (λ x, (negb (f x))) l).
-    Proof.
-        induction l; cbn.
-        - reflexivity.
-        - destruct f; cbn; lia.
-    Qed.
-    Lemma filter_NoDup {X} f (l : list X) :
-        NoDup l → NoDup (filter f l).
-    Proof using. clear EA.
-        induction 1; cbn.
-        - econstructor.
-        - destruct f; eauto. econstructor; auto.
-            intros ? % in_filter_iff. firstorder.
-    Qed.
-    Lemma complToBound_length L b:
-        length (complToBound L b) + length L >= S b.
-    Proof.
-        rewrite <- (seq_length (S b) 0).
-        erewrite filter_length with (l := seq 0 (S b)).
-        unfold complToBound.
-        eapply simple_construction.plus_le_compat_l.
-        generalize (seq_NoDup (S b) 0).
-        generalize (seq 0 (S b)). clear.
-        intros. erewrite filter_ext with (g := fun x => Dec (In x L)).
-        2:{ intros a. destruct Dec; cbn; destruct Dec; firstorder congruence. }
-        eapply NoDup_incl_length. now eapply filter_NoDup.
-        clear. induction l; cbn.
-        - firstorder.
-        - destruct Dec; cbn. 2: eauto.
-            intros ? [-> | ]; eauto.
-    Qed.
-    Lemma complToBound_NoDup L b:
-        NoDup (complToBound L b).
-    Proof.
-        eapply filter_NoDup, seq_NoDup.
-    Qed.
-    Lemma firstn_In {X} (l : list X) n x : In x (firstn n l) → In x l.
-    Proof.
-        induction n in x, l |- *; destruct l; cbn; firstorder.
-    Qed.
-
-    Lemma firstn_NoDup {X} (l : list X) n : NoDup l → NoDup (firstn n l).
-    Proof.
-        induction 1 in n |- *; destruct n; cbn; try now econstructor.
-        econstructor; eauto.
-        now intros ? % firstn_In.
-    Qed.
-End ComplToBound.
-
 Section Assume_EA.
-
-  Definition θ := φ.
-  Definition EA_spec := ∀ p, semi_decidable p → ∃ e, ∀ x, p x ↔ ∃ n, φ e n = Some x.
-
-  Lemma EA_ : EA_spec.
-  Proof.
-    intros P HP%SyntheticComputability.Axioms.EA.enum_iff.
-    rewrite EA.W_spec in HP. destruct HP as [c Hc].
-    exists c. intros x. unfold EA.W in Hc.
-    eapply Hc.
-  Qed.
 
   Definition W_ n e x := φ n e = Some x.
   Definition W e x := ∃ n, W_ e n x.
 
   Lemma W_spec: ∀ P, semi_decidable P → ∃ e, ∀ x, P x ↔ W e x.
-  Proof. intros P [e He]%EA_. exists e; intros x; now rewrite He. Qed.
+  Proof. intros P HP%EA.enum_iff%EA.W_spec. exact HP. Qed.
 
   Notation "'W[' s ']' e" := (λ x, ∃ n, n <= s ∧ W_ e n x) (at level 30).
 
@@ -182,12 +112,6 @@ Section Assume_EA.
       
       #[export]Instance ext_has_wit_dec L n e x : dec (ext_has_wit L n e x).
       Proof. apply and_dec; first apply exists_bounded_dec; eauto. Qed.
-
-      #[export]Instance ext_has_wit_exists_dec L n e : dec (∃ x, ext_has_wit L n e x).
-      Proof.
-        unfold ext_has_wit. eapply bounded_dec; last eapply W_bounded_bounded.
-        intro x; eapply W_bounded_dec; eauto. eauto.
-      Qed.
 
       #[export]Instance ext_pick_dec L n e : dec (ext_pick L n e).
       Proof.
@@ -283,15 +207,6 @@ Section Assume_EA.
       Definition recv_att e n := e < n ∧ least (ext_pick (P_func n) n) e.
       Definition act e n := ¬ (P_func n) # W[n] e.
       Definition act_by e x := ∃ k, recv_att e k ∧ ext_least_choice (P_func k) k x.
-      Definition done e n := ∀ s, n < s → ¬ recv_att e s.
-
-      #[export]Instance attend_dec e n: dec (recv_att e n).
-      Proof.
-        unfold recv_att. apply and_dec; first eauto.
-        eapply least_dec. intros y.
-        eapply ext_pick_dec.
-      Qed.
-
     End Requirements.
 
     Section Requirements_Facts.
@@ -377,15 +292,6 @@ Section Assume_EA.
           apply H. now exists k'.
       Qed.
 
-      Lemma recv_at_most_once e: ¬ ¬ (∃ s', ∀ s, s' < s → ¬ recv_att e s).
-      Proof.
-        intros H.
-        assert (¬¬ (pdec (∃ k, recv_att e k))) as Hdec.
-        { unfold pdec. tauto. }
-        apply Hdec. clear Hdec. intros Hdec.
-        apply H, recv_at_most_once_gen. assumption.
-      Qed.
-
       Lemma recv_at_most_once_bound_gen k:
         (∀ k', k' < k → pdec (∃ k0 : nat, recv_att k' k0)) →
         ∃ s, (∀ e, e < k → ∀ s', s < s' → ¬ recv_att e s').
@@ -411,13 +317,6 @@ Section Assume_EA.
         intros H % (recv_at_most_once_bound_gen (k := k)).
         tauto.
       Qed.
-      Lemma recv_at_most_once_bound: 
-        LEM_Σ 1 → ∀ k, ∃ s, (∀ e, e < k → ∀ s', s < s' → ¬ recv_att e s').
-      Proof.
-        intros Hlem k. apply recv_at_most_once_bound_gen.
-        intros. eapply assume_Σ_1_lem. apply Hlem. eauto. 
-      Qed.
-
       Lemma attend_uni e: unique (recv_att e).
       Proof.
         intros k1 k2 H1 H2.
@@ -496,55 +395,6 @@ Section Assume_EA.
             now apply H1 in H2.
       Qed.
 
-      Definition PredListTo p : list nat → nat → Prop
-        := λ L b, ∀ x, In x L ↔ p x ∧ x <= b.
-
-      Lemma NoDupBoundH {L} b:
-          NoDup L → (∀ x, In x L → x <= b) → ∀ x, x > b → NoDup (x::L).
-      Proof.
-          intros ND H x E.
-          constructor.
-          - intros H1 % H. lia.
-          - exact ND.
-      Qed.
-
-      Lemma PredNoDupListTo_NNExist p:
-        ∀ b, ¬¬ ∃ L, PredListTo p L b ∧ NoDup L.
-      Proof.
-        destruct (F_computable simple_extension) as [f Hf].
-        induction b; intros H.
-        - ccase (p 0) as [H0 | H0]; apply H.
-          + exists [0]. split; try split.
-            * intros [E | E]; (try contradiction E).
-              rewrite <- E. intuition.
-            * intros E. assert (x = 0) by lia.
-              rewrite H1. intuition.
-            * constructor; intuition; constructor.
-          + exists nil. split; try split.
-            * contradiction.
-            * intros E. assert (x = 0) by lia.
-              rewrite H1 in E. firstorder.
-            * constructor.
-        - apply IHb. intros [L H1].
-          ccase (p (1 + b)) as [H0 | H0]; apply H.
-          + exists ((1+ b) :: L). split; try split.
-            * intros [E | E]; try (rewrite <- E; intuition).
-              apply H1 in E. intuition.
-            * intros [E1 E2]. assert (x <= b ∨ x = 1 + b) as [E | E] by lia.
-              ** right. apply H1. intuition.
-              ** left. lia.
-            * apply (@NoDupBoundH _ b).
-              ** apply H1.
-              ** intros x H3 % H1. lia.
-              ** lia.
-          + exists L. split; try split.
-            * intros E % H1. intuition.
-            * intros [E1 E2]. assert (x <= b ∨ x = 1 + b) as [E | E] by lia.
-              ** apply H1. intuition.
-              ** rewrite E in E1. firstorder.
-            * apply H1.
-      Qed.
-
       Lemma P_bounded L n:
         NoDup L → (∀ x, In x L → P x ∧ x <= 2 * n) → length L <= n.
       Proof.
@@ -559,27 +409,13 @@ Section Assume_EA.
       Qed.
 
       Lemma P_Listing:
-        ∀ n, ¬¬ ∃ L, NoDup L ∧ length L <= n ∧ PredListTo P L (2*n).
+        ∀ n, ¬¬ ∃ L, NoDup L ∧ length L <= n ∧ simple_construction.PredListTo P L (2*n).
       Proof.
-        intros n H. apply (@PredNoDupListTo_NNExist P (2*n)).
+        intros n H. apply (@simple_construction.PredNoDupListTo_NNExist P (2*n)).
         intros [L H1]. apply H. exists L; intuition.
         apply P_bounded.
         - exact H2.
         - apply H0.
-      Qed.
-
-      Lemma complToBound_compl p L b:
-        PredListTo p L b → PredListTo (compl p) (complToBound L b) b.
-      Proof.
-      intros H x. split.
-      - intros [H1 H1'] % in_filter_iff.
-        destruct Dec; cbn in H1'; try congruence.
-        enough (x <= b).
-        + firstorder.
-        + apply in_seq in H1. lia.
-      - intros [H1 H2]. eapply in_filter_iff. split.
-        + apply in_seq; lia.
-        + destruct Dec; cbn; try tauto. exfalso. firstorder.
       Qed.
 
       Lemma compl_P_Listing:
@@ -588,10 +424,10 @@ Section Assume_EA.
       Proof.
         intros n H.
         apply (@P_Listing n). intros [L H1].
-        apply H. exists (complToBound L (2*n)). repeat split.
-        - remember (complToBound_length L (2*n)). lia.
-        - apply complToBound_NoDup.
-        - intros x I % (@complToBound_compl P); intuition.
+        apply H. exists (simple_construction.complToBound L (2*n)). repeat split.
+        - remember (simple_construction.complToBound_length L (2*n)). lia.
+        - apply simple_construction.complToBound_NoDup.
+        - intros x I % (@simple_construction.complToBound_compl P); intuition.
       Qed.
 
       Lemma P_coinfinite : ¬ exhaustible (compl P).
@@ -603,8 +439,8 @@ Section Assume_EA.
         exists (firstn n l).
         repeat split.
         - rewrite firstn_length. lia.
-        - now eapply firstn_NoDup.
-        - intros ? ? % firstn_In. now eapply H2.
+        - now eapply simple_construction.firstn_NoDup.
+        - intros ? ? % simple_construction.firstn_In. now eapply H2.
       Qed.
 
     End Complement_Inf.
