@@ -45,32 +45,41 @@ Section Requirements_Verification.
 
     (** ** Requirements *)
 
-  Hypothesis step_ex_spec: ∀ e, (∞∃ n, Ω e n ↓) → ~~ Ξ e (char_rel P) e.
-  Hypothesis N_requirements: ∀ e, ~~ ((∞∀ n, Ω e n ↓) ∨ (∞∀ n, ¬ Ω e n ↓)).
-
   Ltac ok := let G := fresh "G" in intros G; apply G; clear G.
 
-  Lemma Jump_limit : limit_computable_classical (P´).
+  Hypothesis requirements : forall e, ~~ exists v, ∃ N : nat, ∀ n : nat, n ≥ N → Ω e n = v /\
+             (v = Some tt -> Ξ e (char_rel P) e).
+
+  Ltac strip H :=
+    match goal with
+    | [|- False] => apply H; clear H; intros H
+    | [|- ~~ ?G] =>
+        let g := fresh "g" in
+                 intros g; apply H; clear H; intros H;
+                 revert g; change (~~ G)
+     end.
+
+  Lemma Jump_limit_again : limit_computable_classical (P´).
   Proof.
-    exists limit_decider; split; intros.
-    - unfold J. apply nn_split. 
-      intros [w Hw]%Φ_spec. ok. exists w; intros??.
-      apply Dec_auto. by eapply Hw.
-      intros [N HN]. eapply step_ex_spec. 
-      intros m. exists (Datatypes.S N + m); split; first lia.
-      eapply Dec_true. eapply HN. lia.
-    - unfold J. apply nn_split; intros H. 
-      intros G.
-      apply (@N_requirements x). intros [[k Hk] | h2].
-      + eapply step_ex_spec. 2: eassumption.
-        intros m. exists (Datatypes.S k + m).
-        split; first lia. eapply Hk. lia.
-      + destruct h2 as [w Hw]. apply G. exists w.
-        intros. specialize (Hw n H0). unfold limit_decider.
-        destruct (Dec _); eauto.
-      + destruct H as [w Hw].
-        ok.
-        intros [k Hneg]%Φ_spec.
+    exists limit_decider. intros x.
+    specialize (@requirements x).
+    split; strip requirements;
+      destruct requirements as (v & Nv & Hv).
+    - unfold J. apply nn_split.
+      + intros [w Hw]%Φ_spec. ok. exists w; intros??.
+        apply Dec_auto. by eapply Hw.
+      + intros [N HN]. ok.
+        specialize (Hv (Datatypes.S N + Nv)) as [Hv1 Hv2].
+        lia. apply Hv2. rewrite <- Hv1. 
+        eapply Dec_true. eapply HN. lia.
+    - unfold J. apply nn_split; intros H; ok.
+      + exists Nv. intros.
+        unfold limit_decider. destruct Dec. 2: reflexivity.
+        destruct (Hv n) as [E HH].
+        lia. destruct H. apply HH.
+        now rewrite <- E.
+      + intros [k Hneg]%Φ_spec.
+        destruct H as [w Hw].
         set (N := Datatypes.S (max w k)).
         assert (Ω x N ↓). { eapply Hneg. lia. }
         enough (¬ Ω x N ↓) by eauto.
@@ -125,7 +134,6 @@ Section Requirements_Meet.
       intros H'. apply H_. 
       by apply eventally_greater_than_use_gen.
     Qed.
-
 
     Fact wall_convergence_gen e : 
       (∃ N, (∀ s, N ≤ s → ∀ x, extendP (P_func s) s x → use e s < x)
@@ -262,10 +270,26 @@ Section Requirements_Meet.
 
     Fact jump_limit_wall : limit_computable_classical (P´).
     Proof.
-      eapply Jump_limit; first apply F_with_χ.
-      - intros e He. 
-        eapply step_ex_spec; eauto.
-      - eapply N_requirements; eauto.
+      eapply Jump_limit_again; first apply F_with_χ.
+      intros e He.
+      apply (@N_requirements e).
+      intros [ [k Hk] | [k Hk] ].
+      - eapply (@step_ex_spec e).
+        + intros n. exists (k + n).
+          split. lia. eapply Hk. lia.
+        + intros H. 
+          apply He. exists (Some tt). exists k.
+          intros. split.
+          eapply (Hk n). lia.
+          intros. 
+          eassumption.
+      - apply He. exists None.
+        intros. exists k. intros.
+        split. 
+        eapply Hk in H.
+        unfold P_Ω in *.
+        destruct Ω as [ [] | ]; congruence.
+        intros h. congruence.
     Qed.
 
   End wall_greater_than_use.
