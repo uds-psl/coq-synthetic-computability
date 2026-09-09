@@ -19,7 +19,7 @@ Proof.
   - destruct ND as [x [H1 % list_max_in H2]]. rewrite in_seq in H2.
     lia. 
   - intros x1 x2; decide (x1 = x2); eauto.
-  - rewrite H, seq_length. lia.  
+  - rewrite H, List.length_seq. lia.  
 Qed. 
 
 Lemma list_max_length_succ L:
@@ -36,7 +36,7 @@ Qed.
 Definition injective {X Y : Type} (f : X -> Y) := forall x1 x2 : X, f x1 = f x2 -> x1 = x2.
 
 Section HS. 
-  Import  Coq.Init.Nat. 
+  Import  Corelib.Init.Nat. 
 
   Variable I : nat -> Prop. 
 
@@ -65,7 +65,7 @@ Section HS.
     {x | E_I x > bound /\ x >= start}.
   Proof.
     assert (length (map E_I (seq start (bound + 2))) > length (seq 0 (bound + 1))).
-    - rewrite map_length, seq_length, seq_length. lia. 
+    - rewrite length_map, List.length_seq, List.length_seq. lia. 
     - apply pigeonhole_Sigma in H.  
       + destruct H as [y [H1 H2]]. rewrite in_seq in H2. apply in_map_sig in H1 as [x [E H1]].        
         exists x. rewrite E. apply in_seq in H1. lia. exact _.
@@ -94,7 +94,7 @@ Section HS.
       + exists x. rewrite in_seq in H1', H2. split; try lia.
       + exact _.
     - exact _.
-    - rewrite map_length. repeat rewrite seq_length. lia.
+    - rewrite length_map. repeat rewrite List.length_seq. lia.
   Qed.
   
   Lemma bound_dec:
@@ -188,7 +188,7 @@ Section HS.
       { intros x [x0 [<- H4]] % in_map_iff. apply H2 in H4.
         apply in_seq. lia. }
       apply pigeonhole_length in H3.
-      + rewrite seq_length, map_length in H3. lia.
+      + rewrite List.length_seq, length_map in H3. lia.
       + intros x1 x2; decide(x1 = x2); firstorder.
       + now apply map_NoDup.
   Qed.
@@ -232,9 +232,9 @@ Section HS.
         intros E. apply H. intros [L HL]. assert (list_max (map E_I L) >= x). 
         { apply list_max_NoDup.
           - apply NoDup_map; intuition.
-          - now rewrite map_length.
+          - now rewrite length_map.
         }  
-        assert (length (map E_I L) > 0) by (rewrite map_length; lia). 
+        assert (length (map E_I L) > 0) by (rewrite length_map; lia). 
         apply list_max_length_succ in H2. apply in_map_iff in H2 as [n0 E1]. intuition. apply H7 in H5 as [H5 H5'].
         apply H5'. exists n. split; try lia. 
         assert (E_I n0 > E_I n \/ E_I n0 = E_I n) as [E1 | E1] by lia.

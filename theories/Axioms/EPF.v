@@ -1,5 +1,5 @@
 From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.SemiDecidabilityFacts reductions partial embed_nat.
-Require Import Setoid Program Lia.
+From Stdlib Require Import Setoid Program Lia.
 
 Global Instance equiv_part `{partiality} {A} : equiv_on (part A) := {| equiv_rel := @partial.equiv _ A |}.
 

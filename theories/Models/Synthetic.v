@@ -3,7 +3,7 @@ From SyntheticComputability Require Import LMuRecursion.
 From Undecidability.L Require Import Computability.Computability Functions.Eval.
 From Undecidability.L.Datatypes Require Import LNat LOptions LProd Lists.
 
-Require Import Datatypes.
+From Stdlib Require Import Datatypes.
 
 Inductive is_computable {A} {t : TT A} (a : A) : Prop :=
   C : computable a -> is_computable a.
@@ -240,7 +240,8 @@ Qed.
 (*   extract. *)
 (* Qed. *)
 
-Require Import SyntheticComputability.Shared.embed_nat Nat.
+Require Import SyntheticComputability.Shared.embed_nat.
+From Stdlib Require Import Nat.
 
 (* Instance term_nat_rec {X : Set} `{encodable X} : computable (@nat_rec (fun _ => X)). *)
 (* Proof. *)

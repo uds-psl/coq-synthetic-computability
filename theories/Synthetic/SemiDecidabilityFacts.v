@@ -1,4 +1,4 @@
-Require Import List Morphisms Lia.
+From Stdlib Require Import List Morphisms Lia.
 Require Import SyntheticComputability.Synthetic.DecidabilityFacts SyntheticComputability.Synthetic.EnumerabilityFacts SyntheticComputability.Shared.partial SyntheticComputability.Shared.embed_nat SyntheticComputability.Shared.FinitenessFacts SyntheticComputability.Shared.Dec.
 Export EmbedNatNotations.
 

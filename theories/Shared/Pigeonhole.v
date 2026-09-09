@@ -1,6 +1,6 @@
 Require SyntheticComputability.Shared.Dec.
-Require Import Setoid Morphisms.
-Require Export Lia List Arith.
+From Stdlib Require Import Setoid Morphisms.
+From Stdlib Require Export Lia List Arith.
 Import ListNotations.
 
 Fact ldec_stable P :
@@ -89,7 +89,7 @@ Proof.
   intros q. apply H1. intros [Hp | Hp]; eapply H; eauto.
 Qed.
 
-Tactic Notation "ccase" constr(P) "as" intropattern(pat) := 
+Tactic Notation "ccase" constr(P) "as" simple_intropattern(pat) := 
 match goal with
 | [ |- ~ ?G ] => eapply (ccase_neg P); intros pat
   (* let H := fresh "H" in assert (H : ~~ (P \/ ~P)) by tauto; cunwrap H; revert H; intros pat *)

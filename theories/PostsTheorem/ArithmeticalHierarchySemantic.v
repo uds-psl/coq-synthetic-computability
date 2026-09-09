@@ -1,12 +1,13 @@
 (** ** Arithmetical Hierarchy in Type Theory *)
 
+From SyntheticComputability Require principles.
 From SyntheticComputability.Shared Require Import embed_nat.
-Require Import Lia Vector Fin List.
+From Stdlib Require Import Lia Vector Fin List.
 Import Vector.VectorNotations.
 (* From Undecidability.FOL Require Import Syntax. *)
 From SyntheticComputability.Synthetic Require Import Definitions.
 
-Require Import PeanoNat (* Nat.eqb *) Bool.
+From Stdlib Require Import PeanoNat Bool. (* Nat.eqb *)
 
 From Equations Require Import Equations.
 Require Import Equations.Prop.DepElim.
@@ -685,7 +686,7 @@ Section ArithmeticalHierarchySemantic.
     eapply H. now eapply isΣΠn_In_ΠΣSn.
   Qed.
 
-  From SyntheticComputability Require Import principles.
+  Import principles.
 
   Lemma level1 :
     DNE_Σ 0

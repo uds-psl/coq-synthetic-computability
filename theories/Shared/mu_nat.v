@@ -1,5 +1,5 @@
 
-Require Import Lia.
+From Stdlib Require Import Lia.
 
 Definition least p n k := n <= k /\ p k /\ forall i, n <= i -> p i -> k <= i.
 

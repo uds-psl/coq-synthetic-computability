@@ -1,6 +1,7 @@
+From Stdlib.Logic Require ConstructiveEpsilon.
 From SyntheticComputability.Synthetic Require Import DecidabilityFacts EnumerabilityFacts ListEnumerabilityFacts.
 From SyntheticComputability.Shared Require Import ListAutomation Dec.
-Require Import List Lia.
+From Stdlib Require Import List Lia.
 Import ListNotations ListAutomationNotations.
 
 Lemma enumerable_enum {X} {p : X -> Prop} :
@@ -85,7 +86,7 @@ Qed.
 
 
 
-Require Import ConstructiveEpsilon.
+From Stdlib Require Import ConstructiveEpsilon.
 From SyntheticComputability Require Import Shared.ListAutomation Shared.mu_nat.
 
 
@@ -130,7 +131,7 @@ Section Inf.
     intros A x. induction A; cbn; auto.
   Qed.
 
-  From Coq.Logic Require Import ConstructiveEpsilon.
+  Import ConstructiveEpsilon.
 
   Definition le_f x y :=
     exists n, f n = Some x /\ forall n', f n' = Some y -> n <= n'.

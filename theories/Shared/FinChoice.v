@@ -1,5 +1,5 @@
 From SyntheticComputability.Shared Require Import FinitenessFacts.
-Require Import List.
+From Stdlib Require Import List.
 
 Definition total {X Y} (R : X -> Y -> Prop) :=
   forall x, exists y, R x y.

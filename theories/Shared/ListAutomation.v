@@ -1,4 +1,5 @@
-Require Export List SyntheticComputability.Shared.Dec SyntheticComputability.Shared.FilterFacts.
+From Stdlib Require Export List.
+Require Export SyntheticComputability.Shared.Dec SyntheticComputability.Shared.FilterFacts.
 Export ListNotations.
 
 Module ListAutomationNotations.
@@ -59,7 +60,7 @@ Ltac inv_collect :=
     | [H : _ el _ :: _ |- _ ] => destruct H
      end; intuition; subst).
 
-Require Import Lia Arith.
+From Stdlib Require Import Lia Arith.
 Local Set Implicit Arguments.
 Local Unset Strict Implicit.
 
@@ -79,7 +80,7 @@ Lemma incl_nil X (A : list X) :
 Proof. intros x []. Qed.
 
 #[export] Hint Rewrite <- app_assoc : list.
-#[export] Hint Rewrite rev_app_distr map_app prod_length : list.
+#[export] Hint Rewrite rev_app_distr map_app length_prod : list.
 #[export] Hint Resolve in_eq in_nil in_cons in_or_app : core.
 #[export] Hint Resolve incl_refl incl_tl incl_cons incl_appl incl_appr incl_app incl_nil : core.
 
@@ -158,7 +159,7 @@ Section Inclusion.
 
 End Inclusion.
 
-Require Import Setoid Morphisms.
+From Stdlib Require Import Setoid Morphisms.
 
 #[export] Instance incl_preorder X : 
   PreOrder (@incl X).

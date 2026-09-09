@@ -1,6 +1,6 @@
 From Undecidability.L Require Export L Datatypes.LNat Datatypes.LBool Functions.Encoding.
 From SyntheticComputability Require Export Models.Seval.
-Require Import Coq.Logic.ConstructiveEpsilon.
+From Stdlib Require Import Logic.ConstructiveEpsilon.
 
 Definition cChoice := constructive_indefinite_ground_description_nat_Acc.
 

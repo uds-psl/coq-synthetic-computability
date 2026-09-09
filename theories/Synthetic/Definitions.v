@@ -56,6 +56,6 @@ Notation "'∑' x .. y , p" := (sig (fun x => .. (sig (fun y => p)) ..))
   (at level 200, x binder, right associativity,
    format "'[' '∑'  '/  ' x  ..  y ,  '/  ' p ']'")
   : type_scope.
-Notation "'if' x 'is' p 'then' a 'else' b" := (match x with p => a | _ => b end) (at level 200, p pattern).
+Notation "'if' x 'is' p 'then' a 'else' b" := (match x with p => a | _ => b end) (at level 200, x, a, b at level 200, p pattern).
 Definition uncurry {X} {Y} {Z} (R : X -> Y -> Z) := fun '(x,y) => R x y.
 Notation stable p := (forall x, ~~ p x -> p x).

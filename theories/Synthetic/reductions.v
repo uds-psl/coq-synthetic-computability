@@ -1,5 +1,5 @@
 From stdpp Require Import prelude.
-Require Import ssreflect.
+From Stdlib Require Import ssreflect.
 
 From SyntheticComputability.Synthetic Require Import Definitions DecidabilityFacts EnumerabilityFacts ListEnumerabilityFacts MoreEnumerabilityFacts.
 From SyntheticComputability.Synthetic Require Import truthtables.
@@ -315,7 +315,7 @@ Proof.
   setoid_rewrite eval_tt_mk_tt'. 
   2:{
     cbn in *. eapply Forall2_length in H.
-    now rewrite H map_length.
+    now rewrite H length_map.
   }
   eapply Hf.
   destruct (f x) as [fx tt]. cbn in *.
@@ -324,10 +324,10 @@ Proof.
   - econstructor.
     + eapply Hg. eapply Forall2_take with (n := length (g a).1) in H.
       rewrite map_app in H.
-      erewrite <- map_length with (f := r) in H at 2.
+      erewrite <- length_map with (f := r) in H at 2.
       now rewrite take_app_length' in H.
     + eapply IHfx. eapply Forall2_drop with (n := length (g a).1) in H.
-      erewrite <- map_length with (f := r) in H at 2.
+      erewrite <- length_map with (f := r) in H at 2.
       rewrite map_app in H.
       now rewrite drop_app_length' in H.
 Qed.
@@ -486,7 +486,7 @@ Proof.
   - intros n L H. cbn in *.
     inv H. rewrite eval_tt_mk_tt'.
     + cbn. f_equal. eapply Forall2_length in H4.
-      rewrite map_length in H4. exact H4.
+      rewrite length_map in H4. exact H4.
     + eapply Hf. eassumption.
   - intros x y. intros [=].
     now eapply Hg.

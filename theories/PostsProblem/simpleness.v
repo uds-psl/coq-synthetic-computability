@@ -3,8 +3,11 @@ Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
-Require Import Arith Arith.Compare_dec Lia Coq.Program.Equality List.
+From Stdlib Require Import Arith Arith.Compare_dec Lia Program.Equality List.
 From SyntheticComputability Require Import the_priority_method.
+From SyntheticComputability Require simple_construction.
+
+From SyntheticComputability.Shared.Libs.PSL Require Power EqDec.
 
 Section Assume_EA.
 
@@ -403,7 +406,7 @@ Section Assume_EA.
         assert (incl LC (seq 0 n)). unfold incl. 
         - intros c [e [x Hx]] % H2. apply in_seq. lia.
         - apply pigeonhole_length in H1.
-          + now rewrite seq_length in H1.
+          + now rewrite List.length_seq in H1.
           + intros. decide (x1 = x2); tauto.
           + exact H0.
       Qed.
@@ -438,7 +441,7 @@ Section Assume_EA.
         eapply H.
         exists (firstn n l).
         repeat split.
-        - rewrite firstn_length. lia.
+        - rewrite length_firstn. lia.
         - now eapply simple_construction.firstn_NoDup.
         - intros ? ? % simple_construction.firstn_In. now eapply H2.
       Qed.

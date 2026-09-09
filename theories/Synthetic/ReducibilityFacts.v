@@ -1,6 +1,6 @@
 From SyntheticComputability.Synthetic Require Import DecidabilityFacts EnumerabilityFacts ListEnumerabilityFacts MoreEnumerabilityFacts reductions.
 From SyntheticComputability.Shared Require Import ListAutomation.
-Require Import List Lia.
+From Stdlib Require Import List Lia.
 Import ListNotations ListAutomationNotations.
 
 Set Implicit Arguments.

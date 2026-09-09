@@ -3,7 +3,7 @@ From Undecidability.L Require Export Seval.
 From Undecidability Require Export Dec.
 
 (* 
-Require Import Coq.Logic.ConstructiveEpsilon. 
+From Stdlib Require Import Logic.ConstructiveEpsilon.
 
 Import L_Notations.
 
@@ -182,7 +182,7 @@ Qed.
 
 (* Informative eval *)
 
-Require Import Coq.Logic.ConstructiveEpsilon.
+From Stdlib Require Import Logic.ConstructiveEpsilon.
 Definition cChoice := constructive_indefinite_ground_description_nat_Acc.
 
 Fixpoint stepf (s : term) : list term :=

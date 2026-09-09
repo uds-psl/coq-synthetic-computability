@@ -1,10 +1,14 @@
+From SyntheticComputability Require principles.
+From SyntheticComputability Require simple.
 Require Import SyntheticComputability.Axioms.EA.
 Require Import SyntheticComputability.Shared.Pigeonhole.
 Require Import SyntheticComputability.Shared.FinitenessFacts.
 Require Import SyntheticComputability.Synthetic.reductions SyntheticComputability.Synthetic.truthtables.
 Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Import SyntheticComputability.Shared.ListAutomation.
-Require Import List Arith.
+From Stdlib Require Import List Arith.
+
+From SyntheticComputability.Shared.Libs.PSL Require Import Power EqDec.
 
 Section Assume_EA.
 
@@ -63,8 +67,6 @@ Proof.
   - eauto.
 Qed.
 
-From SyntheticComputability.Shared.Libs.PSL Require Import Power EqDec.
-
 Definition gen (n : nat) : list (list nat) := power (seq 0 (S n)).
 
 Lemma dupfree_Nodup {X} (A : list X) :
@@ -97,13 +99,13 @@ Lemma power_length {X : eqType} (l : list X) : length (power l) = 2 ^ (length l)
 Proof.
   induction l; cbn.
   - reflexivity.
-  - rewrite app_length, map_length, <- IHl. lia.
+  - rewrite List.length_app, length_map, <- IHl. lia.
 Qed.
 
 Lemma gen_length n : length (gen n) = 2 ^ (S n).
 Proof.
   unfold gen.
-  now rewrite power_length, seq_length.
+  now rewrite power_length, List.length_seq.
 Qed.
 
 Definition star_of p n := (fun z => (~~ p z /\ z <= n) \/ z > n).
@@ -228,7 +230,7 @@ Proof.
      + eapply IHlp. intros. eapply Hpstar. eauto. eauto. eauto.
 Qed.
 
-From SyntheticComputability Require Import principles.
+  Import principles.
 
 Definition hypersimple (p: nat -> Prop) : Prop
   := enumerable p /\ ~ exhaustible (compl p) /\
@@ -253,7 +255,7 @@ Proof.
   eapply Himm. eexists. eapply exceeds_majorizes; eauto.
 Qed.
 
-From SyntheticComputability Require Import simple.
+  Import simple.
 
 Lemma hypersimple_simple p :
   MP -> hypersimple p -> simple p.

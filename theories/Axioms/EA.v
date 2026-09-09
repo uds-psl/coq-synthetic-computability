@@ -1,5 +1,7 @@
+From SyntheticComputability Require truthtables.
+From Stdlib Require List.
 From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.MoreEnumerabilityFacts Synthetic.SemiDecidabilityFacts reductions embed_nat Dec.
-Require Import Setoid Program Lia.
+From Stdlib Require Import Setoid Program Lia.
 
 Definition EA := ∑ ψ : nat -> (nat -> option nat),
     forall p : nat -> nat -> Prop, penumerable p -> exists γ, parametric_enumerator (fun x => ψ (γ x)) p.
@@ -183,7 +185,7 @@ Proof.
   - eapply enumerable_W.
 Qed.
 
-From SyntheticComputability Require Import truthtables.
+  Import truthtables.
 
 Lemma TT : 
   forall f : nat -> { Q : list nat & truthtable}, 
@@ -289,7 +291,7 @@ Proof.
 Qed.
 
 
-Require Import List.
+  Import List.
 
 Lemma generative_W :   generative (fun! ⟨ n, m ⟩ => W n m).
 Proof.
@@ -299,7 +301,7 @@ Proof.
     eapply decidable_enumerable. 2:eauto. exists (fun _ => true). firstorder.
   }
   intros n. exists (List.map (fun m => ⟨c_top,m⟩) (List.seq 0 n)). split.
-  now rewrite map_length, seq_length. split.
+  now rewrite length_map, List.length_seq. split.
   eapply NoDup_map. intros ? ? E % (f_equal unembed). rewrite !embedP in E. congruence. eapply seq_NoDup.
   intros ? (? & <- & ?) % in_map_iff. rewrite embedP. firstorder.
 Qed.

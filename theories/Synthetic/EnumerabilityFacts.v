@@ -1,6 +1,6 @@
 From SyntheticComputability.Synthetic Require Import DecidabilityFacts.
 From SyntheticComputability.Shared Require Export embed_nat equiv_on partial mu_nat Dec.
-Require Import List Morphisms Lia.
+From Stdlib Require Import List Morphisms Lia.
 Export EmbedNatNotations.
 
 (** ** Enumerability  *)

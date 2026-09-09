@@ -4,7 +4,9 @@ Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
-Require Import Arith Arith.Compare_dec Lia Coq.Program.Equality List.
+From Stdlib Require Import Arith Arith.Compare_dec Lia Program.Equality List.
+
+From SyntheticComputability.Shared.Libs.PSL Require Power EqDec.
 Import ListNotations.
 
 (* ########################################################################## *)

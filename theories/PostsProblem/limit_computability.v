@@ -2,7 +2,10 @@ From SyntheticComputability Require Import ArithmeticalHierarchySemantic PostsTh
 
 Import EmbedNatNotations.
 
-Require Import stdpp.list Arith.Compare_dec Lia.
+Require Import stdpp.list.
+From Stdlib Require Import Arith.Compare_dec Lia.
+
+From SyntheticComputability.Shared.Libs.PSL Require Power EqDec.
 (* ########################################################################## *)
 (** * Limit Computability *)
 (* ########################################################################## *)

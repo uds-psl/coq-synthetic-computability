@@ -5,13 +5,16 @@ From SyntheticComputability Require Import Definitions EPF SemiDec reductions.
 Import EmbedNatNotations.
 
 From SyntheticComputability Require Import partial.
-Require Import ssreflect Setoid.
+From Stdlib Require Import ssreflect Setoid.
 
-Require Import Lia Vector List PeanoNat.
+From Stdlib Require Import Lia Vector List PeanoNat.
 Import ListNotations.
 Local Notation vec := Vector.t.
 
 Require Import SyntheticComputability.TuringReducibility.OracleComputability.
+
+Local Set Implicit Arguments.
+Local Unset Strict Implicit.
 
 Notation compl p := (fun x => ~ p x).
 

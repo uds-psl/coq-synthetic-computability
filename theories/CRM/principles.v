@@ -1,5 +1,5 @@
-From Coq.Logic Require Import ConstructiveEpsilon.
-Require Import Lia Nat.
+From Stdlib.Logic Require Import ConstructiveEpsilon.
+From Stdlib Require Import Lia Nat.
 From stdpp Require Import numbers list list_numbers.
 From SyntheticComputability Require Import SemiDecidabilityFacts DecidabilityFacts EnumerabilityFacts ListEnumerabilityFacts reductions Axioms.Equivalence halting FinChoice Dec.
 
@@ -409,8 +409,8 @@ Proof.
     { intros x. destruct (f x); firstorder congruence. }
     clear m Hm.
     assert (alpha (n * 2) = true). {
-      unfold alpha. rewrite Nat.mod_mul. rewrite Nat.eqb_refl.
-      rewrite Nat.div_mul. eauto. lia. lia.
+      unfold alpha. rewrite Nat.Div0.mod_mul. rewrite Nat.eqb_refl.
+      rewrite Nat.div_mul. eauto. lia.
     }
     destruct (dec_bounded_quant (fun n => g n = true) n).
     + intros m ?; destruct (g m); firstorder congruence.
@@ -426,14 +426,14 @@ Proof.
         pose proof (Nat.div_lt_upper_bound k 2 n).
         lia.
       * cbn [Nat.eqb] in H3. eapply H2 in H3. lia. 
-        eapply Nat.div_le_upper_bound. lia. lia.
+        eapply Nat.Div0.div_le_upper_bound. lia.
     + firstorder.
   - right. intros [m Hm].
     destruct (least_ex (fun n => g n = true) _ Hm) as [n [Hn Hle]].
     { intros x. destruct (g x); firstorder congruence. }
     clear m Hm.
     assert (alpha (1 + n * 2) = true). {
-      unfold alpha. rewrite Nat.mod_add; try lia.
+      unfold alpha. rewrite Nat.Div0.mod_add; try lia.
       change (1 `mod` 2 =? 0) with false. hnf.
       rewrite Nat.div_add. cbn. eauto. lia.
     }
@@ -448,9 +448,9 @@ Proof.
       unfold alpha in H3.
       exfalso. destruct (k `mod` 2) eqn:Em.
       * cbn [Nat.eqb] in H3. eapply H2 in H3. cbn in H4. eauto.
-        eapply Nat.div_le_upper_bound. lia. lia.
+        eapply Nat.Div0.div_le_upper_bound. lia.
       * cbn [Nat.eqb] in H3. eapply Hle in H3. cbn in H4.
-        rewrite Nat.mod_eq in Em; lia.
+        rewrite Nat.Div0.mod_eq in Em; lia.
     + firstorder.
 Qed.
 
@@ -891,7 +891,7 @@ Proof.
         rewrite lookup_seq; eauto.
         rewrite E in H2. inv H2. eassumption.
       * eapply lookup_ge_None in E. erewrite <- Forall2_length in E; eauto.
-        rewrite seq_length in E. lia.
+        rewrite List.length_seq in E. lia.
 Qed.
 
 Goal ACC -> AC_0_0.
@@ -1118,7 +1118,7 @@ Proof.
   pose (F' n := match F n with Some u => u | _ => [] end).
   destruct (C (fun n b => R (F' n) b)) as [f Hf]; eauto.
   pose (f' := fix f' n := match n with 0 => [] | S n => f' n ++ [f (G (f' n))] end).
-  assert (Hlen : forall n, length (f' n) = n) by (induction n; cbn; rewrite ?app_length; cbn; lia).
+  assert (Hlen : forall n, length (f' n) = n) by (induction n; cbn; rewrite ?List.length_app; cbn; lia).
   exists (fun n => nth n (f' (S n)) false).
   cbn. intros n.
   rewrite app_nth2. 2: rewrite Hlen; lia.

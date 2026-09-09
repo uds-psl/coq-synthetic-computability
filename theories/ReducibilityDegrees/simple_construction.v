@@ -6,7 +6,7 @@ Require Export SyntheticComputability.Synthetic.DecidabilityFacts SyntheticCompu
 Require Export SyntheticComputability.Shared.ListAutomation.
 Require Export SyntheticComputability.ReducibilityDegrees.simple.
 Require Export SyntheticComputability.Shared.embed_nat.
-Require Export List Arith.
+From Stdlib Require Export List Arith.
 
 Section Assume_EA.
 
@@ -142,7 +142,7 @@ Section ComplToBound.
   Lemma complToBound_length L b:
     length (complToBound L b) + length L >= S b.   
   Proof.
-    rewrite <- (seq_length (S b) 0).
+    rewrite <- (List.length_seq (S b) 0).
     erewrite filter_length with (l := seq 0 (S b)). 
     unfold complToBound.
     eapply plus_le_compat_l.
@@ -447,7 +447,7 @@ Section fix_ct.
     assert (incl LC (seq 0 n)).
     - intros c [_ [_ H3]] % H2. apply in_seq. lia.
     - apply pigeonhole_length in H1.
-      + now rewrite seq_length in H1.
+      + now rewrite List.length_seq in H1.
       + intros. decide (x1 = x2); tauto.
       + exact H0.
   Qed.  
@@ -565,7 +565,7 @@ Section fix_ct.
     eapply H.
     exists (firstn n l).
     repeat split.
-    - rewrite firstn_length. lia.
+    - rewrite length_firstn. lia.
     - now eapply firstn_NoDup.
     - intros ? ? % firstn_In. now eapply H2.
   Qed.
@@ -587,7 +587,7 @@ Section fix_ct.
 End fix_ct.
 
 Section S_Star.
-  Import  Coq.Init.Nat. 
+  Import  Corelib.Init.Nat. 
 
 
   Variable W_SDec: nat * nat -> nat -> bool.
@@ -699,7 +699,7 @@ Section S_Star.
     intros n.
     exists (map (fun x => (c_bot, x)) (seq 0 n)).
     repeat split.
-    - now rewrite map_length, seq_length.
+    - now rewrite length_map, List.length_seq.
     - eapply NoDup_map. now intros ? ? [= ->]. eapply seq_NoDup.
     - intros [? ?] (? & [= <- <-] & ? % in_seq) % in_map_iff. eapply H.
   Qed.
@@ -712,7 +712,7 @@ Section S_Star.
     intros n.
     exists (map (fun x => ⟨c_bot, x⟩) (seq 0 n)).
     repeat split.
-    - now rewrite map_length, seq_length.
+    - now rewrite length_map, List.length_seq.
     - eapply NoDup_map. 2: eapply seq_NoDup. intros ? ? ? % (f_equal unembed).
       rewrite !embedP in H0. congruence.
     - intros x (? & <- & ? % in_seq) % in_map_iff. red. now rewrite embedP.
@@ -728,7 +728,7 @@ Section S_Star.
       + intros x. split. 
         * revert H0. apply Forall_forall. exact H.
         * apply in_seq in H0. lia. 
-    - unfold S_Pow in H0. rewrite seq_length in H0. clear H. 
+    - unfold S_Pow in H0. rewrite List.length_seq in H0. clear H. 
       induction n; cbn in H0; lia.
   Qed.
 
@@ -830,7 +830,7 @@ Section S_Star.
     unfold reflects. intros H1. 
     rewrite eval_tt_mk_tt'.
     2:{ eapply list_relations.Forall2_length in H1.
-        now rewrite H1, map_length. }
+        now rewrite H1, length_map. }
     unshelve edestruct (Forall_dec (fun b => b = true)) as [H0 | H0].
     - intuition. 
       assert (Forall S_Star (S_Pow ⟨c,x⟩)). {

@@ -1,4 +1,5 @@
-Require Import PeanoNat.
+From Stdlib Require Vector.
+From Stdlib Require Import PeanoNat.
 
 (* bijection from nat * nat to nat *)
 Definition embed '(x, y) : nat := 
@@ -41,7 +42,7 @@ End EmbedNatNotations.
 
 Module VectorEmbedding.
 
-Require Import Vector.
+  Import Vector.
 
 Fixpoint vec_to_nat {k : nat} (v : Vector.t nat k) {struct v} : nat.
 Proof.

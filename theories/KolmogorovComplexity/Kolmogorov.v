@@ -3,7 +3,7 @@ From SyntheticComputability Require Import mu_nat partial equiv_on.
 
 From SyntheticComputability Require Import simple principles EnumerabilityFacts.
 
-Require Import Nat Arith Lia.
+From Stdlib Require Import Nat Arith Lia.
 
 Notation least' p n k := (n <= k /\ p k /\ forall i, n <= i -> p i -> k <= i)%nat.
 
@@ -162,7 +162,7 @@ Axiom length_log : forall n, length (ofnat n) <= Nat.log2 n.
 Axiom length_mono : forall x y, x <= y -> length (ofnat x) <= length (ofnat y).
 
 #[export] Hint Rewrite ofnat_tonat tonat_ofnat : length.
-#[export] Hint Rewrite List.app_length : length.
+#[export] Hint Rewrite List.length_app : length.
 
 Notation "| n |" := (length (ofnat n)) (at level 10).
 
@@ -350,7 +350,7 @@ Qed.
 
 From SyntheticComputability Require Import FinitenessFacts.
 From stdpp Require Import base.
-Require Import List.
+From Stdlib Require Import List.
 
 Lemma list_max_spec L x :
   In x L -> x <= list_max L.
@@ -441,7 +441,7 @@ Proof.
     + eapply NoDup_app; try eapply NoDup_map; eauto.
       intros ? (? & <- & ?) % in_map_iff (? & ? & ?) % in_map_iff.
       congruence.
-    + rewrite app_length, !map_length, IH3. cbn. lia.
+    + rewrite List.length_app, !length_map, IH3. cbn. lia.
 Qed.
 
 Lemma list_for_k k :
@@ -455,7 +455,7 @@ Proof.
     + intros <-. exists (ofnat x). now autorewrite with length. 
   - eapply NoDup_map; auto. intros ? ? E % (f_equal ofnat).
     now rewrite !ofnat_tonat in E.
-  - now rewrite map_length.
+  - now rewrite length_map.
 Qed.
 
 Lemma list_for_le_k k :
@@ -476,7 +476,7 @@ Proof.
     + intros. rewrite in_app_iff, IH1, H1.
       lia.
     + eapply NoDup_app; firstorder lia.
-    + rewrite app_length, IH3, H3. cbn; lia.
+    + rewrite List.length_app, IH3, H3. cbn; lia.
 Qed.
 
 Lemma at_most k : k > 0 ->

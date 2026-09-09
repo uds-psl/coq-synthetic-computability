@@ -1,6 +1,7 @@
 Require Import SyntheticComputability.Shared.Dec SyntheticComputability.Shared.ListAutomation.
-Require Import Setoid Morphisms.
-Require Import SyntheticComputability.Synthetic.Definitions Lia List.
+From Stdlib Require Import Setoid Morphisms.
+Require Import SyntheticComputability.Synthetic.Definitions.
+From Stdlib Require Import Lia List.
 From SyntheticComputability.Shared Require Import mu_nat equiv_on Pigeonhole Dec partial.
 Import ListNotations.
 
@@ -565,7 +566,7 @@ Lemma cantor_infinite_unbounded {X} (p : X -> Prop) :
   cantor_infinite p -> unbounded p.
 Proof.
   intros [f Hf] n. exists (map f (seq 0 n)). repeat split.
-  - now rewrite map_length, seq_length.
+  - now rewrite length_map, List.length_seq.
   - eapply map_NoDup. firstorder. eapply seq_NoDup.
   - intros x (? & <- & ?) % in_map_iff. eapply Hf.
 Qed.
@@ -616,7 +617,7 @@ Proof.
   - intros [f Hf]. econstructor. intros l.
     edestruct (pigeonhole_Sigma (map f (seq 0 (1 + length l))) l Hd) as (x & H1 & H2).
     + eapply map_NoDup. firstorder. eapply seq_NoDup.
-    + rewrite map_length, seq_length. lia.
+    + rewrite length_map, List.length_seq. lia.
     + exists x. eapply in_map_iff in H1 as (? & <- & ?). firstorder.
   - intros [F]. eapply weakly_generative_cantor_infinite.
     econstructor. intros l.

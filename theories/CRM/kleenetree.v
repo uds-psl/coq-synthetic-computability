@@ -2,7 +2,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Require Import stdpp.list stdpp.list_numbers.
 From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.SemiDecidabilityFacts Synthetic.EnumerabilityFacts ListEnumerabilityFacts reductions partial Axioms.Equivalence  principles Shared.Dec.
-Require Import ssreflect Nat.
+From Stdlib Require Import ssreflect Nat.
 Require Import SyntheticComputability.Shared.FilterFacts.
 
 Section Reverse_Induction.
@@ -167,7 +167,7 @@ Proof.
   eapply Hclos. 2:eapply Hinhab. now econstructor.
 Qed.
 
-#[export] Hint Immediate tree_is_tree.
+#[export] Hint Immediate tree_is_tree : core.
 #[export] Hint Extern 2 => eapply tree_nil : core.
 
 Record Kleene_tree :=
@@ -243,7 +243,7 @@ Lemma bounded_to_wellfounded T :
   bounded_tree T -> wellfounded_tree T.
 Proof.
   intros [n H] f. exists n. eapply H.
-  rewrite map_length seq_length. lia.
+  rewrite length_map List.length_seq. lia.
 Qed.
 
 Lemma infinite_path_to_infinite T :
@@ -251,7 +251,7 @@ Lemma infinite_path_to_infinite T :
 Proof.
   intros [f Hf] n.
   exists (map f (seq 0 n)). split. eauto.
-  rewrite map_length seq_length. lia.
+  rewrite length_map List.length_seq. lia.
 Qed.
 
 (** ** Constructions  *)
@@ -293,7 +293,7 @@ Proof.
   econstructor.
   - exists []. cbn. move => n H. lia.
   - move => l1 l2 [l3 ->].
-    rewrite !app_length.
+    rewrite !List.length_app.
     move => H n Hn x Hx.
     assert (Hg : D (length l1 + length l3) n = Some x). {
       eapply seval_mono. eassumption. lia. }
@@ -305,31 +305,31 @@ Proof.
     + destruct (IHa k) as [L | R].
       * destruct (D k (length a)) as [ x | ] eqn:E.
         -- destruct (bool_eq_dec x b).
-           ++ left. rewrite app_length. cbn. move => n Hn x' Hx'.
+           ++ left. rewrite List.length_app. cbn. move => n Hn x' Hx'.
               destruct (nat_eq_dec n (length a)).
               ** subst. rewrite lookup_app_r. lia.
                  rewrite Nat.sub_diag. cbn. congruence.
               ** rewrite lookup_app_l. lia.
                  eapply L. lia. eassumption.
-           ++ right. rewrite app_length. cbn. move => / (fun H => H (length a)) H.
+           ++ right. rewrite List.length_app. cbn. move => / (fun H => H (length a)) H.
               rewrite lookup_app_r ?Nat.sub_diag in H. lia. cbn in H.
               eapply n.
               eapply Some_inj. symmetry. eapply H. lia. eauto.
-        -- left. rewrite app_length. cbn. move => n Hn x' Hx'.
+        -- left. rewrite List.length_app. cbn. move => n Hn x' Hx'.
            destruct (nat_eq_dec n (length a)).
            ** congruence.
            ** rewrite lookup_app_l. lia.
               eapply L. lia. eassumption.
       * right. move => H. contradiction R.
         move => n Hn x Hx.
-        specialize (H n). rewrite app_length in H. cbn in H.
+        specialize (H n). rewrite List.length_app in H. cbn in H.
         rewrite lookup_app_l in H. lia.
         eapply H. lia. eassumption.
   - unfold infinite_tree, tree_T. move => k.
     pose (f k := (fix f n := match n with 0 => [] | S n => f n ++ [(if D k n is Some x then x else false)] end)).
     exists (f k k).
     assert (H_length : forall n, length (f k n) = n). {
-      induction n; cbn; rewrite ?app_length; cbn.
+      induction n; cbn; rewrite ?List.length_app; cbn.
       reflexivity.
       rewrite IHn. lia.
     }
@@ -351,7 +351,7 @@ Proof.
     eapply seval_hasvalue in H1 as [k H1].
     fold (D k n) in H1. cbn in *.
     specialize (H (1 + k + n) n). 
-    rewrite map_length seq_length in H.
+    rewrite length_map List.length_seq in H.
     assert (Hlt : n < 1 + k + n) by lia.
     setoid_rewrite lookup_map in H. setoid_rewrite (lookup_seq) in H.
     edestruct H as [x [[H3 H4] H5]].
@@ -433,7 +433,7 @@ Proof.
   split.
   - intros [k Hb].
     specialize (Hb (map (fun _ => true) (seq 0 k))).
-    rewrite map_length seq_length in Hb.
+    rewrite length_map List.length_seq in Hb.
     specialize (Hb (Nat.le_refl _)).
     unfold tree_from in Hb. cbn in Hb.
     rewrite <- Is_true_iff in Hb.
@@ -469,7 +469,7 @@ Proof.
     intros Hl % Is_true_iff.
     eapply forallb_forall in Hl.
     setoid_rewrite Hn in Hl. inv Hl.
-    eapply in_seq. rewrite map_length seq_length. lia.
+    eapply in_seq. rewrite length_map List.length_seq. lia.
 Qed.
 
 Lemma LPO_tree_iff :
@@ -583,7 +583,7 @@ Proof.
         -- intros [ | []]; hnf; eauto; decide equality.
         -- intros [k Hk].
            destruct k. now eapply (Hk [] eq_refl).
-           pose proof (Hk (true :: map (fun _ => true) (seq 0 k)) (ltac:(now cbn; rewrite map_length seq_length))) as Hf.
+           pose proof (Hk (true :: map (fun _ => true) (seq 0 k)) (ltac:(now cbn; rewrite length_map List.length_seq))) as Hf.
            cbn in Hf.
            destruct forallb eqn:E. congruence. clear Hf.
            eapply Is_true_neg_iff in E. setoid_rewrite forallb_True in E.
@@ -591,7 +591,7 @@ Proof.
            2: intros; destruct (f x); cbn; firstorder congruence.
            eapply List.Exists_exists in E as [n [Hn HHn]].
 
-           pose proof (Hk (false :: map (fun _ => true) (seq 0 k)) (ltac:(now cbn; rewrite map_length seq_length))) as Hg.
+           pose proof (Hk (false :: map (fun _ => true) (seq 0 k)) (ltac:(now cbn; rewrite length_map List.length_seq))) as Hg.
            cbn in Hg.
            destruct forallb eqn:E. congruence. clear Hg.
            eapply Is_true_neg_iff in E. setoid_rewrite forallb_True in E.
@@ -817,7 +817,7 @@ Section WKL_to_LPL.
         eapply tree_p. 3:eauto. eauto. eapply take_prefix.
       }
       exists (u ++ repeat false n).
-      split. 2:{ rewrite app_length repeat_length. lia. }
+      split. 2:{ rewrite List.length_app repeat_length. lia. }
       right. exists u. split. eexists; eauto.
       split. eauto.
       intros [v [Hv1 Hv2]]. eapply Hu2 in Hv2. lia.
@@ -839,9 +839,9 @@ Section WKL_to_LPL.
     - eapply HT.
       eapply prefix_length_eq in Hpref.
       + subst. eapply Hv.
-      + now rewrite map_length seq_length.
+      + now rewrite length_map List.length_seq.
     - eapply prefix_length in Hpref.
-      rewrite map_length seq_length in Hpref. lia.
+      rewrite length_map List.length_seq in Hpref. lia.
   Qed.
 
 End WKL_to_LPL.
@@ -873,7 +873,7 @@ Proof.
     * eapply is_tree_subtree_at.
       rewrite <- E. eapply (Hf 1).
     * intros k. exists (map f (seq 1 k)).
-      split. 2:rewrite map_length seq_length; lia.
+      split. 2:rewrite length_map List.length_seq; lia.
       red. cbn. rewrite <- E.
       eapply (Hf (S k)).
   + right.
@@ -881,7 +881,7 @@ Proof.
     * eapply is_tree_subtree_at.
       rewrite <- E. eapply (Hf 1).
     * intros k. exists (map f (seq 1 k)).
-      split. 2:rewrite map_length seq_length; lia.
+      split. 2:rewrite length_map List.length_seq; lia.
       red. cbn. rewrite <- E.
       eapply (Hf (S k)).
 Qed.
@@ -908,9 +908,9 @@ Proof.
     split.
     - exists []. cbv. intros; lia.
     - intros l1 ? [l2 ->] H. intros i Hi. cbn in *. 
-      specialize (H i (ltac:(rewrite app_length; lia))).
+      specialize (H i (ltac:(rewrite List.length_app; lia))).
       rewrite (app_nth1 _ _ _ Hi) in H.
-      intros. eapply H. rewrite app_length; lia.
+      intros. eapply H. rewrite List.length_app; lia.
     - eapply decidable_iff. econstructor. intros u. eapply listable_forall_dec.
       + eapply listable_lt.
       + intros i. eapply listable_forall_dec.
@@ -925,16 +925,16 @@ Proof.
     induction n as [ | n (u & IH & Hu)].
     - exists []; cbn. split. intros; lia. eauto.
     - destruct (Htot n) as [b Hb].
-      exists (u ++ [b]). split. 2:rewrite app_length; cbn; lia.
-      intros i Hi'. rewrite app_length in Hi'; cbn in *.
+      exists (u ++ [b]). split. 2:rewrite List.length_app; cbn; lia.
+      intros i Hi'. rewrite List.length_app in Hi'; cbn in *.
       assert (i = length u \/ i < length u) as [-> | Hi] by lia.
       + subst. rewrite app_nth2. lia.
         intros. rewrite Nat.sub_diag. cbn. now eapply Hf.
       + intros. rewrite app_nth1. lia. now eapply IH.
   }
   exists g. intros n. cbn in *. eapply Hf. intros m.
-  specialize (Hg (1 + n + m) n ltac:(rewrite map_length seq_length; cbn; lia) m ltac:(rewrite map_length seq_length; cbn; lia)).
-  erewrite nth_indep in Hg. 2: rewrite map_length seq_length; cbn; lia.
+  specialize (Hg (1 + n + m) n ltac:(rewrite length_map List.length_seq; cbn; lia) m ltac:(rewrite length_map List.length_seq; cbn; lia)).
+  erewrite nth_indep in Hg. 2: rewrite length_map List.length_seq; cbn; lia.
   erewrite map_nth, seq_nth in Hg. eassumption. lia.
   Unshelve. exact 0.
 Qed.
@@ -976,7 +976,7 @@ Proof.
   - pose (g := fix g n := match n with 0 => []
                              | S n => g n ++ [f (G (g n))]
                      end).
-    assert (Hg : forall n, length (g n) = n). { induction n; cbn; rewrite ?app_length; cbn; lia. }
+    assert (Hg : forall n, length (g n) = n). { induction n; cbn; rewrite ?List.length_app; cbn; lia. }
     exists (fun n => f (G (g n))).
     induction n.
     + cbn. specialize (Hf (G [])). unfold F' in Hf.
@@ -1184,7 +1184,7 @@ Qed.
 (*   - assert (Hl : forall n, length (proj1_sig (f n)) = n). { *)
 (*       induction n. *)
 (*       + rewrite H0. reflexivity. *)
-(*       + destruct (Hf n) as [b ->].  rewrite app_length IHn //=. lia. *)
+(*       + destruct (Hf n) as [b ->].  rewrite List.length_app IHn //=. lia. *)
 (*     } *)
 (*     assert (Hmap : forall n, (map (λ n0 : nat, nth_default false (proj1_sig (f (S n0))) n0) (seq 0 n) = proj1_sig (f n))). { *)
 (*       intros n. induction n. *)
@@ -1215,7 +1215,7 @@ Qed.
 (*   assert (HF : forall n, length (F n) = S n). { *)
 (*     induction n; cbn. *)
 (*     - destruct (f []); reflexivity. *)
-(*     - destruct (f (F n)); rewrite app_length; cbn; lia. *)
+(*     - destruct (f (F n)); rewrite List.length_app; cbn; lia. *)
 (*   } *)
 (*   exists (fun n => nth n (F n) false). *)
 (*   induction n. *)
@@ -1229,11 +1229,11 @@ Qed.
 (*     + clear Hf. clear - HF. induction n. *)
 (*       * cbn. destruct (f []); reflexivity. *)
 (*       * cbn. destruct (f (F n)) eqn:E. *)
-(*         -- rewrite app_length seq_app map_app. *)
+(*         -- rewrite List.length_app seq_app map_app. *)
 (*            cbn. rewrite HF. cbn -[seq]. rewrite E. rewrite app_nth2. rewrite HF. lia. *)
 (*            cbn -[seq]. rewrite HF minus_diag. *)
 (*            rewrite <- IHn. now rewrite HF. *)
-(*         -- rewrite app_length seq_app map_app. *)
+(*         -- rewrite List.length_app seq_app map_app. *)
 (*            cbn. rewrite HF. cbn -[seq]. rewrite E. rewrite app_nth2. rewrite HF. lia. *)
 (*            cbn -[seq]. rewrite HF minus_diag. *)
 (*            rewrite <- IHn. now rewrite HF. *)
@@ -1254,7 +1254,7 @@ Qed.
 (*   - intros dc p q H. *)
 (*     destruct (dc (fun u => p (length u)) (fun u => q (length u))) as [f Hf]; eauto. *)
 (*     exists f. intros n. specialize (Hf n). *)
-(*     now rewrite map_length seq_length in Hf. *)
+(*     now rewrite length_map List.length_seq in Hf. *)
 (*   - assert (countable (list bool)) as (G & F & HFG). { *)
 (*       eapply enumerable_discrete_countable; eauto. *)
 (*       eapply discrete_iff. econstructor. exact _. *)
@@ -1284,14 +1284,14 @@ Qed.
 (* (*     + destruct IHu as [(v & H1 & H2 & H3)|(v & H1 & H2 & H3)]. *) *)
 (* (*       * eapply (LLPO (Build_tree H2)) in H3 as [[H3 H4] | [H3 H4]]; cbn in *. *) *)
 (* (*         -- eapply subtree_at_app in H3. eapply subtree_at_app_inf in H4. *) *)
-(* (*            left. exists (v ++ [true]). split. rewrite! app_length. cbn. lia. eauto. *) *)
+(* (*            left. exists (v ++ [true]). split. rewrite! List.length_app. cbn. lia. eauto. *) *)
 (* (*         -- eapply subtree_at_app in H3. eapply subtree_at_app_inf in H4. *) *)
-(* (*            right. exists (v ++ [true]). split. rewrite! app_length. cbn. lia. eauto. *) *)
+(* (*            right. exists (v ++ [true]). split. rewrite! List.length_app. cbn. lia. eauto. *) *)
 (* (*       * eapply (LLPO (Build_tree H2)) in H3 as [[H3 H4] | [H3 H4]]; cbn in *. *) *)
 (* (*         -- eapply subtree_at_app in H3. eapply subtree_at_app_inf in H4. *) *)
-(* (*            left. exists (v ++ [false]). split. rewrite! app_length. cbn. lia. eauto. *) *)
+(* (*            left. exists (v ++ [false]). split. rewrite! List.length_app. cbn. lia. eauto. *) *)
 (* (*         -- eapply subtree_at_app in H3. eapply subtree_at_app_inf in H4. *) *)
-(* (*            right. exists (v ++ [false]). split. rewrite! app_length. cbn. lia. eauto. *) *)
+(* (*            right. exists (v ++ [false]). split. rewrite! List.length_app. cbn. lia. eauto. *) *)
 (* (*   - exists f. induction n. *) *)
 (* (*     + cbn. eauto. *) *)
 (* (*     + replace (S n) with (n + 1) by lia. *) *)
@@ -1312,7 +1312,7 @@ Qed.
 (* (*   - assert (Hl : forall n, length (proj1_sig (f n)) = n). { *) *)
 (* (*       induction n. *) *)
 (* (*       + rewrite H0. reflexivity. *) *)
-(* (*       + destruct (Hf n) as [b ->].  rewrite app_length IHn //=. lia. *) *)
+(* (*       + destruct (Hf n) as [b ->].  rewrite List.length_app IHn //=. lia. *) *)
 (* (*     } *) *)
 (* (*     assert (Hmap : forall n, (map (λ n0 : nat, nth_default false (proj1_sig (f (S n0))) n0) (seq 0 n) = proj1_sig (f n))). { *) *)
 (* (*       intros n. induction n. *) *)

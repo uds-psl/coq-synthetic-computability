@@ -1,5 +1,5 @@
 From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.SemiDecidabilityFacts reductions partial embed_nat.
-Require Import Setoid Program Lia.
+From Stdlib Require Import Setoid Program Lia.
 
 (** * Axioms for synthetic computability *)
 

@@ -1,6 +1,6 @@
 (** * Prenex Normal Form *)
 From SyntheticComputability  Require Import Arithmetics.
-Require Import Lia Vector List.
+From Stdlib Require Import Lia Vector List.
 Import Vector.VectorNotations.
 Import List.ListNotations.
 

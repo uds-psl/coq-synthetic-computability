@@ -1,7 +1,7 @@
 Local Set Implicit Arguments.
 Local Unset Strict Implicit.
 
-Require Import List Lia.
+From Stdlib Require Import List Lia.
 Import ListNotations.
 
 Definition functional {X Y} (R : X -> Y -> Prop) :=
@@ -104,7 +104,7 @@ Section Cont.
     FunRel X Y.
   Proof.
     exists (fun n b => In n L /\ f n b).
-    unfold functional. abstract intuition eauto using (@the_func_proof _ _ f).
+    unfold functional. abstract (pose proof (@the_func_proof _ _ f); intuition eauto).
   Defined.
 
   Definition lprefixes f : FunRel X Y -> Prop :=
@@ -146,8 +146,8 @@ Section Cont.
     - apply modulus_continuous_to_Bauer_continuous.
   Qed.
 
-  Print Assumptions equivalence.
-
 End Cont.
+
+Print Assumptions equivalence.
  
 

@@ -3,9 +3,11 @@ Require Import SyntheticComputability.Synthetic.DecidabilityFacts.
 Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
-Require Import Arith Arith.Compare_dec Lia Coq.Program.Equality List.
+From Stdlib Require Import Arith Arith.Compare_dec Lia Program.Equality List.
 From SyntheticComputability Require Import the_priority_method.
 From SyntheticComputability Require Import simpleness.
+
+From SyntheticComputability.Shared.Libs.PSL Require Power EqDec.
 
 Definition inf_exists (P: nat → Prop) := ∀ n, ∃ m, n ≤ m ∧ P m.
 

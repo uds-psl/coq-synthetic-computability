@@ -1,6 +1,6 @@
 From SyntheticComputability.Synthetic Require Import DecidabilityFacts SemiDecidabilityFacts EnumerabilityFacts.
 From SyntheticComputability Require Import Shared.embed_nat.
-Require Import List Lia.
+From Stdlib Require Import List Lia.
 Import ListNotations EmbedNatNotations.
 
 (** ** List enumerability *)

@@ -1,5 +1,5 @@
 From stdpp Require Import prelude.
-Require Import ssreflect.
+From Stdlib Require Import ssreflect.
 
 From SyntheticComputability.Synthetic Require Import Definitions DecidabilityFacts EnumerabilityFacts.
 From SyntheticComputability.Shared Require Import Dec ListAutomation.

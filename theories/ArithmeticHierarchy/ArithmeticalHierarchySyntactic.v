@@ -2,15 +2,15 @@
 (** ** Arithmetical Hierarchy in First-Order Arithmetic *)
 
 From Undecidability Require Import Syntax FullFacts.
-Require Import Lia Vector Fin List.
+From Stdlib Require Import Lia Vector Fin List.
 Import Vector.VectorNotations.
 From SyntheticComputability Require Import PrenexNormalForm.
-Require Import Eqdep_dec.
+From Stdlib Require Import Eqdep_dec.
 
 From Equations Require Import Equations.
 Require Import Equations.Prop.DepElim.
 
-Require Import PeanoNat (* Nat.eqb *) Bool.
+From Stdlib Require Import PeanoNat Bool. (* Nat.eqb *)
 
 Local Set Implicit Arguments.
 Local Unset Strict Implicit.

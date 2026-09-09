@@ -1,4 +1,4 @@
-Require Import ssreflect Setoid.
+From Stdlib Require Import ssreflect Setoid.
 
 Class equiv_on (T : Type) :=
   {

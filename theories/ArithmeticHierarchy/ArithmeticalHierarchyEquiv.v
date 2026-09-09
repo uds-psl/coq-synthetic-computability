@@ -1,12 +1,12 @@
 (** ** Equivalence of Both Definitions *)
 
 From Undecidability.FOL Require Import Facts FullFacts.
-Require Import Lia Vector Fin List.
+From Stdlib Require Import Lia Vector Fin List.
 Import Vector.VectorNotations.
 From SyntheticComputability Require Import PrenexNormalForm.
 From SyntheticComputability Require Import ArithmeticalHierarchySyntactic ArithmeticalHierarchySemantic.
 
-Require Import PeanoNat (* Nat.eqb *) Bool.
+From Stdlib Require Import PeanoNat Bool. (* Nat.eqb *)
 
 From Equations Require Import Equations.
 Require Import Equations.Prop.DepElim.

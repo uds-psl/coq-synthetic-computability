@@ -1,6 +1,7 @@
-Require Import ssreflect Setoid Lia List.
+Require stdpp.list.
+From Stdlib Require Import ssreflect Setoid Lia List.
 Require Import SyntheticComputability.Shared.embed_nat SyntheticComputability.Shared.mu_nat.
-From Coq.Logic Require Import ConstructiveEpsilon.
+From Stdlib.Logic Require Import ConstructiveEpsilon.
 Import EmbedNatNotations ListNotations.
 
 Local Set Implicit Arguments.
@@ -469,7 +470,7 @@ Module implementation.
       + eapply H0 in H5. erewrite spec_fun in H5. 3: exact Hle. 2:eassumption. congruence.
   Defined.
 
-  Require Import stdpp.list.
+  Import stdpp.list.
 
   Lemma lookup_seq k m n : m < n -> (seq k n) !! m = Some (k + m).
   Proof.

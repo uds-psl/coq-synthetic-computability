@@ -1,5 +1,5 @@
 From stdpp Require Import prelude.
-Require Import ssreflect.
+From Stdlib Require Import ssreflect.
 
 From SyntheticComputability.Synthetic Require Import Definitions DecidabilityFacts EnumerabilityFacts.
 From SyntheticComputability.Shared Require Import Dec ListAutomation.
@@ -156,7 +156,7 @@ Section fixes.
         erewrite <- map_map with (f := fst) (g := f).
         eapply map_NoDup; firstorder.
         now intros [].
-      * cbn. rewrite !map_length. lia.
+      * cbn. rewrite !length_map. lia.
       * rewrite E. eauto.
   Qed.
 

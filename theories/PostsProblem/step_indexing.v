@@ -4,8 +4,10 @@ Require Export SyntheticComputability.Shared.FinitenessFacts.
 Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
 From SyntheticComputability Require Import partial Dec.
-Require Import Coq.Program.Equality.
+From Stdlib Require Import Program.Equality.
 From stdpp Require Export list.
+
+From SyntheticComputability.Shared.Libs.PSL Require Power EqDec.
 Import PartialTactics.
 
 (* ########################################################################## *)
@@ -178,7 +180,7 @@ Section Step_Eval.
       evalt_comp τ f (length l + n) m = Some v2.
   Proof.
     intros H H1. split; revert n; dependent induction H; try eauto.
-    - intros. cbn -[evalt]. rewrite app_length. cbn -[evalt].
+    - intros. cbn -[evalt]. rewrite List.length_app. cbn -[evalt].
       replace (length qs + 1 + n) with (length qs + (S n)) by lia.
       eapply IHinterrogation. intros; apply H2.
       etransitivity. exact H4. by eapply prefix_app_r.
@@ -189,7 +191,7 @@ Section Step_Eval.
       assert (x = Ask q). { eapply hasvalue_det; eauto. }
       rewrite H4, H6, H1, <- H3. eapply evalt_comp_ext.
       intros; by list_simplifier.
-    - intros. rewrite app_length in H3. cbn in H3.
+    - intros. rewrite List.length_app in H3. cbn in H3.
       replace (length qs + 1 + n) with (length qs + (S n)) in H3 by lia.
       eapply IHinterrogation in H3.
       2: { intros; apply H2. etransitivity. exact H4.
@@ -210,7 +212,7 @@ Section Step_Eval.
     evalt_comp (λ l', τ (lv ++ l')) f n m = Some v.
   Proof.
     intros H. revert n; dependent induction H; try eauto.
-    intros. rewrite app_length in H2. cbn in H2.
+    intros. rewrite List.length_app in H2. cbn in H2.
     replace (length qs + 1 + n) with (length qs + (S n)) in H2 by lia.
     eapply IHinterrogation in H2.
     cbn in H2. rewrite app_nil_r in H2.
@@ -342,7 +344,7 @@ Section Step_Eval.
     { eapply prefix_nil_inv; eauto. exists (Hl). done. } subst.
     exists []. split. econstructor. done.
   - destruct Hl. list_simplifier. exists (qs ++ [q] ).
-    split. econstructor; eauto. rewrite !app_length.
+    split. econstructor; eauto. rewrite !List.length_app.
     cbn. f_equal. eapply interrogation_length. done.
     list_simplifier.
     apply app_eq_inv in H2. destruct H2 as [[k [Hk Hk']]|[k [Hk Hk']]].
@@ -371,7 +373,7 @@ Section Step_Eval.
     apply app_eq_inv in H2. destruct H2 as [[k [Hk Hk']]|[k [Hk Hk']]].
     + rewrite Hk in Hlen. destruct k.
       2:{ apply (IHinterrogation (q1::k)). done. list_simplifier.
-      rewrite app_length. cbn. lia. }
+      rewrite List.length_app. cbn. lia. }
       list_simplifier. subst. exists ans. split. done.
       split. eapply interrogation_length. done.
       exists q. done.
@@ -749,7 +751,7 @@ Section Step_Eval_Spec.
   Theorem φ_spec0' e x n: φ (decider n) e x n = 0 ↔ Φ_ decider e x n = None.
   Proof.
     destruct (φ_spec0 e x n) as [H1 H2]. split; intros H.
-    - destruct (φ (decider n) e x n); eauto.
+    - destruct (φ (decider n) e x n); eauto; try congruence.
       destruct (Φ_ decider e x n); eauto.
       destruct u; eauto. enough (0≠0) by congruence.
       by eapply H2.
@@ -761,7 +763,7 @@ Section Step_Eval_Spec.
 
   Fact char_rel_boring n:
     ∀ q a, char_rel (decider n) q a ↔ (λ x y, decider n x = y) q a.
-  Proof. intros. unfold char_rel. destruct a, (decider n q); intuition. Qed. 
+  Proof. intros. unfold char_rel. destruct a, (decider n q); intuition; try congruence. Qed. 
 
 
   Theorem φ_spec1 e x n k :

@@ -18,7 +18,7 @@ end : core.
 (* Register additional simplification rules with autorewrite / simpl_list *)
 (* Print Rewrite HintDb list. *)
 Global Hint Rewrite <- app_assoc : list.
-Global Hint Rewrite rev_app_distr map_app prod_length : list.
+Global Hint Rewrite rev_app_distr map_app length_prod : list.
 
 Lemma list_cycle  (X : Type) (A : list X) x :
   x::A <> A.
@@ -411,7 +411,7 @@ Proof.
   intros ->. revert ys. induction xs; cbn; auto.
 Qed.
 
-Lemma skipn_length (X : Type) (n : nat) (xs : list X) :
+Lemma length_skipn (X : Type) (n : nat) (xs : list X) :
   length (skipn n xs) = length xs - n.
 Proof.
   revert xs. induction n; intros; cbn.
@@ -462,7 +462,7 @@ Lemma rev_repeat (X : Type) (n : nat) (a : X) :
   rev (repeat a n) = repeat a n.
 Proof.
   apply repeat_eq_iff. split.
-  - rewrite rev_length. rewrite repeat_length. auto.
+  - rewrite length_rev. rewrite repeat_length. auto.
   - intros y Hx % in_rev. eapply repeat_spec; eauto.
 Qed.
 

@@ -4,7 +4,7 @@ Require Import SyntheticComputability.Shared.FinitenessFacts.
 Require Import SyntheticComputability.Synthetic.reductions SyntheticComputability.Synthetic.truthtables.
 Require Import SyntheticComputability.Synthetic.DecidabilityFacts SyntheticComputability.Synthetic.EnumerabilityFacts SyntheticComputability.Synthetic.SemiDecidabilityFacts SyntheticComputability.Synthetic.ReducibilityFacts.
 Require Import SyntheticComputability.Shared.ListAutomation.
-Require Import List Arith.
+From Stdlib Require Import List Arith.
 
 Section Assume_EA.
 

@@ -1,5 +1,5 @@
 Require SyntheticComputability.Shared.Dec.
-Require Import Setoid Morphisms.
+From Stdlib Require Import Setoid Morphisms.
 Require Export SyntheticComputability.Synthetic.Definitions SyntheticComputability.Shared.FinitenessFacts.
 From SyntheticComputability.Shared Require Import mu_nat equiv_on.
 

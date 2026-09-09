@@ -2,7 +2,7 @@ From Undecidability.FOL Require Export Facts.
 From Undecidability.FOL Require Export FullFacts.
 
 Import Vector.VectorNotations.
-Require Import List.
+From Stdlib Require Import List.
 
 (* ** Signature for PA axiomatisation, containing function symbols for set operations *)
 

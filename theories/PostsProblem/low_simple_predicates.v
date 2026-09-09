@@ -5,9 +5,10 @@ Require Export SyntheticComputability.Shared.Pigeonhole.
 Require Export SyntheticComputability.Shared.ListAutomation.
 From SyntheticComputability Require Export lowness.
 From SyntheticComputability Require Export simpleness.
-Require Import Arith.
+From Stdlib Require Import Arith.
 Require Import stdpp.list.
 
+From SyntheticComputability.Shared.Libs.PSL Require Power EqDec.
 
 (* ########################################################################## *)
 (** * Low Simple Predicates *)

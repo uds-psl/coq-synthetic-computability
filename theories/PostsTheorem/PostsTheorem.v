@@ -2,13 +2,16 @@
 
 From SyntheticComputability.Shared Require Import embed_nat.
 From SyntheticComputability Require Import TuringReducibility.OracleComputability TuringJump ArithmeticalHierarchySemantic SemiDec reductions Dec.
-Require Import Lia List Vector PeanoNat.
+From Stdlib Require Import Lia List Vector PeanoNat.
 Import Vector.VectorNotations.
 Local Notation vec := Vector.t.
 From SyntheticComputability Require Import partial.
 
 From Equations Require Import Equations.
 Require Import Equations.Prop.DepElim.
+
+Local Set Implicit Arguments.
+Local Unset Strict Implicit.
 
 Class datatype (X : nat -> Type) :=
   {
@@ -175,7 +178,7 @@ Section PostsTheorem.
                        end).
             red. intros x. rewrite seval_hasvalue.
             firstorder. eexists. rewrite H0. destruct dec_vec; try congruence.
-            destruct seval as [ [ | [] ] | ]eqn:E; eauto.
+            destruct seval as [ [ | [] ] | ]eqn:E; eauto; try congruence.
             destruct dec_vec; try congruence.
             subst. eauto.
           * unfold char_rel.
@@ -212,7 +215,7 @@ Section PostsTheorem.
                                                      end).
         red. intros x. destruct unembed. rewrite seval_hasvalue.
         firstorder. eexists. rewrite H0. reflexivity.
-        destruct seval as [ [ | [] ] | ]eqn:E; eauto.
+        destruct seval as [ [ | [] ] | ]eqn:E; eauto; try congruence.
   Qed.
 
   Lemma Σ_semi_decidable_in_Π_forward {k} (p: (vec nat k) -> Prop) n (DN : LEM_Π n) :
@@ -230,7 +233,7 @@ Section PostsTheorem.
     now eapply LEM_Σ_to_DNE_Σ.
   Qed.
 
-  Hint Resolve DNEimpl.
+  Hint Resolve DNEimpl : core.
 
   (* Lemma Σ_semi_decidable_in_Σ_forward {k} (p: (vec nat k) -> Prop) n (DN : LEM_Π n) : *)
   (*   isΣsem (S n) p -> exists (p': vec nat (S k) -> Prop), isΣsem n p' /\ OracleSemiDecidable p' p. *)
@@ -285,7 +288,7 @@ Section PostsTheorem.
       intros v. specialize (H v). destruct (f v); firstorder congruence.
     - intros k p [p' [Σp' Sp']]%Σ_semi_decidable_in_Σ.
       apply (@red_m_iff_semidec_jump_vec _).
-      eapply (Turing_transports_sdec Sp').
+      eapply (Turing_transports_sdec _ _ _ Sp').
       apply red_m_impl_red_T. eapply IH; eauto.
       all: intros n' q Hq; eapply DN; now eapply isΣΠn_In_ΣΠSn with (l := 1). 
   Qed.
@@ -300,7 +303,7 @@ Section PostsTheorem.
     isΣsem (S n) p -> OracleSemiDecidable (­{0}^(n)) p.
   Proof.
     intros [p' [Σp' Sp']]%Σ_semi_decidable_in_Σ.
-    eapply (Turing_transports_sdec Sp').
+    eapply (Turing_transports_sdec _ _ _ Sp').
     eapply jump_Σn_complete_redT.
     all: eauto.
   Qed.
@@ -310,13 +313,13 @@ Section PostsTheorem.
   Proof.
     split.
     - intros [p' [Σp' Sp']]%Σ_semi_decidable_in_Σ.
-      eapply (Turing_transports_sdec Sp').
+      eapply (Turing_transports_sdec _ _ _ Sp').
       eapply jump_Σn_complete_redT.
       all: eauto.
     - intros H. apply Σ_semi_decidable_in_Σ; eauto.
       exists ({0}^[n]). split.
       + apply jump_in_Σn; eauto.
-      + apply (Turing_transports_sdec H), red_m_impl_red_T, jumpNKspec.
+      + apply (Turing_transports_sdec _ _ _ H), red_m_impl_red_T, jumpNKspec.
   Qed.
 
   Theorem PostsTheorem {k} (p: (vec nat k) -> Prop) n (DN : LEM_Σ n) :
@@ -335,6 +338,6 @@ Section PostsTheorem.
     - apply jump_Σn_complete_redT...
     - apply Σ_semi_decidable_jump...
   Qed.
-  Print Assumptions PostsTheorem.
-
+  
 End PostsTheorem.
+Print Assumptions PostsTheorem.

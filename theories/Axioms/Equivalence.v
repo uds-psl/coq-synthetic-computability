@@ -1,5 +1,6 @@
+From Stdlib Require List.
 From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts Synthetic.SemiDecidabilityFacts reductions partial embed_nat Dec.
-Require Import Setoid Program Lia.
+From Stdlib Require Import Setoid Program Lia.
 
 From SyntheticComputability.Axioms Require Export CT SCT EA EPF.
 
@@ -226,7 +227,7 @@ Qed.
 
 Module R_spec.
 
-Require Import List.
+  Import List.
 Import ListNotations.
 Import implementation.
 Local Existing Instance monotonic_functions.
@@ -249,14 +250,14 @@ Proof.
   - enough (I f (f 0) = true) as <- by eapply H.
     unfold I.
     rewrite seq_app, map_app. cbn.
-    rewrite app_nth1. 2: rewrite app_length, repeat_length; cbn; lia.
+    rewrite app_nth1. 2: rewrite List.length_app, repeat_length; cbn; lia.
     rewrite app_nth2. 2: rewrite repeat_length; cbn; lia.
     now rewrite repeat_length, PeanoNat.Nat.sub_diag.
   - intros.
     enough (I f m = false) as <- by eapply H.
     unfold I.
     rewrite seq_app, map_app. cbn.
-    rewrite app_nth1. 2: rewrite app_length, repeat_length; cbn; lia.
+    rewrite app_nth1. 2: rewrite List.length_app, repeat_length; cbn; lia.
     rewrite app_nth1. 2: rewrite repeat_length; cbn; lia.
     destruct nth eqn:E; try reflexivity.
     enough (In true (repeat false (f 0))) by (eapply repeat_spec; eassumption).
@@ -270,7 +271,7 @@ Lemma flat_map_length_ge {X Y} (f : X -> list Y) l n :
 Proof.
   intros Hl Hf. induction l in n, Hl |- *; cbn in *.
   - lia.
-  - rewrite app_length. 
+  - rewrite List.length_app. 
     destruct n; try lia.
     specialize (IHl n ltac:(lia)).
     specialize (Hf a). lia.
@@ -292,18 +293,18 @@ Proof.
     unfold I.
     rewrite <- map_map, seq_shift. cbn.
     symmetry.
-    rewrite app_nth2. all: rewrite app_length, repeat_length. 2: cbn; lia.
+    rewrite app_nth2. all: rewrite List.length_app, repeat_length. 2: cbn; lia.
     cbn.
     replace (x + S (f 0) - (f 0 + 1)) with x by lia.
     replace (x + S (f 0)) with (S (x + f 0)) by lia.
     cbn. rewrite seq_app, map_app, flat_map_app.
     rewrite app_assoc, app_nth1. reflexivity.
-    rewrite !app_length, repeat_length; cbn.
+    rewrite !List.length_app, repeat_length; cbn.
     enough (length (flat_map (fun n : nat => repeat false n ++ [true]) (map f (seq 2 x)))
             >= x) by lia.
     eapply flat_map_length_ge. 
-    + rewrite map_length, seq_length. lia.
-    + intros. rewrite app_length, repeat_length. cbn. lia.
+    + rewrite length_map, List.length_seq. lia.
+    + intros. rewrite List.length_app, repeat_length. cbn. lia.
 Qed.
 
 Lemma SCT_to_SCT_bool :

@@ -1,4 +1,4 @@
-Require Import List Lia Arith.
+From Stdlib Require Import List Lia Arith.
 Import ListNotations.
 
 Set Default Goal Selector "!".
@@ -144,7 +144,7 @@ Section get_better.
 
 End get_better.
 
-#[export] Hint Resolve occ_spec e_spec.
+#[export] Hint Resolve occ_spec e_spec : core.
 
 Notation injective f := (forall x1 x2, f x1 = f x2 -> x1 = x2).
 
@@ -166,7 +166,7 @@ Section Def_F.
     intros x.
     eapply Nat.lt_le_trans.
     2: eapply gen_spec. 2:eapply NoDup_map; eauto.
-    rewrite map_length.
+    rewrite length_map.
     eapply nth_error_Some.
     rewrite index_spec. 1:congruence.
     left. eauto.

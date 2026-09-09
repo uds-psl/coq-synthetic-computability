@@ -1,5 +1,5 @@
 From stdpp Require Import prelude.
-Require Import List Lia.
+From Stdlib Require Import List Lia.
 
 Import ListNotations.
 
@@ -223,7 +223,7 @@ Proof.
     rewrite nth_error_app2.
     rewrite drop_app_le. rewrite skipn_firstn_comm.
     rewrite Nat.sub_diag. rewrite firstn_O. cbn. f_equal.
-    assert (length (take m t) = m). rewrite firstn_length. lia. lia. rewrite firstn_length. lia. rewrite firstn_length. lia.
+    assert (length (take m t) = m). rewrite length_firstn. lia. lia. rewrite length_firstn. lia. rewrite length_firstn. lia.
   - rewrite drop_ge. 2: lia.
     assert (nth_error [] n0 = None) as -> by now destruct n0.
     symmetry. eapply nth_error_None. lia.
@@ -247,7 +247,7 @@ Proof.
     * cbn. rewrite pos_app_2. 2: intros (? & [= [=]] & ?) % in_map_iff. 
       rewrite pos_map. 2: firstorder congruence.
       destruct pos. destruct nth_error eqn:E. all: try now firstorder congruence.
-      all: rewrite map_length.
+      all: rewrite length_map.
       all: replace (length (Vector.to_list l)) with n.
       2, 4: clear; induction l; cbn in *; now f_equal.
       all: generalize (length (gen_lists n)); intros m.
@@ -272,5 +272,5 @@ Proof.
   clear. 
   induction l in t |- *.
   - cbn. reflexivity.
-  - cbn. rewrite <- !IHl. now rewrite (map_length (eq true) l) at 3.
+  - cbn. rewrite <- !IHl. now rewrite (length_map (eq true) l) at 3.
 Qed.

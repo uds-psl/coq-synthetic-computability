@@ -1,6 +1,6 @@
 Require Import stdpp.list stdpp.list_numbers.
 From SyntheticComputability Require Import Synthetic.DecidabilityFacts Synthetic.EnumerabilityFacts ListEnumerabilityFacts reductions partial Axioms.Equivalence principles kleenetree Synthetic.MoreEnumerabilityFacts mu_nat Shared.Dec.
-Require Import ssreflect Nat.
+From Stdlib Require Import ssreflect Nat.
 
 (** ** Continuity  *)
 
@@ -48,10 +48,10 @@ Lemma take_seq n m s :
   n <= m -> take n (seq s m) = seq s n.
 Proof.
   induction 1.
-  - rewrite <- (seq_length n s) at 1.
+  - rewrite <- (List.length_seq n s) at 1.
     now rewrite firstn_all.
   - replace (S m) with (m + 1) by lia.
-    rewrite seq_app firstn_app IHle seq_length.
+    rewrite seq_app firstn_app IHle List.length_seq.
     replace (n - m) with 0 by lia. cbn.
     now rewrite app_nil_r.
 Qed.
@@ -88,7 +88,7 @@ Proof.
     destruct (Fsurj (fun _ => S N)) as [f_N H_N].
     
     specialize (H (map f_N (seq 0 n))).
-    rewrite map_length seq_length in H.
+    rewrite length_map List.length_seq in H.
     specialize (H (Nat.le_refl _)).
     edestruct (listable_exists_dec (p := fun i => 0 < i <= n) ( q := fun i => ~ Exists (le i) (M (extend (take i (map f_N (seq 0 n)))) 0))).
     + exists (seq 1 n). clear. intros. rewrite in_seq. lia.
@@ -108,12 +108,12 @@ Proof.
         erewrite <- Mmod with (f := extend (map f_N (seq 0 m))).
         -- eapply max_list_spec. eapply in_map_iff.
            eexists. split. reflexivity. eapply HL.
-           rewrite map_length seq_length. lia.
+           rewrite length_map List.length_seq. lia.
         -- eapply map_ext_in.
            intros a Ha. unfold extend. eapply Hm in Ha.
            erewrite nth_indep.
            erewrite map_nth, seq_nth. reflexivity. lia.
-           now rewrite map_length seq_length.
+           now rewrite length_map List.length_seq.
     + edestruct H. intros.
       edestruct @Exists_dec.
       2:{ exact e. }
@@ -128,14 +128,14 @@ Proof.
     eapply Nat.lt_le_trans with (m := 1 + max_list (M (extend (map f (seq 0 N))) 0)).
     + specialize (H N). setoid_rewrite List.Exists_exists in H.
       destruct H as [i Hi].
-      * split. unfold N. cbn. lia. now rewrite map_length seq_length.
+      * split. unfold N. cbn. lia. now rewrite length_map List.length_seq.
       * eapply Nat.le_lt_trans. eapply Hi.
         enough (max_list [i] <=  max_list (M (extend (map f (seq 0 N))) 0)) as H0.
         unfold max_list in H0 at 1. rewrite Nat.max_0_r in H0. unfold id in H0 at 1. lia.
         eapply max_list_incl. intros ? [-> | []].
         replace N with (length (map f (seq 0 N))) in Hi at 1.
         rewrite firstn_all in Hi. eapply Hi.
-        now rewrite map_length seq_length.
+        now rewrite length_map List.length_seq.
     + unfold N. rewrite <- HL.
       enough (max_list (M f 0) ≤ max_list (1 + length L :: L ++ M f 0)). lia.
       eapply max_list_incl, incl_tl, incl_appr, incl_refl.
@@ -147,7 +147,7 @@ Proof.
       * enough (max_list [a] <=  max_list (1 + length L :: L ++ M f 0)) as H0.
         unfold max_list in H0 at 1. rewrite Nat.max_0_r in H0. unfold id in H0 at 1. lia.
         eapply max_list_incl. intros ? [-> | []]. eapply in_cons, in_app_iff. eauto.
-      * rewrite map_length seq_length.
+      * rewrite length_map List.length_seq.
         enough (max_list [a] <=  max_list (1 + length L :: L ++ M f 0)) as H0.
         unfold max_list in H0 at 1. rewrite Nat.max_0_r in H0. unfold id in H0 at 1. lia.
         eapply max_list_incl. intros ? [-> | []]. eapply in_cons, in_app_iff. eauto.
@@ -282,7 +282,7 @@ Lemma F'_length f o n :
 Proof.
   induction n; cbn.
   - lia.
-  - rewrite app_length.
+  - rewrite List.length_app.
     pose proof (enum_length (f (o + n))). lia.
 Qed.
 
@@ -319,13 +319,13 @@ Proof.
     rewrite IHk. f_equal.
     destruct (drop k (F' f 0 k ++ ℓ (f k))) eqn:E1.
     + eapply (f_equal length) in E1.
-      rewrite skipn_length in E1. cbn in E1.
-      pose proof (F'_length f 0 (S k)). cbn in H2. rewrite app_length in H2, E1.
+      rewrite length_skipn in E1. cbn in E1.
+      pose proof (F'_length f 0 (S k)). cbn in H2. rewrite List.length_app in H2, E1.
       lia.
     + destruct (drop k (F' g 0 k ++ ℓ (g k))) eqn:E2.
       * eapply (f_equal length) in E2.
-        rewrite skipn_length in E2. cbn in E2.
-        pose proof (F'_length g 0 (S k)). cbn in H2. rewrite app_length in H2, E2.
+        rewrite length_skipn in E2. cbn in E2.
+        pose proof (F'_length g 0 (S k)). cbn in H2. rewrite List.length_app in H2, E2.
         lia.
       * cbn. rewrite !firstn_O. f_equal.
         assert (F' f 0 (S k) !! k = Some b). eapply drop_lookup_iff. eauto.
@@ -412,7 +412,7 @@ Proof.
         eapply (f_equal (take k''')) in Heq.
         assert (k''' <= k''). {
           subst k''' k'' k.
-          cbn. rewrite app_length. lia.
+          cbn. rewrite List.length_app. lia.
         }
         rewrite !take_take in Heq; eauto.
         rewrite firstn_app in Heq.
@@ -444,7 +444,7 @@ Proof.
         eapply (f_equal (take k''')) in Heq.
         assert (k''' <= k''). {
           subst k''' k'' k.
-          cbn. rewrite app_length. lia.
+          cbn. rewrite List.length_app. lia.
         }
         rewrite !take_take in Heq; eauto.
         symmetry in Heq.
@@ -542,7 +542,7 @@ Lemma F'_length_g o m g :
 Proof.
   induction m in o, g |- *; cbn.
   - reflexivity.
-  - rewrite !app_length IHm.
+  - rewrite !List.length_app IHm.
     f_equal. 
     now rewrite !G_inv Nat.iter_succ_r.
 Qed.
@@ -555,7 +555,7 @@ Proof.
   - cbn. now rewrite <- plus_n_O.
   - rewrite Nat.iter_succ_r IHm. rewrite <- F'_length_g.
     replace (S m) with (m + 1) by lia.
-    rewrite F'_offset /nxt app_length. cbn.
+    rewrite F'_offset /nxt List.length_app. cbn.
     f_equal. rewrite G_inv. cbn. lia.
 Qed.
 
@@ -565,12 +565,12 @@ Proof.
   induction m in g |- *; cbn.
   - reflexivity.
   - rewrite IHm.
-    rewrite app_length seq_app map_app map_length seq_length.
+    rewrite List.length_app seq_app map_app length_map List.length_seq.
     f_equal.
     rewrite G_inv.
     destruct F_find_pref as [l [Hl e]].
     cbn. rewrite e.
-    rewrite map_length seq_length.
+    rewrite length_map List.length_seq.
     eapply map_seq_eq. clear.
     move => n. rewrite <- plus_n_O.
     eapply nxt_iter.
@@ -612,7 +612,7 @@ Proof.
       replace (S x) with (x + 1) in H by lia.
       rewrite !seq_app !map_app in H.
       unshelve epose proof (app_inj_1 _ _ _ _ _ H) as [E1 E2].
-      now rewrite !map_length !seq_length.
+      now rewrite !length_map !List.length_seq.
       cbn in *. inv E2. now rewrite H1 IHx.
 Qed.
 
@@ -773,7 +773,7 @@ Lemma map_nth_seq {X} (x0 : X) l :
 Proof.
   induction l using rev_ind.
   - reflexivity.
-  - cbn. rewrite app_length seq_app map_app.
+  - cbn. rewrite List.length_app seq_app map_app.
     cbn. rewrite app_nth2. lia.
     rewrite Nat.sub_diag. cbn. f_equal.
     rewrite <- IHl at 2.
@@ -799,7 +799,7 @@ Proof.
       pose proof (wf_τ (extend u)).
       eapply mu_nat_dep_least in H as (k & H1 & H2 & H3). 
       -- exists (map (extend u) (seq 0 k)). split.
-         ++ rewrite map_length seq_length.
+         ++ rewrite length_map List.length_seq.
             destruct (le_lt_dec n k); eauto.
             exfalso. eapply H2.
             eapply tree_p. eauto. 2:exact Hu1.

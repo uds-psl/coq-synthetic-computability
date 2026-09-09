@@ -1,4 +1,4 @@
-Require Import Setoid.
+From Stdlib Require Import Setoid.
 Set Default Goal Selector "!".
 
 Definition MP_prop:= forall A : nat -> Prop, (forall n, A n \/ ~ A n) -> ~~ (exists n, A n) -> exists n, A n.

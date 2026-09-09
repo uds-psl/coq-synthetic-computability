@@ -1,8 +1,11 @@
 (** * Kleene-Post Theorem *)
 
 From SyntheticComputability Require Import TuringReducibility.OracleComputability partial.
-Require Import Lia List.
+From Stdlib Require Import Lia List.
 Import ListNotations.
+
+Local Set Implicit Arguments.
+Local Unset Strict Implicit.
 
 Section Part.
 
@@ -107,7 +110,7 @@ Qed.
 Lemma prefix_length s t :
   prefix s t -> length s <= length t.
 Proof.
-  intros [u <-]. rewrite app_length. lia.
+  intros [u <-]. rewrite List.length_app. lia.
 Qed.
 
 Lemma prefix_sub s t :
@@ -277,17 +280,17 @@ Proof.
   assert (S (n + S (n + 0)) = S (S (2 * n))) as -> by lia.
   inversion 1; subst; try lia; inversion H1; subst; try lia; assert (n = e0) as <- by lia.
   - apply IHn in H6. split.
-    + rewrite app_length. cbn. apply prefix_length in H7. lia.
-    + apply prefix_length in H2. rewrite app_length in H2. cbn in H2. lia.
+    + rewrite List.length_app. cbn. apply prefix_length in H7. lia.
+    + apply prefix_length in H2. rewrite List.length_app in H2. cbn in H2. lia.
   - apply IHn in H6. split.
-    + rewrite app_length. cbn. lia.
-    + apply prefix_length in H2. rewrite app_length in H2. cbn in H2. lia.
+    + rewrite List.length_app. cbn. lia.
+    + apply prefix_length in H2. rewrite List.length_app in H2. cbn in H2. lia.
   - apply IHn in H4. split.
-    + rewrite app_length. cbn. apply prefix_length in H5. lia.
-    + rewrite app_length. cbn. lia.
+    + rewrite List.length_app. cbn. apply prefix_length in H5. lia.
+    + rewrite List.length_app. cbn. lia.
   - apply IHn in H4. split.
-    + rewrite app_length. cbn. lia.
-    + rewrite app_length. cbn. lia.
+    + rewrite List.length_app. cbn. lia.
+    + rewrite List.length_app. cbn. lia.
 Qed.
 
 Lemma sigtau_length' k n s t :
@@ -529,7 +532,7 @@ Proof.
     apply (Kleene_Post1 (e:=e)). intros n b. cbn. now rewrite HF2, He.
 Qed.
 
-Print Assumptions KleenePost.
-
 End Part.
+
+Print Assumptions KleenePost.
 
